@@ -14,9 +14,4 @@ class FaqCategory extends Model
         'order_number',
         'status',
     ];
-
-    public function faqs()
-    {
-        return $this->hasMany(Faq::class, 'faq_category_id');
-    }
 }

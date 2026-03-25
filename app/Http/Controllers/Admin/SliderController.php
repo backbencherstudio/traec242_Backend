@@ -13,8 +13,6 @@ class SliderController extends Controller
     {
         $sliders = Slider::all();
         return response()->json($sliders);
-
-
     }
 
     public function store(Request $request)
@@ -52,7 +50,7 @@ class SliderController extends Controller
     public function edit($id)
     {
         $slider = Slider::find($id);
-        if(!$slider){
+        if (!$slider) {
             return response()->json(['message' => 'Slider not found'], 404);
         }
         return response()->json($slider);
@@ -76,12 +74,12 @@ class SliderController extends Controller
         $slider->status = $request->status;
         $slider->order_number = $request->order_number;
 
-        if ($request->hasFile('thumbnail')){
-            if ($slider->thumbnail && file_exists(public_path($slider->thumbnail))){
+        if ($request->hasFile('thumbnail')) {
+            if ($slider->thumbnail && file_exists(public_path($slider->thumbnail))) {
                 unlink(public_path($slider->thumbnail));
             }
             $file = $request->file('thumbnail');
-            $filename = uniqid() . '.' .$file->getClientOriginalName();
+            $filename = uniqid() . '.' . $file->getClientOriginalName();
             $file->move(public_path('uploads/sliders'), $filename);
             $slider->thumbnail = 'uploads/sliders/' . $filename;
         }

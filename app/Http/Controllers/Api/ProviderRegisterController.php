@@ -29,7 +29,7 @@ class ProviderRegisterController extends Controller
             'state' => $validated['state'],
             'zip_code' => $validated['zip_code'],
             'password' => $validated['password'],
-            'services_id' => $validated['services_id'],
+            'category_id' => $validated['category_id'],
             'type' => 2,
             'status' => 1
         ]);
