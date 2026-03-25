@@ -3,20 +3,45 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\FaqStoreRequest;
 use App\Models\Content;
+use App\Models\Faq;
+use App\Models\User;
 use Illuminate\Container\Attributes\Storage;
 use Illuminate\Http\Request;
 
 class ContentController extends Controller
 {
 
-    public function index()
+
+    /**
+     * Return content and other data
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function home_index()
     {
         $content = Content::pluck('value', 'key');
-        return $this->sendResponse($content);
-    }
 
-    public function update(Request $request)
+        $data = [
+            'content' => $content,
+            'other_data' => [
+                'total_user' => User::where('type', 0)->count(),
+                'total_provider' => User::where('type', 2)->count(),
+                'avg_rating' => 3.3
+            ]
+        ];
+        return $this->sendResponse($data);
+    }
+    /**
+     * Update content values.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+
+
+    public function home_update(Request $request)
     {
         $allowedKeys = [
             'image_1',
@@ -49,5 +74,56 @@ class ContentController extends Controller
 
         $updatedContent = Content::pluck('value', 'key');
         return $this->sendResponse($updatedContent, 'Content updated successfully.');
+    }
+
+
+
+
+    /**
+     * Fetch all faqs from the database.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+
+    public function faq_index()
+    {
+        $content = Faq::get();
+
+        return $this->sendResponse($content);
+    }
+
+
+    /**
+     * Store a newly created faq in storage.
+     *
+     * @param  \App\Http\Requests\FaqStoreRequest  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+
+    public function faq_store(FaqStoreRequest $request)
+    {
+        $validated = $request->validated();
+
+        $content = Faq::create([
+            'question' => $validated['question'],
+            'answer' =>  $validated['answer']
+        ]);
+
+        return $this->sendResponse($content);
+    }
+
+
+
+    /**
+     * Delete a faq from the database.
+     *
+     * @param  \App\Http\Requests\FaqStoreRequest  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function faq_delete(Faq $faq)
+    {
+        $faq->delete();
+
+        return $this->sendResponse([], 'Faq deleted successfully.');
     }
 }

@@ -14,7 +14,6 @@ return new class extends Migration
             $table->string('question');
             $table->text('answer');
             $table->boolean('status')->default(true);
-            $table->integer('order_number')->default(0);
             $table->timestamps();
         });
     }
