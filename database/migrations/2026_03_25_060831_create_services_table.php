@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('services', function (Blueprint $table) {
         $table->id();
         $table->string('title');
+        $table->unsignedBigInteger('user_id');
         $table->unsignedBigInteger('category_id');
         $table->string('location')->nullable();
         $table->text('description')->nullable();
@@ -22,6 +23,7 @@ return new class extends Migration
         $table->boolean('status')->default(1)->comment('0 = Inactive, 1 = Active');
         $table->timestamps();
         $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
+        $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 
