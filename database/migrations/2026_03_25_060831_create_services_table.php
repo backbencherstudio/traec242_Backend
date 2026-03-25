@@ -12,13 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('services', function (Blueprint $table) {
-            $table->id();
-            $table->string('title');
-            $table->text('description')->nullable();
-            $table->string('image')->nullable();
-            $table->decimal('rate', 10, 2)->default(0);
-            $table->boolean('status')->default(1);
-            $table->timestamps();
+        $table->id();
+        $table->string('title');
+        $table->unsignedBigInteger('category_id');
+        $table->string('location')->nullable();
+        $table->text('description')->nullable();
+        $table->string('image')->nullable();
+        $table->boolean('feature_service')->default(0)->comment('0 = Inactive, 1 = Active');
+        $table->boolean('status')->default(1)->comment('0 = Inactive, 1 = Active');
+        $table->timestamps();
+        $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
         });
     }
 
