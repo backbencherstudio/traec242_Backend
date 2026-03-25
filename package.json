@@ -1,0 +1,31 @@
+{
+  "name": "hire410",
+  "version": "1.0.0",
+  "description": "<p align=\"center\"><a href=\"https://laravel.com\" target=\"_blank\"><img src=\"https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg\" width=\"400\" alt=\"Laravel Logo\"></a></p>",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/backbencherstudio/hire410.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/backbencherstudio/hire410/issues"
+  },
+  "homepage": "https://github.com/backbencherstudio/hire410#readme",
+  "devDependencies": {
+    "laravel-vite-plugin": "^2.0.1",
+    "vite": "^7.3.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5"
+  }
+}
