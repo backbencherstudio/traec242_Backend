@@ -23,9 +23,9 @@ return new class extends Migration
             $table->string('zip_code')->nullable()->after('state');
             $table->string('bio')->nullable()->after('zip_code');
             $table->json('languages')->nullable()->after('bio');
-            $table->json('services_id')->nullable()->after('languages');
+            $table->json('category_id')->nullable()->after('languages');
             $table->string('status')->nullable()->comment('0 = Inactive, 1 = Active')->after('role');
-            $table->boolean('provider_status')->nullable()->default(false)->comment('0 = Inactive, 1 = Active')->after('status');
+            $table->boolean('provider_status')->nullable()->default(false)->comment('0 = Pending, 1 = Approved')->after('status');
         });
     }
 

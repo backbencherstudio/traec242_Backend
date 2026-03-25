@@ -32,8 +32,8 @@ class ProviderRegisterRequest extends FormRequest
             'state'      => 'required|string|max:100',
             'zip_code'   => 'required|string|max:20',
             'password'   => 'required|string|min:8|confirmed',
-            'services_id' => 'required|array',
-            'services_id.*' => 'exists:services,id',
+            'category_id' => 'required|array',
+            'category_id.*' => 'exists:categories,id',
         ];
     }
 }
