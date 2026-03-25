@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('image')->nullable()->after('password');
-<<<<<<< HEAD
             $table->tinyInteger('type')->default(0)->comment('0 = User, 1 = Admin, 2 = Provider' )->after('image');
              $table->string('phone')->nullable()->after('type');
              $table->string('role')->nullable()->after('phone');
@@ -26,21 +25,7 @@ return new class extends Migration
              $table->json('languages')->nullable()->after('bio');
              $table->json('category_id')->nullable()->after('languages');
              $table->string('status')->nullable()->comment('0 = Inactive, 1 = Active')->after('role');
-=======
-            $table->tinyInteger('type')->default(0)->comment('0 = User, 1 = Admin, 2 = Provider')->after('image');
-            $table->string('phone')->nullable()->after('type');
-            $table->string('role')->nullable()->after('phone');
-            $table->string('last_name')->nullable()->after('name');
-            $table->string('address')->nullable()->after('role');
-            $table->string('city')->nullable()->after('address');
-            $table->string('state')->nullable()->after('city');
-            $table->string('zip_code')->nullable()->after('state');
-            $table->string('bio')->nullable()->after('zip_code');
-            $table->json('languages')->nullable()->after('bio');
-            $table->json('services_id')->nullable()->after('languages');
-            $table->string('status')->nullable()->comment('0 = Inactive, 1 = Active')->after('role');
-            $table->boolean('provider_status')->nullable()->default(false)->comment('0 = Inactive, 1 = Active')->after('status');
->>>>>>> 3983a48afcdb86e9c13a45c80e948bf7d5429278
+             $table->boolean('provider_status')->nullable()->default(false)->comment('0 = Inactive, 1 = Active')->after('status');
         });
     }
 
