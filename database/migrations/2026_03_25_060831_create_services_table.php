@@ -17,7 +17,7 @@ return new class extends Migration
         $table->unsignedBigInteger('category_id');
         $table->string('location')->nullable();
         $table->text('description')->nullable();
-        $table->string('image')->nullable();
+        $table->json('image')->nullable();
         $table->boolean('feature_service')->default(0)->comment('0 = Inactive, 1 = Active');
         $table->boolean('status')->default(1)->comment('0 = Inactive, 1 = Active');
         $table->timestamps();
