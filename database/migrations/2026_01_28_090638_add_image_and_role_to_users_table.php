@@ -23,6 +23,7 @@ return new class extends Migration
              $table->string('zip_code')->nullable()->after('state');
              $table->string('bio')->nullable()->after('zip_code');
              $table->json('languages')->nullable()->after('bio');
+             $table->json('services_id')->nullable()->after('languages');
              $table->string('status')->nullable()->comment('0 = Inactive, 1 = Active')->after('role');
         });
     }
