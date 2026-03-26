@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Content;
+use App\Models\Faq;
+use App\Models\PrivacyPolicy;
 use App\Models\User;
-use Illuminate\Http\Request;
 
 class BasicContentController extends Controller
 {
@@ -22,5 +23,17 @@ class BasicContentController extends Controller
             ]
         ];
         return $this->sendResponse($data);
+    }
+
+    public function faq()
+    {
+        $content = Faq::all();
+        return $this->sendResponse($content);
+    }
+
+    public function privacy()
+    {
+        $content = PrivacyPolicy::first();
+        return $this->sendResponse($content);
     }
 }

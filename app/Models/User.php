@@ -49,7 +49,7 @@ class User extends Authenticatable implements JWTSubject
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'languages' => 'array',
-            'services_id' => 'array',
+            'category_id' => 'array',
             'type' => 'integer',
             'status' => 'boolean',
         ];
