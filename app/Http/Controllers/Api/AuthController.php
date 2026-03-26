@@ -57,10 +57,9 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'last_name' => 'nullable|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
-            'phone' => 'nullable|string|max:20',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -70,21 +69,11 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time().'_'.Str::random(10).'.'.$image->getClientOriginalExtension();
-            $image->move(public_path('user'), $imageName);
-
-            $imagePath = 'user/'.$imageName;
-        }
-
         $user = User::create([
             'name' => $request->name,
+            'last_name' => $request->last_name,
             'email' => $request->email,
-            'phone' => $request->phone,
             'type' => 0,
-            'image' => $imagePath,
             'password' => Hash::make($request->password),
         ]);
 
@@ -95,9 +84,9 @@ class AuthController extends Controller
         ]);
 
         return response()->json([
-            'user' => $user,
             'success' => true,
             'message' => 'User registered successfully',
+            'user' => $user,
             'token' => $token,
         ], 201);
     }
