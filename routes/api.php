@@ -39,9 +39,9 @@ Route::post('/register', [AuthController::class, 'adminregister'])->name('regist
 Route::get('/edit/{id}', [AuthController::class, 'edit'])->name('edit');
 Route::post('/update/{id}', [AuthController::class, 'adminUpdate'])->name('update');
 Route::delete('/delete/{id}', [AuthController::class, 'delete'])->name('delete');
-Route::get('/logout/{id}', [AuthController::class, 'logout'])->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/password/{id}', [AuthController::class, 'password'])->name('password');
-Route::post('/passwordchange/{id}', [AuthController::class, 'passwordchange'])->name('passwordchange');
+Route::post('/passwordchange', [AuthController::class, 'passwordchange']);
 
 // Role
 Route::prefix('role')->group(function () {
