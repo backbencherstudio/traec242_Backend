@@ -35,15 +35,15 @@ Route::get('/auth/google', [GoogleAuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
 
 // Admin Protected Routes
-// Route::middleware(['auth:api', 'role'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function () {
 Route::get('/index', [AuthController::class, 'index'])->name('index');
 Route::post('/register', [AuthController::class, 'adminregister'])->name('register');
 Route::get('/edit/{id}', [AuthController::class, 'edit'])->name('edit');
 Route::post('/update/{id}', [AuthController::class, 'adminUpdate'])->name('update');
 Route::delete('/delete/{id}', [AuthController::class, 'delete'])->name('delete');
-Route::get('/logout/{id}', [AuthController::class, 'logout'])->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/password/{id}', [AuthController::class, 'password'])->name('password');
-Route::post('/passwordchange/{id}', [AuthController::class, 'passwordchange'])->name('passwordchange');
+Route::post('/passwordchange', [AuthController::class, 'passwordchange']);
 
 // Role
 Route::prefix('role')->group(function () {
@@ -130,7 +130,7 @@ Route::prefix('mail')->group(function () {
     Route::post('/send-email', [EmailController::class, 'sendEmail']);
 });
 
-// });
+});
 
 // Shanto
 
