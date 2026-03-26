@@ -12,6 +12,8 @@ use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
 {
@@ -24,7 +26,6 @@ class AuthController extends Controller
             'admin' => $admins,
 
         ]);
-
     }
 
     public function login(Request $request)
@@ -117,9 +118,9 @@ class AuthController extends Controller
         $imagePath = null;
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $imageName = time().'_'.Str::random(10).'.'.$image->getClientOriginalExtension();
+            $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
             $image->move(public_path('user'), $imageName);
-            $imagePath = 'user/'.$imageName;
+            $imagePath = 'user/' . $imageName;
         }
 
         $user = User::create([
@@ -183,8 +184,8 @@ class AuthController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,'.$user->id,
-            'phone' => 'nullable|string|max:20|unique:users,phone,'.$user->id,
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:20|unique:users,phone,' . $user->id,
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:0,1',
             'role' => 'required|exists:roles,id',
@@ -203,9 +204,9 @@ class AuthController extends Controller
             }
 
             $image = $request->file('image');
-            $imageName = time().'_'.Str::random(10).'.'.$image->getClientOriginalExtension();
+            $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
             $image->move(public_path('user'), $imageName);
-            $user->image = 'user/'.$imageName;
+            $user->image = 'user/' . $imageName;
         }
 
         $user->name = $request->name;
@@ -342,6 +343,17 @@ class AuthController extends Controller
             ], 422);
         }
 
+        $key = 'otp-' . $request->email;
+
+        if (RateLimiter::tooManyAttempts($key, 1)) {
+            $seconds = RateLimiter::availableIn($key);
+
+            return response()->json([
+                'success' => false,
+                'message' => "Please wait {$seconds} seconds before requesting another OTP.",
+            ], 429);
+        }
+
         $user = User::where('email', $request->email)->first();
 
         if ($user->type == 1) {
@@ -351,7 +363,7 @@ class AuthController extends Controller
             ], 403);
         }
 
-        $otp = rand(100000, 999999);
+        $otp = random_int(1000, 9999);
 
         DB::table('password_resets')->updateOrInsert(
             ['email' => $request->email],
@@ -359,17 +371,24 @@ class AuthController extends Controller
                 'otp' => Hash::make($otp),
                 'expires_at' => now()->addMinutes(5),
                 'updated_at' => now(),
-                'created_at' => now(),
             ]
         );
 
-        Mail::raw(
-            "Your password reset OTP is: {$otp}. It will expire in 5 minutes.",
-            function ($message) use ($request) {
-                $message->to($request->email)
-                    ->subject('Password Reset OTP');
-            }
-        );
+        try {
+            Mail::raw(
+                "Your password reset OTP is: {$otp} It will expire in 5 minutes.",
+                function ($message) use ($request) {
+                    $message->to($request->email)
+                        ->subject('Password Reset OTP');
+                }
+            );
+            RateLimiter::hit($key, 30);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send OTP email',
+            ], 500);
+        }
 
         return response()->json([
             'success' => true,
@@ -438,7 +457,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Password reset successfully',
+            'message' => 'Password set successfully!',
         ]);
     }
 }
