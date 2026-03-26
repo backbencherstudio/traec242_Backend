@@ -1,11 +1,9 @@
 <?php
 
-use App\Http\Controllers\Admin\AboutController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\FaqCategoryController;
 use App\Http\Controllers\Admin\FaqController;
-use App\Http\Controllers\Admin\HireController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
@@ -35,7 +33,7 @@ Route::get('/auth/google', [GoogleAuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
 
 // Admin Protected Routes
-// Route::middleware(['auth:api', 'role'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function () {
 Route::get('/index', [AuthController::class, 'index'])->name('index');
 Route::post('/register', [AuthController::class, 'adminregister'])->name('register');
 Route::get('/edit/{id}', [AuthController::class, 'edit'])->name('edit');
@@ -130,7 +128,7 @@ Route::prefix('mail')->group(function () {
     Route::post('/send-email', [EmailController::class, 'sendEmail']);
 });
 
-// });
+});
 
 // Shanto
 
