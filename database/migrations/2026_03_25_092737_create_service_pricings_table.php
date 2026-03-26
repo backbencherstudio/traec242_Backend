@@ -14,13 +14,13 @@ return new class extends Migration
         Schema::create('service_pricings', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('service_id');
+            $table->string('service_type');
             $table->string('duration');
             $table->decimal('price', 10, 2);
             $table->text('description')->nullable();
             $table->json('features')->nullable();
             $table->timestamps();
             $table->foreign('service_id')->references('id')->on('services')->onDelete('cascade');
-
         });
     }
 

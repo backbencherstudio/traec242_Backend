@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\FaqStoreRequest;
 use App\Models\Content;
 use App\Models\Faq;
+use App\Models\PrivacyPolicy;
 use App\Models\User;
 use Illuminate\Container\Attributes\Storage;
 use Illuminate\Http\Request;
@@ -125,5 +126,30 @@ class ContentController extends Controller
         $faq->delete();
 
         return $this->sendResponse([], 'Faq deleted successfully.');
+    }
+
+
+
+    public function privacy_index()
+    {
+        $privacy = PrivacyPolicy::first();
+
+        return $this->sendResponse($privacy);
+    }
+
+    public function privacy_update(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+        ]);
+
+        $privacy = PrivacyPolicy::first() ?? new PrivacyPolicy();
+
+        $privacy->title = $request->title;
+        $privacy->description = $request->description;
+        $privacy->save();
+
+        return $this->sendResponse($privacy, 'Privacy Policy updated successfully.');
     }
 }
