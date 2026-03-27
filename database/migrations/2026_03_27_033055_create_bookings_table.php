@@ -36,7 +36,7 @@ return new class extends Migration
             $table->string('question_four')->nullable();
             $table->string('question_five')->nullable();
             $table->string('question_six')->nullable();
-            $table->string('booking_code')->unique()->nullable();
+            $table->string('include_booking_id')->unique()->nullable();
             $table->boolean('agree_terms')->default(false);
             $table->enum('payment_method', ['stripe'])->nullable();
             $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled'])->default('pending');
