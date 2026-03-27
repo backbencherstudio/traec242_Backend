@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Subscriber;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\SubscriberMail;
 
 class SubscriberController extends Controller
 {
@@ -36,6 +38,8 @@ class SubscriberController extends Controller
         $subscriber = Subscriber::create([
             'email' => $request->email,
         ]);
+
+        Mail::to($request->email)->queue(new SubscriberMail($request->email));
 
         return response()->json([
             'status' => true,
