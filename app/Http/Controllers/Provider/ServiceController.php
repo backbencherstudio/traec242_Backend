@@ -8,6 +8,9 @@ use App\Http\Resources\ServiceResource;
 use App\Models\Service;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Subscriber;
+use App\Mail\NewServiceMail;
+use Illuminate\Support\Facades\Mail;
 
 class ServiceController extends Controller
 {
@@ -49,7 +52,13 @@ class ServiceController extends Controller
                 }
 
 
-                
+                Subscriber::chunk(50, function ($subscribers) use ($service) {
+                    foreach ($subscribers as $subscriber) {
+                        Mail::to($subscriber->email)
+                            ->queue(new NewServiceMail($service));
+                    }
+                });
+
 
                 return $this->sendResponse(ServiceResource::make($service->load('pricings')),  'Service created successfully');
             });
