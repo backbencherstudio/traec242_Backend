@@ -11,11 +11,13 @@ class NewServiceMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public $service;
+    public $title;
+    public $description;
 
     public function __construct($service)
     {
-        $this->service = $service;
+        $this->title = $service->title;
+        $this->description = $service->description;
     }
 
     public function build()
