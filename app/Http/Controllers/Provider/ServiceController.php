@@ -49,7 +49,7 @@ class ServiceController extends Controller
                 }
 
 
-                
+
 
                 return $this->sendResponse(ServiceResource::make($service->load('pricings')),  'Service created successfully');
             });
