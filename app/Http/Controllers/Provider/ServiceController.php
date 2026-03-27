@@ -8,6 +8,9 @@ use App\Http\Resources\ServiceResource;
 use App\Models\Service;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Subscriber;
+use App\Mail\NewServiceMail;
+use Illuminate\Support\Facades\Mail;
 
 class ServiceController extends Controller
 {
@@ -48,10 +51,16 @@ class ServiceController extends Controller
                     $service->pricings()->create($pricingData);
                 }
 
-                return response()->json([
-                    'message' => 'Service created successfully',
-                    'data' => new ServiceResource($service->load('pricings'))
-                ], 201);
+
+                Subscriber::chunk(50, function ($subscribers) use ($service) {
+                    foreach ($subscribers as $subscriber) {
+                        Mail::to($subscriber->email)
+                            ->queue(new NewServiceMail($service));
+                    }
+                });
+
+
+                return $this->sendResponse(ServiceResource::make($service->load('pricings')),  'Service created successfully');
             });
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to create service'], 500);

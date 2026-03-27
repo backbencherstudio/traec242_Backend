@@ -296,7 +296,7 @@ class AuthController extends Controller
         ], 200);
     }
 
-    public function passwordchange(Request $request, $id)
+    public function passwordchange(Request $request)
     {
 
         $request->validate([
@@ -304,23 +304,23 @@ class AuthController extends Controller
             'new_password' => 'required|string|min:6|confirmed',
         ]);
 
-        $admin = User::where('type', 1)->find($id);
+        $user = auth()->user();
 
-        if (! $admin) {
+        if (! $user) {
             return response()->json([
                 'status' => false,
-                'message' => 'Admin not found',
+                'message' => 'User not found',
             ], 404);
         }
 
-        if (! Hash::check($request->current_password, $admin->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'status' => false,
                 'message' => 'Current password is incorrect',
             ], 400);
         }
-        $admin->password = Hash::make($request->new_password);
-        $admin->save();
+        $user->password = Hash::make($request->new_password);
+        $user->save();
 
         return response()->json([
             'status' => true,
