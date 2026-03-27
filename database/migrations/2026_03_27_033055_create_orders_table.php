@@ -11,8 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('bookings', function (Blueprint $table) {
+        Schema::create('orders', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('service_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('service_pricing_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('first_name');
             $table->string('last_name');
@@ -36,7 +38,7 @@ return new class extends Migration
             $table->string('question_four')->nullable();
             $table->string('question_five')->nullable();
             $table->string('question_six')->nullable();
-            $table->string('booking_code')->unique()->nullable();
+            $table->foreignId('include_order_id')->constrained()->cascadeOnDelete();
             $table->boolean('agree_terms')->default(false);
             $table->enum('payment_method', ['stripe'])->nullable();
             $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled'])->default('pending');
@@ -49,6 +51,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('bookings');
+        Schema::dropIfExists('orders');
     }
 };
