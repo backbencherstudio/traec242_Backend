@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Frontend\SubscriberController;
+use App\Http\Controllers\Frontend\OrderController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -134,6 +135,11 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     //Subscriber
     Route::prefix('subscriber')->group(function () {
         Route::get('index', [SubscriberController::class, 'index']);
+    });
+
+    //Booking
+    Route::prefix('order')->group(function () {
+        Route::post('/create-order', [OrderController::class, 'store']);
     });
 });
 
