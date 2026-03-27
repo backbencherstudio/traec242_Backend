@@ -48,10 +48,10 @@ class ServiceController extends Controller
                     $service->pricings()->create($pricingData);
                 }
 
-                return response()->json([
-                    'message' => 'Service created successfully',
-                    'data' => new ServiceResource($service->load('pricings'))
-                ], 201);
+
+                
+
+                return $this->sendResponse(ServiceResource::make($service->load('pricings')),  'Service created successfully');
             });
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to create service'], 500);
