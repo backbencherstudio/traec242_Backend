@@ -143,6 +143,9 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     });
 });
 
+Route::get('/order/success/{orderId}', [OrderController::class, 'success'])->name('order.success');
+Route::get('/order/cancel/{orderId}', [OrderController::class, 'cancel'])->name('order.cancel');
+
 // Shanto
 
 Route::middleware('auth:admin')->get('/user-data', [AuthController::class, 'apiData']);
