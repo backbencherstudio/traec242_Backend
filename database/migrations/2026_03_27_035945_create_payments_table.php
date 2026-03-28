@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
-            $table->string('transaction_id')->unique();
+            $table->string('transaction_id')->unique()->nullable();
             $table->decimal('amount', 10, 2);
             $table->decimal('admin_commission_amount', 10, 2)->default(0.00);
             $table->decimal('provider_amount', 10, 2)->default(0.00);
