@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\IncludeOrder;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\ServicePricing;
@@ -43,7 +44,7 @@ class OrderController extends Controller
             'question_four' => 'nullable|string',
             'question_five' => 'nullable|string',
             'question_six' => 'nullable|string',
-            'include_order_id' => 'nullable|string|unique:orders,include_order_id',
+            'include_order_ids' => 'nullable|string',
             'agree_terms' => 'required|boolean',
             'payment_method' => 'required|string',
         ]);
@@ -77,20 +78,24 @@ class OrderController extends Controller
                 'question_four' => $request->question_four,
                 'question_five' => $request->question_five,
                 'question_six' => $request->question_six,
-                'include_order_id' => $request->include_order_id ?? Str::uuid(),
+                'include_order_ids' => $request->include_order_ids ?? Str::uuid(),
                 'agree_terms' => $request->agree_terms,
                 'payment_method' => $request->payment_method,
                 'status' => 'pending',
             ]);
 
+            $includeOrderIds = json_decode($request->include_order_ids);
+
+            $includeOrders = IncludeOrder::whereIn('id', $includeOrderIds)->get();
+            $includeOrderTotal = $includeOrders->sum('price');
+
             $pricing = ServicePricing::findOrFail($request->service_pricing_id);
-            $amount = $pricing->price;
-            $admin_commission = $amount * 0.20;
-            $provider_amount = $amount - $admin_commission;
+            $servicePrice = $pricing->price;
+
+            $finalAmount = $servicePrice + $includeOrderTotal;
 
             Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
-
-            $checkoutSession = Session::create([
+            $checkoutSession = \Stripe\Checkout\Session::create([
                 'payment_method_types' => ['card'],
                 'line_items' => [
                     [
@@ -99,7 +104,7 @@ class OrderController extends Controller
                             'product_data' => [
                                 'name' => $request->event_name,
                             ],
-                            'unit_amount' => $amount * 100,
+                            'unit_amount' => $finalAmount * 100,
                         ],
                         'quantity' => 1,
                     ],
@@ -109,13 +114,16 @@ class OrderController extends Controller
                 'cancel_url' => route('order.cancel', ['orderId' => $order->id]),
             ]);
 
-            $payment = Payment::create([
+            $adminCommission = $finalAmount * 0.20;
+            $providerAmount = $finalAmount - $adminCommission;
+
+            Payment::create([
                 'order_id' => $order->id,
                 'user_id' => auth()->id(),
                 'transaction_id' => null,
-                'amount' => $amount,
-                'admin_commission_amount' => $admin_commission,
-                'provider_amount' => $provider_amount,
+                'amount' => $finalAmount,
+                'admin_commission_amount' => $adminCommission,
+                'provider_amount' => $providerAmount,
                 'currency' => 'USD',
                 'payment_method' => 'stripe_checkout',
                 'status' => 'pending',
@@ -132,11 +140,10 @@ class OrderController extends Controller
             DB::rollBack();
             return response()->json([
                 'status' => false,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-
 
     public function success(Request $request, $orderId)
     {

@@ -32,7 +32,7 @@ class Order extends Model
         'question_four',
         'question_five',
         'question_six',
-        'include_order_id',
+        'include_order_ids',
         'agree_terms',
         'payment_method',
         'status',
