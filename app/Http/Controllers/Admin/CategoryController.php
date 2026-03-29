@@ -21,7 +21,12 @@ class CategoryController extends Controller
 
     public function store(Request $request)
     {
-
+        if (auth()->user()->type !== 1) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You are not authorized to create a category.',
+            ], 403);
+        }
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required',
@@ -33,9 +38,9 @@ class CategoryController extends Controller
 
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $imageName = time().'_'.$image->getClientOriginalName();
+            $imageName = time() . '_' . $image->getClientOriginalName();
             $image->move(public_path('uploads/category'), $imageName);
-            $imagePath = 'uploads/category/'.$imageName;
+            $imagePath = 'uploads/category/' . $imageName;
         }
 
         $category = Category::create([
@@ -64,6 +69,12 @@ class CategoryController extends Controller
 
     public function update(Request $request, $id)
     {
+        if (auth()->user()->type !== 1) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You are not authorized to update this category.',
+            ], 403);
+        }
 
         $category = Category::findOrFail($id);
 
@@ -76,9 +87,9 @@ class CategoryController extends Controller
 
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $imageName = time().'_'.$image->getClientOriginalName();
+            $imageName = time() . '_' . $image->getClientOriginalName();
             $image->move(public_path('uploads/category'), $imageName);
-            $category->image = 'uploads/category/'.$imageName;
+            $category->image = 'uploads/category/' . $imageName;
         }
 
         $category->name = $request->name;
@@ -97,6 +108,12 @@ class CategoryController extends Controller
 
     public function destroy($id)
     {
+        if (auth()->user()->type !== 1) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You are not authorized to delete this category.',
+            ], 403);
+        }
         $category = Category::find($id);
 
         if (! $category) {
