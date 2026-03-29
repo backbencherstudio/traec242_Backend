@@ -12,7 +12,9 @@ use App\Http\Controllers\Admin\SubcategoryController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\GoogleAuthController;
+use App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\Frontend\SubscriberController;
+use App\Http\Controllers\Frontend\OrderController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -66,7 +68,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('index', [CategoryController::class, 'index'])->name('category.index');
         Route::post('store', [CategoryController::class, 'store'])->name('category.store');
         Route::get('edit/{id}', [CategoryController::class, 'edit'])->name('category.edit');
-        Route::post('update/{id}', [CategoryController::class, 'update'])->name('category.update');
+        Route::put('update/{id}', [CategoryController::class, 'update'])->name('category.update');
         Route::delete('/delete/{id}', [CategoryController::class, 'destroy'])->name('category.destroy');
     });
     // subcategory
@@ -135,10 +137,23 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     Route::prefix('subscriber')->group(function () {
         Route::get('index', [SubscriberController::class, 'index']);
     });
+
+    Route::prefix('message')->group(function () {
+        Route::get('index', [MessageController::class, 'index']);
+        Route::post('send', [MessageController::class, 'sendMessage']);
+    });
+
+
+    //Booking
+    Route::prefix('order')->group(function () {
+        Route::post('/create-order', [OrderController::class, 'store']);
+    });
 });
 
-// Shanto
+Route::get('/order/success/{orderId}', [OrderController::class, 'success'])->name('order.success');
+Route::get('/order/cancel/{orderId}', [OrderController::class, 'cancel'])->name('order.cancel');
+Route::get('/order/invoice/{orderId}', [OrderController::class, 'generateInvoice'])->name('order.invoice');
 
-Route::middleware('auth:admin')->get('/user-data', [AuthController::class, 'apiData']);
+
 
 require __DIR__ . '/mahmudul.php';

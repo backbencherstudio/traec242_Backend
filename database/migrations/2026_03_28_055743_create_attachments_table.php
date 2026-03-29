@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('include_bookings', function (Blueprint $table) {
+        Schema::create('attachments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('booking_id')->constrained()->cascadeOnDelete();
-            $table->string('name');
-            $table->decimal('price', 10, 2)->default(0);
-            $table->boolean('status')->default(1);
+            $table->foreignId('message_id')->constrained()->onDelete('cascade');
+            $table->string('file_path');
+            $table->string('file_name');
+            $table->string('file_type');
+            $table->string('file_size')->nullable();
             $table->timestamps();
         });
     }
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('include_bookings');
+        Schema::dropIfExists('attachments');
     }
 };

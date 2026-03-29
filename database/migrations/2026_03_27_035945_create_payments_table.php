@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('booking_id')->constrained('bookings')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->string('transaction_id')->unique();
+            $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
+            $table->string('transaction_id')->unique()->nullable();
             $table->decimal('amount', 10, 2);
             $table->decimal('admin_commission_amount', 10, 2)->default(0.00);
             $table->decimal('provider_amount', 10, 2)->default(0.00);

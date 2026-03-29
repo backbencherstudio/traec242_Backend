@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Api\ProviderRegisterController;
+use App\Http\Controllers\Frontend\AllServiceController;
 use App\Http\Controllers\Frontend\BasicContentController;
 use App\Http\Controllers\Provider\ServiceController;
 use Illuminate\Support\Facades\Route;
@@ -10,6 +11,7 @@ Route::post('register_provider', [ProviderRegisterController::class, 'store']);
 Route::get('home_response', [BasicContentController::class, 'home_response']);
 Route::get('faq', [BasicContentController::class, 'faq']);
 Route::get('privacy', [BasicContentController::class, 'privacy']);
+Route::get('services', [AllServiceController::class, 'index']);
 
 
 Route::prefix('admin')->group(function () {
