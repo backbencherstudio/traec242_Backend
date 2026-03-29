@@ -38,7 +38,7 @@ return new class extends Migration
             $table->string('question_four')->nullable();
             $table->string('question_five')->nullable();
             $table->string('question_six')->nullable();
-            $table->foreignId('include_order_id')->constrained()->cascadeOnDelete();
+            $table->json('include_order_ids')->nullable();
             $table->boolean('agree_terms')->default(false);
             $table->enum('payment_method', ['stripe'])->nullable();
             $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled'])->default('pending');
