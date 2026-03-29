@@ -64,4 +64,11 @@ class User extends Authenticatable implements JWTSubject
     {
         return [];
     }
+
+    public function conversations()
+{
+    return $this->belongsToMany(Conversation::class)
+                ->withPivot('last_read_at', 'is_admin')
+                ->withTimestamps();
+}
 }

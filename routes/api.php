@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\SubcategoryController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\GoogleAuthController;
+use App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\Frontend\SubscriberController;
 use App\Http\Controllers\Frontend\OrderController;
 use App\Http\Controllers\NotificationController;
@@ -137,14 +138,17 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('index', [SubscriberController::class, 'index']);
     });
 
+    Route::prefix('message')->group(function () {
+        Route::get('index', [MessageController::class, 'index']);
+        Route::post('send', [MessageController::class, 'sendMessage']);
+    });
+
+
     //Booking
     Route::prefix('order')->group(function () {
         Route::post('/create-order', [OrderController::class, 'store']);
     });
 });
 
-// Shanto
-
-Route::middleware('auth:admin')->get('/user-data', [AuthController::class, 'apiData']);
 
 require __DIR__ . '/mahmudul.php';
