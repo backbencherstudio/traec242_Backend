@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\ServicePricing;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -210,5 +211,35 @@ class OrderController extends Controller
                 'message' => 'Payment processing failed: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function generateInvoice($orderId)
+    {
+
+        $order = Order::with(['service', 'Pricing', 'user'])->findOrFail($orderId);
+
+        $pricing = $order->Pricing;
+        $payment = Payment::where('order_id', $order->id)->first();
+
+        $data = [
+            'order' => $order,
+            'user' => $order->user,
+            'service' => $order->service,
+            'pricing' => $pricing,
+            'payment' => $payment,
+            'total_amount' => $pricing->price,
+            'transaction_id' => $payment->transaction_id,
+            'payment_method' => $payment->payment_method,
+            'payment_status' => $payment->status,
+            'date' => now()->format('Y-m-d'),
+            'address' => $order->address,
+            'city' => $order->city,
+            'state' => $order->state,
+            'zip_code' => $order->zip_code,
+        ];
+
+        $pdf = Pdf::loadView('invoices.order_invoice', $data)
+            ->setPaper('a4', 'portrait');
+        return $pdf->download('invoice_' . $orderId . '.pdf');
     }
 }

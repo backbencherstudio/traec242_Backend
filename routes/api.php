@@ -145,6 +145,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
 
 Route::get('/order/success/{orderId}', [OrderController::class, 'success'])->name('order.success');
 Route::get('/order/cancel/{orderId}', [OrderController::class, 'cancel'])->name('order.cancel');
+Route::get('/order/invoice/{orderId}', [OrderController::class, 'generateInvoice'])->name('order.invoice');
 
 // Shanto
 
