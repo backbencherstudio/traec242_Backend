@@ -10,7 +10,6 @@ use App\Models\ServicePricing;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
 use Stripe\PaymentIntent;
@@ -44,7 +43,8 @@ class OrderController extends Controller
             'question_four' => 'nullable|string',
             'question_five' => 'nullable|string',
             'question_six' => 'nullable|string',
-            'include_order_ids' => 'nullable|string',
+            'include_order_ids' => 'nullable|array',
+            'include_order_ids.*' => 'integer|exists:include_orders,id',
             'agree_terms' => 'required|boolean',
             'payment_method' => 'required|string',
         ]);
@@ -78,24 +78,22 @@ class OrderController extends Controller
                 'question_four' => $request->question_four,
                 'question_five' => $request->question_five,
                 'question_six' => $request->question_six,
-                'include_order_ids' => $request->include_order_ids ?? Str::uuid(),
+                'include_order_ids' => json_encode($request->include_order_ids ?? []),
                 'agree_terms' => $request->agree_terms,
                 'payment_method' => $request->payment_method,
                 'status' => 'pending',
             ]);
 
-            $includeOrderIds = json_decode($request->include_order_ids);
-
+            $includeOrderIds = $request->include_order_ids;
             $includeOrders = IncludeOrder::whereIn('id', $includeOrderIds)->get();
             $includeOrderTotal = $includeOrders->sum('price');
 
             $pricing = ServicePricing::findOrFail($request->service_pricing_id);
             $servicePrice = $pricing->price;
-
             $finalAmount = $servicePrice + $includeOrderTotal;
 
             Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
-            $checkoutSession = \Stripe\Checkout\Session::create([
+            $checkoutSession = Session::create([
                 'payment_method_types' => ['card'],
                 'line_items' => [
                     [
