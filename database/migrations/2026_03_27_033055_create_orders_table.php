@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('service_id')->constrained()->cascadeOnDelete();
             $table->foreignId('service_pricing_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('first_name');
             $table->string('last_name');
             $table->string('email');
@@ -37,7 +38,7 @@ return new class extends Migration
             $table->string('question_four')->nullable();
             $table->string('question_five')->nullable();
             $table->string('question_six')->nullable();
-            $table->string('booking_code')->unique()->nullable();
+            $table->json('include_order_ids')->nullable();
             $table->boolean('agree_terms')->default(false);
             $table->enum('payment_method', ['stripe'])->nullable();
             $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled'])->default('pending');
