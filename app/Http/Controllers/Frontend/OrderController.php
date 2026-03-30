@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\ServicePricing;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Stripe\Stripe;
@@ -16,6 +17,33 @@ use Stripe\PaymentIntent;
 
 class OrderController extends Controller
 {
+    public function index()
+    {
+        $orders = Order::with(['service', 'pricing', 'payment', 'user'])
+            ->get()
+            ->map(function ($order) {
+
+                $dueIn = Carbon::parse($order->event_end_date)->diff(Carbon::now());
+                $days = $dueIn->d;
+                $hours = $dueIn->h;
+                $minutes = $dueIn->i;
+
+                return [
+                    'service_image' => $order->service->image,
+                    'event_name' => $order->event_name,
+                    'order_by' => "{$order->first_name} {$order->last_name}",
+                    'price' => "$" . number_format($order->payment->amount),
+                    'due_in' => "{$days}d {$hours}h {$minutes}m",
+                    'status' => $order->status,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $orders,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
