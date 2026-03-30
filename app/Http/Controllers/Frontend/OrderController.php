@@ -44,6 +44,69 @@ class OrderController extends Controller
         ]);
     }
 
+    public function show($id)
+    {
+
+        $order = Order::with(['service', 'pricing', 'payment', 'user'])
+            ->find($id);
+
+        if (!$order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order not found',
+            ], 404);
+        }
+
+        $dueIn = Carbon::parse($order->event_end_date)->diff(Carbon::now());
+        $days = $dueIn->d;
+        $hours = $dueIn->h;
+        $minutes = $dueIn->i;
+
+        $orderDetails = [
+            'id' => $order->id,
+            'location' => [
+                'full_name' => $order->user->first_name . ' ' . $order->user->last_name,
+                'email' => $order->email,
+                'phone' => $order->phone,
+                'address' => $order->address,
+            ],
+            'event_details' => [
+                'event_type' => $order->event_description,
+                'event_name' => $order->event_name,
+                'duration' => $order->event_duration,
+                'guests' => $order->guest_count,
+                'description' => $order->event_description,
+            ],
+            'questionnaire' => [
+                'party_theme' => $order->question_one,
+                'music_preference' => $order->question_two,
+                'must_play_songs' => $order->question_three,
+                'dance_games' => $order->question_four,
+                'entrance_style' => $order->question_five,
+                'additional_notes' => $order->question_six,
+            ],
+            'payment' => [
+                'amount_paid' => $order->payment ? $order->payment->amount : 'N/A',
+                'payment_method' => $order->payment ? $order->payment->payment_method : 'N/A',
+            ],
+            'order_status' => [
+                'status' => $order->status,
+                'order_date' => Carbon::parse($order->created_at)->format('M d, Y h:i A'),
+                'event_due_in' => "{$days}d {$hours}h {$minutes}m",
+                'completed_date' => $order->completed_date ? Carbon::parse($order->completed_date)->format('M d, Y') : null,
+            ],
+            'provider_details' => [
+                'provider_name' => $order->service->name,
+                'provider_image' => $order->service->image,
+            ]
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => $orderDetails,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
