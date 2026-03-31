@@ -67,6 +67,7 @@ class OrderController extends Controller
                 'order_by' => "{$order->user->name} {$order->user->last_name}",
                 'event_name' => $order->event_name,
             ],
+
             'location & contact' => [
                 'full_name' => $order->first_name . ' ' . $order->last_name,
                 'email' => $order->email,
@@ -77,6 +78,7 @@ class OrderController extends Controller
                     trim("{$order->state} {$order->zip_code}")
                 ])),
             ],
+
             'event_details' => [
                 'event_type' => $order->service->title,
                 'event_name' => $order->event_name,
@@ -84,6 +86,7 @@ class OrderController extends Controller
                 'guests' => $order->guest_count,
                 'description' => $order->event_description,
             ],
+
             'questionnaire' => [
                 'party_theme' => $order->question_one,
                 'music_preference' => $order->question_two,
@@ -92,12 +95,9 @@ class OrderController extends Controller
                 'entrance_style' => $order->question_five,
                 'additional_notes' => $order->question_six,
             ],
-            'payment' => [
-                'amount_paid' => $order->payment ? $order->payment->amount : 'N/A',
-                'payment_method' => $order->payment ? $order->payment->payment_method : 'N/A',
-            ],
+
             'order_details' => [
-                'service_image' => $order->service->image,
+                'service_image' => $order->service->image_url,
                 'event_name' => $order->event_name,
                 'order_by' => "{$order->user->name} {$order->user->last_name}",
                 'status' => $order->status,
