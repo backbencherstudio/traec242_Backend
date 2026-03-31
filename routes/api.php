@@ -141,8 +141,13 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     Route::prefix('message')->group(function () {
         Route::get('index', [MessageController::class, 'index']);
         Route::post('send', [MessageController::class, 'sendMessage']);
-        // Route::post('send', [MessageController::class, 'sendMessage']);
+
     });
+    // Route::prefix('message')->group(function () {
+    //     Route::get('index', [MessageController::class, 'index']);
+    //     Route::post('send', [MessageController::class, 'sendMessage']);
+
+    // });
 
     //Order
     Route::prefix('order')->group(function () {
