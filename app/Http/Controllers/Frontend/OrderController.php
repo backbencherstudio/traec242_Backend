@@ -31,7 +31,7 @@ class OrderController extends Controller
                 return [
                     'service_image' => $order->service->image,
                     'event_name' => $order->event_name,
-                    'order_by' => "{$order->first_name} {$order->last_name}",
+                    'order_by' => "{$order->user->name} {$order->user->last_name}",
                     'price' => "$" . number_format($order->payment->amount),
                     'due_in' => "{$days}d {$hours}h {$minutes}m",
                     'status' => $order->status,
@@ -63,14 +63,22 @@ class OrderController extends Controller
 
         $orderDetails = [
             'id' => $order->id,
+            'order_started' => [
+                'order_by' => "{$order->user->name} {$order->user->last_name}",
+                'event_name' => $order->event_name,
+            ],
             'location & contact' => [
-                'full_name' => $order->user->first_name . ' ' . $order->user->last_name,
+                'full_name' => $order->first_name . ' ' . $order->last_name,
                 'email' => $order->email,
                 'phone' => $order->phone,
-                'address' => $order->address,
+                'address' => implode(', ', array_filter([
+                    $order->address,
+                    $order->city,
+                    trim("{$order->state} {$order->zip_code}")
+                ])),
             ],
             'event_details' => [
-                'event_type' => $order->event_description,
+                'event_type' => $order->service->title,
                 'event_name' => $order->event_name,
                 'duration' => $order->event_duration,
                 'guests' => $order->guest_count,
@@ -88,16 +96,15 @@ class OrderController extends Controller
                 'amount_paid' => $order->payment ? $order->payment->amount : 'N/A',
                 'payment_method' => $order->payment ? $order->payment->payment_method : 'N/A',
             ],
-            'order_status' => [
+            'order_details' => [
+                'service_image' => $order->service->image,
+                'event_name' => $order->event_name,
+                'order_by' => "{$order->user->name} {$order->user->last_name}",
                 'status' => $order->status,
-                'order_date' => Carbon::parse($order->created_at)->format('M d, Y h:i A'),
-                'event_due_in' => "{$days}d {$hours}h {$minutes}m",
-                'completed_date' => $order->completed_date ? Carbon::parse($order->completed_date)->format('M d, Y') : null,
+                'order_number' => '#ORD' . str_pad($order->id, 5, '0', STR_PAD_LEFT),
+                'end_date' => Carbon::parse($order->event_end_date)->format('d M, Y'),
+                'amount_paid' =>  "$" . number_format($order->payment->amount),
             ],
-            'provider_details' => [
-                'provider_name' => $order->service->name,
-                'provider_image' => $order->service->image,
-            ]
         ];
 
         return response()->json([
