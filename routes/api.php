@@ -147,7 +147,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
 
     // });
 
-    //Order
+    //Order.....
     Route::prefix('order')->group(function () {
         Route::post('/create-order', [OrderController::class, 'store']);
         Route::get('index', [OrderController::class, 'index'])->name('order.index');
