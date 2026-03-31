@@ -52,7 +52,7 @@ class CategoryController extends Controller
         ]);
 
         return response()->json([
-            'status' => 'success',
+            'status' => true,
             'category' => $category,
         ]);
     }
@@ -100,7 +100,7 @@ class CategoryController extends Controller
         $category->save();
 
         return response()->json([
-            'status' => 'success',
+            'status' => true,
             'message' => 'Category updated successfully!',
             'category' => $category,
         ]);

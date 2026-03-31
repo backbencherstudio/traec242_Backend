@@ -116,8 +116,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::delete('delete/{id}', [FaqController::class, 'destroy'])->name('faq.destroy');
     });
 
-
-
     // setting
     Route::prefix('setting')->group(function () {
         Route::get('index', [SettingController::class, 'index'])->name('setting.index');
@@ -141,13 +139,21 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     Route::prefix('message')->group(function () {
         Route::get('index', [MessageController::class, 'index']);
         Route::post('send', [MessageController::class, 'sendMessage']);
+
     });
+    // Route::prefix('message')->group(function () {
+    //     Route::get('index', [MessageController::class, 'index']);
+    //     Route::post('send', [MessageController::class, 'sendMessage']);
 
+    // });
 
-    //Booking
+    //Order
     Route::prefix('order')->group(function () {
         Route::post('/create-order', [OrderController::class, 'store']);
+        Route::get('index', [OrderController::class, 'index'])->name('order.index');
+        Route::get('show/{id}', [OrderController::class, 'show'])->name('order.show');
     });
+
 });
 
 Route::get('/order/success/{orderId}', [OrderController::class, 'success'])->name('order.success');

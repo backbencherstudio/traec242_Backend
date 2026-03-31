@@ -8,15 +8,111 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\ServicePricing;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
 use Stripe\PaymentIntent;
 
 class OrderController extends Controller
 {
+    public function index()
+    {
+        $orders = Order::with(['service', 'pricing', 'payment', 'user'])
+            ->get()
+            ->map(function ($order) {
+
+                $dueIn = Carbon::parse($order->event_end_date)->diff(Carbon::now());
+                $days = $dueIn->d;
+                $hours = $dueIn->h;
+                $minutes = $dueIn->i;
+
+                return [
+                    'service_image' => $order->service->image,
+                    'event_name' => $order->event_name,
+                    'order_by' => "{$order->user->name} {$order->user->last_name}",
+                    'price' => "$" . number_format($order->payment->amount),
+                    'due_in' => "{$days}d {$hours}h {$minutes}m",
+                    'status' => $order->status,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $orders,
+        ]);
+    }
+
+    public function show($id)
+    {
+        $order = Order::with(['service', 'pricing', 'payment', 'user'])
+            ->find($id);
+
+        if (!$order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order not found',
+            ], 404);
+        }
+
+        $dueIn = Carbon::parse($order->event_end_date)->diff(Carbon::now());
+        $days = $dueIn->d;
+        $hours = $dueIn->h;
+        $minutes = $dueIn->i;
+
+        $orderDetails = [
+            'id' => $order->id,
+            'order_started' => [
+                'order_by' => "{$order->user->name} {$order->user->last_name}",
+                'event_name' => $order->event_name,
+            ],
+            'location & contact' => [
+                'full_name' => $order->first_name . ' ' . $order->last_name,
+                'email' => $order->email,
+                'phone' => $order->phone,
+                'address' => implode(', ', array_filter([
+                    $order->address,
+                    $order->city,
+                    trim("{$order->state} {$order->zip_code}")
+                ])),
+            ],
+            'event_details' => [
+                'event_type' => $order->service->title,
+                'event_name' => $order->event_name,
+                'duration' => $order->event_duration,
+                'guests' => $order->guest_count,
+                'description' => $order->event_description,
+            ],
+            'questionnaire' => [
+                'party_theme' => $order->question_one,
+                'music_preference' => $order->question_two,
+                'must_play_songs' => $order->question_three,
+                'dance_games' => $order->question_four,
+                'entrance_style' => $order->question_five,
+                'additional_notes' => $order->question_six,
+            ],
+            'payment' => [
+                'amount_paid' => $order->payment ? $order->payment->amount : 'N/A',
+                'payment_method' => $order->payment ? $order->payment->payment_method : 'N/A',
+            ],
+            'order_details' => [
+                'service_image' => $order->service->image,
+                'event_name' => $order->event_name,
+                'order_by' => "{$order->user->name} {$order->user->last_name}",
+                'status' => $order->status,
+                'order_number' => '#ORD' . str_pad($order->id, 5, '0', STR_PAD_LEFT),
+                'end_date' => Carbon::parse($order->event_end_date)->format('d M, Y'),
+                'amount_paid' =>  "$" . number_format($order->payment->amount),
+            ],
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => $orderDetails,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -44,7 +140,8 @@ class OrderController extends Controller
             'question_four' => 'nullable|string',
             'question_five' => 'nullable|string',
             'question_six' => 'nullable|string',
-            'include_order_ids' => 'nullable|string',
+            'include_order_ids' => 'nullable|array',
+            'include_order_ids.*' => 'integer|exists:include_orders,id',
             'agree_terms' => 'required|boolean',
             'payment_method' => 'required|string',
         ]);
@@ -78,24 +175,22 @@ class OrderController extends Controller
                 'question_four' => $request->question_four,
                 'question_five' => $request->question_five,
                 'question_six' => $request->question_six,
-                'include_order_ids' => $request->include_order_ids ?? Str::uuid(),
+                'include_order_ids' => json_encode($request->include_order_ids ?? []),
                 'agree_terms' => $request->agree_terms,
                 'payment_method' => $request->payment_method,
                 'status' => 'pending',
             ]);
 
-            $includeOrderIds = json_decode($request->include_order_ids);
-
+            $includeOrderIds = $request->include_order_ids;
             $includeOrders = IncludeOrder::whereIn('id', $includeOrderIds)->get();
             $includeOrderTotal = $includeOrders->sum('price');
 
             $pricing = ServicePricing::findOrFail($request->service_pricing_id);
             $servicePrice = $pricing->price;
-
             $finalAmount = $servicePrice + $includeOrderTotal;
 
             Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
-            $checkoutSession = \Stripe\Checkout\Session::create([
+            $checkoutSession = Session::create([
                 'payment_method_types' => ['card'],
                 'line_items' => [
                     [
