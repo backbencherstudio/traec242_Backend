@@ -116,8 +116,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::delete('delete/{id}', [FaqController::class, 'destroy'])->name('faq.destroy');
     });
 
-
-
     // setting
     Route::prefix('setting')->group(function () {
         Route::get('index', [SettingController::class, 'index'])->name('setting.index');
