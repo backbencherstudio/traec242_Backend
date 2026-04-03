@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Admin\MessageController;
+use App\Http\Controllers\Api\UserDashboardController;
 use App\Http\Controllers\Frontend\SubscriberController;
 use App\Http\Controllers\Frontend\OrderController;
 use App\Http\Controllers\NotificationController;
@@ -154,6 +155,9 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('show/{id}', [OrderController::class, 'show'])->name('order.show');
     });
 
+    Route::prefix('user-dashboard')->group(function () {
+        Route::get('summary', [UserDashboardController::class, 'summary']);
+    });
 });
 
 Route::get('/order/success/{orderId}', [OrderController::class, 'success'])->name('order.success');
