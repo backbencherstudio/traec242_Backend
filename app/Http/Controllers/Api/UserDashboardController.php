@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\Order;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class UserDashboardController extends Controller
@@ -34,6 +35,30 @@ class UserDashboardController extends Controller
                 'unread_messages' => $unreadMessage,
                 'avg_rating_score' => $rating,
             ],
+        ]);
+    }
+
+    public function recentOrders(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        $orders = Order::where('user_id', $userId)
+            ->orderBy('event_start_date', 'desc')
+            ->take(5)
+            ->get();
+
+        $recentOrders = $orders->map(function ($order) {
+            return [
+                'event_name' => $order->event_name,
+                'order_by' => "{$order->user->name} {$order->user->last_name}",
+                'date' => Carbon::parse($order->event_start_date)->format('M d, Y'),
+                'status' => ucfirst($order->status),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $recentOrders,
         ]);
     }
 }
