@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\Order;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -44,7 +45,7 @@ class UserDashboardController extends Controller
 
         $orders = Order::where('user_id', $userId)
             ->orderBy('event_start_date', 'desc')
-            ->take(5)
+            ->take(4)
             ->get();
 
         $recentOrders = $orders->map(function ($order) {
@@ -69,7 +70,6 @@ class UserDashboardController extends Controller
         $completedOrders = Order::where('user_id', $userId)
             ->where('status', 'completed')
             ->orderBy('event_start_date', 'desc')
-            ->take(5)
             ->get();
 
         $activities = [];
@@ -94,6 +94,39 @@ class UserDashboardController extends Controller
         return response()->json([
             'success' => true,
             'recent_activity' => $activities
+        ]);
+    }
+
+    public function recentMessages(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        $messages = Message::where(function ($query) use ($userId) {
+            $query->where('sender_id', $userId)
+                ->orWhere('receiver_id', $userId);
+        })
+            ->latest()
+            ->get()
+            ->unique('conversation_id')
+            ->take(4);
+
+        $data = $messages->map(function ($message) use ($userId) {
+
+            $otherUserId = $message->sender_id == $userId
+                ? $message->receiver_id
+                : $message->sender_id;
+
+            $user = User::find($otherUserId);
+
+            return [
+                'image' => $user->image ?? null,
+                'name' => "{$user->name} {$user->last_name}"?? 'Unknown',
+                'message' => $message->message,
+            ];
+        });
+
+        return response()->json([
+            'recent_messages' => $data
         ]);
     }
 }

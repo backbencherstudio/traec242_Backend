@@ -140,7 +140,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     Route::prefix('message')->group(function () {
         Route::get('index', [MessageController::class, 'index']);
         Route::post('send', [MessageController::class, 'sendMessage']);
-
     });
     // Route::prefix('message')->group(function () {
     //     Route::get('index', [MessageController::class, 'index']);
@@ -159,6 +158,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('summary', [UserDashboardController::class, 'summary']);
         Route::get('recent-orders', [UserDashboardController::class, 'recentOrders']);
         Route::get('recent-activity', [UserDashboardController::class, 'recentActivity']);
+        Route::get('recent-message', [UserDashboardController::class, 'recentMessages']);
     });
 });
 
