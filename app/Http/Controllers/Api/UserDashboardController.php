@@ -61,4 +61,39 @@ class UserDashboardController extends Controller
             'data' => $recentOrders,
         ]);
     }
+
+    public function recentActivity(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        $completedOrders = Order::where('user_id', $userId)
+            ->where('status', 'completed')
+            ->orderBy('event_start_date', 'desc')
+            ->take(5)
+            ->get();
+
+        $activities = [];
+
+        foreach ($completedOrders as $order) {
+            $activities[] = [
+                'title' => "Completed order #" . $order->id,
+                'time' => Carbon::parse($order->updated_at)->diffForHumans(),
+            ];
+        }
+
+        $activities[] = [
+            'title' => "Received 5-star review",
+            'time' => 'response static',
+        ];
+
+        $activities[] = [
+            'title' => "Earned Party Pro",
+            'time' => 'response static',
+        ];
+
+        return response()->json([
+            'success' => true,
+            'recent_activity' => $activities
+        ]);
+    }
 }
