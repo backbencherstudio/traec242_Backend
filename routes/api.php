@@ -153,6 +153,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     Route::prefix('user-dashboard')->group(function () {
         Route::get('summary', [UserDashboardController::class, 'summary']);
         Route::get('recent-orders', [UserDashboardController::class, 'recentOrders']);
+        Route::get('recent-activity', [UserDashboardController::class, 'recentActivity']);
     });
 });
 
