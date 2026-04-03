@@ -8,6 +8,8 @@ use App\Models\Order;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class UserDashboardController extends Controller
 {
@@ -119,14 +121,73 @@ class UserDashboardController extends Controller
             $user = User::find($otherUserId);
 
             return [
-                'image' => $user->image ?? null,
-                'name' => "{$user->name} {$user->last_name}"?? 'Unknown',
+                'image' => $user->image,
+                'name' => "{$user->name} {$user->last_name}" ?? 'Unknown',
                 'message' => $message->message,
             ];
         });
 
         return response()->json([
             'recent_messages' => $data
+        ]);
+    }
+
+    public function chat(Request $request)
+    {
+        $userId = $request->user()->id;
+        $search = $request->input('search');
+
+        $latestMessages = Message::select('conversation_id', DB::raw('MAX(id) as last_id'))
+            ->where(function ($q) use ($userId) {
+                $q->where('sender_id', $userId)
+                    ->orWhere('receiver_id', $userId);
+            })
+            ->groupBy('conversation_id');
+
+        $messages = Message::with(['sender', 'receiver'])
+            ->whereIn('id', $latestMessages->pluck('last_id'))
+            ->when($search, function ($query) use ($search, $userId) {
+                $query->where(function ($q) use ($search, $userId) {
+                    $q->where('message', 'like', "%{$search}%")
+                        ->orWhereHas('sender', function ($q2) use ($search) {
+                            $q2->where('name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('receiver', function ($q3) use ($search) {
+                            $q3->where('name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->latest()
+            ->get();
+
+        $unreadCounts = Message::where('receiver_id', $userId)
+            ->whereNull('read_at')
+            ->select('conversation_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('conversation_id')
+            ->pluck('total', 'conversation_id');
+
+        $conversations = $messages->map(function ($message) use ($userId, $unreadCounts) {
+
+            $otherUser = $message->sender_id == $userId
+                ? $message->receiver
+                : $message->sender;
+
+            return [
+                'conversation_id' => $message->conversation_id,
+                'image' => $otherUser->image,
+                'name' => trim(($otherUser->name ?? '') . ' ' . ($otherUser->last_name ?? '')) ?: 'Unknown',
+                'time' => $message->created_at->format('h:i A'),
+                'last_message' => Str::limit($message->message, 50),
+                'unread_count' => $unreadCounts[$message->conversation_id] ?? 0,
+                // 'is_online' => $otherUser->is_online ?? false,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'conversations' => $conversations->values()
         ]);
     }
 }
