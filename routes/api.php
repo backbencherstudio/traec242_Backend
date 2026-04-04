@@ -156,5 +156,4 @@ Route::get('/order/cancel/{orderId}', [OrderController::class, 'cancel'])->name(
 Route::get('/order/invoice/{orderId}', [OrderController::class, 'generateInvoice'])->name('order.invoice');
 
 
-
 require __DIR__ . '/mahmudul.php';
