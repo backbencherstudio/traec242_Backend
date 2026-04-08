@@ -148,11 +148,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('index', [OrderController::class, 'index'])->name('order.index');
         Route::get('show/{id}', [OrderController::class, 'show'])->name('order.show');
     });
-    // Route::prefix('order')->group(function () {
-    //     Route::post('/create-order', [OrderController::class, 'store']);
-    //     Route::get('index', [OrderController::class, 'index'])->name('order.index');
-    //     Route::get('show/{id}', [OrderController::class, 'show'])->name('order.show');
-    // });
+   
 
     Route::prefix('user-dashboard')->group(function () {
         Route::get('summary', [UserDashboardController::class, 'summary']);
