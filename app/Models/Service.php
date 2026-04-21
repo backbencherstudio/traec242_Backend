@@ -37,9 +37,13 @@ class Service extends Model
         return $this->belongsTo(Category::class);
     }
 
-
     public function pricings(): HasMany
     {
         return $this->hasMany(ServicePricing::class);
+    }
+
+    public function getImageUrlAttribute()
+    {
+        return collect($this->image)->map(fn($img) => asset('storage/' . $img));
     }
 }

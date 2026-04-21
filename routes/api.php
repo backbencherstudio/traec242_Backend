@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Admin\MessageController;
+use App\Http\Controllers\Api\UserDashboardController;
 use App\Http\Controllers\Frontend\SubscriberController;
 use App\Http\Controllers\Frontend\OrderController;
 use App\Http\Controllers\NotificationController;
@@ -116,8 +117,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::delete('delete/{id}', [FaqController::class, 'destroy'])->name('faq.destroy');
     });
 
-
-
     // setting
     Route::prefix('setting')->group(function () {
         Route::get('index', [SettingController::class, 'index'])->name('setting.index');
@@ -142,11 +141,25 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('index', [MessageController::class, 'index']);
         Route::post('send', [MessageController::class, 'sendMessage']);
     });
+    // Route::prefix('message')->group(function () {
+    //     Route::get('index', [MessageController::class, 'index']);
+    //     Route::post('send', [MessageController::class, 'sendMessage']);
 
+    // });
 
-    //Booking
+    //Order
     Route::prefix('order')->group(function () {
         Route::post('/create-order', [OrderController::class, 'store']);
+        Route::get('index', [OrderController::class, 'index'])->name('order.index');
+        Route::get('show/{id}', [OrderController::class, 'show'])->name('order.show');
+    });
+
+    Route::prefix('user-dashboard')->group(function () {
+        Route::get('summary', [UserDashboardController::class, 'summary']);
+        Route::get('recent-orders', [UserDashboardController::class, 'recentOrders']);
+        Route::get('recent-activity', [UserDashboardController::class, 'recentActivity']);
+        Route::get('recent-message', [UserDashboardController::class, 'recentMessages']);
+        Route::get('chat-list', [UserDashboardController::class, 'chat']);
     });
 });
 
