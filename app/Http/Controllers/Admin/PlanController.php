@@ -121,4 +121,23 @@ class PlanController extends Controller
             'data' => $plan
         ]);
     }
+
+    public function destroy($id)
+    {
+        $plan = Plan::find($id);
+
+        if (!$plan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Plan not found',
+            ], 404);
+        }
+
+        $plan->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Plan deleted successfully'
+        ]);
+    }
 }
