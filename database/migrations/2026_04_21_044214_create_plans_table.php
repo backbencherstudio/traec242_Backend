@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('currency', 10)->default('USD');
             $table->string('package')->nullable();
             $table->integer('day')->default(0); // plan validity
-            $table->text('features')->nullable();
+            $table->json('features')->nullable();
             $table->tinyInteger('status')->default(1); // 1 = active, 0 = inactive
             $table->timestamps();
         });

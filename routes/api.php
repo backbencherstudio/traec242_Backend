@@ -77,6 +77,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     //Plan
     Route::prefix('plan')->group(function () {
         Route::get('index', [PlanController::class, 'index'])->name('plan.index');
+        Route::post('store', [PlanController::class, 'store'])->name('plan.store');
     });
 
     // subcategory
