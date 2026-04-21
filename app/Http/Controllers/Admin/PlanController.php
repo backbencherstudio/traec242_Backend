@@ -21,14 +21,13 @@ class PlanController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|in:Basic,Premium,Enterprise',
+            'name' => 'required|in:free,premium',
             'title' => 'nullable|string',
-            'price' => 'required|numeric',
+            'price' => 'required|numeric|min:0',
             'currency' => 'nullable|string',
-            'package' => 'required|in:Free,Monthly,Annual',
+            'package' => 'required|in:free,monthly,yearly',
             'features' => 'nullable|array',
             'features.*' => 'string',
-            'status' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -38,32 +37,88 @@ class PlanController extends Controller
             ], 422);
         }
 
-        $day = 0;
+        $daysMap = [
+            'free' => 7,
+            'monthly' => 30,
+            'yearly' => 365,
+        ];
 
-        if ($request->package === 'Free') {
-            $day = 7;
-        } elseif ($request->package === 'Monthly') {
-            $day = 30;
-        } elseif ($request->package === 'Annual') {
-            $day = 365;
-        }
+        $data = $validator->validated();
 
-        $plan = Plan::create([
-            'name' => $request->name,
-            'title' => $request->title ?? $request->name . ' Plan',
-            'price' => $request->price,
-            'currency' => $request->currency ?? 'SAR',
-            'package' => $request->package,
-            'day' => $day,
-            'features' => $request->features,
-            'status' => 1,
-        ]);
+        $data['day'] = $daysMap[$data['package']] ?? 0;
+        $data['title'] = $data['title'] ?? $data['name'] . ' Plan';
+        $data['currency'] = $data['currency'] ?? 'USD';
+        $data['features'] = $data['features'] ?? [];
+        $data['status'] = 1;
 
+        $plan = Plan::create($data);
 
         return response()->json([
             'success' => true,
             'message' => 'Plan created successfully',
             'data' => $plan
         ], 201);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $plan = Plan::find($id);
+
+        if (!$plan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Plan not found',
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'nullable|in:free,premium',
+            'title' => 'nullable|string',
+            'price' => 'nullable|numeric|min:0',
+            'currency' => 'nullable|string',
+            'package' => 'nullable|in:free,monthly,yearly',
+            'features' => 'nullable|array',
+            'features.*' => 'string',
+            'status' => 'nullable|in:0,1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $daysMap = [
+            'free' => 7,
+            'monthly' => 30,
+            'yearly' => 365,
+        ];
+
+        $data = $validator->validated();
+
+        if (isset($data['package'])) {
+            $data['day'] = $daysMap[$data['package']] ?? 0;
+        }
+
+        if (isset($data['name']) && !isset($data['title'])) {
+            $data['title'] = $data['name'] . ' Plan';
+        }
+
+        if (array_key_exists('currency', $data) && !$data['currency']) {
+            $data['currency'] = 'USD';
+        }
+
+        if (array_key_exists('features', $data) && is_null($data['features'])) {
+            $data['features'] = [];
+        }
+
+        $plan->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Plan updated successfully',
+            'data' => $plan
+        ]);
     }
 }

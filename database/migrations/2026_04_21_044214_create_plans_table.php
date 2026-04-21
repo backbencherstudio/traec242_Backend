@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('plans', function (Blueprint $table) {
             $table->id();
-            $table->enum('plan', ['free', 'premium'])->default('free');
+            $table->enum('name', ['free', 'premium'])->default('free');
             $table->string('title')->nullable();
             $table->decimal('price', 10, 2)->default(0);
             $table->string('currency', 10)->default('USD');
-            $table->enum('package', ['weekly', 'monthly', 'yearly'])->default('weekly');
-            $table->integer('day')->default(0); // plan validity
+            $table->enum('package', ['free', 'monthly', 'yearly'])->default('free');
+            $table->integer('day')->default(0);
             $table->json('features')->nullable();
-            $table->tinyInteger('status')->default(1); // 1 = active, 0 = inactive
+            $table->tinyInteger('status')->default(1);
             $table->timestamps();
         });
     }
