@@ -34,6 +34,8 @@ class ProviderRegisterRequest extends FormRequest
             'password'   => 'required|string|min:8|confirmed',
             'category_id' => 'required|array',
             'category_id.*' => 'exists:categories,id',
+            'plan_id' => 'required|array',
+            'plan_id.*'     => 'integer|exists:plans,id',
         ];
     }
 }
