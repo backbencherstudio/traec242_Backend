@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('plan_id')->constrained()->onDelete('cascade');
+            $table->enum('billing_cycle', ['monthly', 'yearly']);
             $table->string('starts_at')->nullable();
             $table->string('ends_at')->nullable();
             $table->integer('status')->default(1);
@@ -23,9 +24,7 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
+
     public function down(): void
     {
         Schema::dropIfExists('subscriptions');
