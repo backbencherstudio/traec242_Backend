@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\StripeController;
 use App\Http\Controllers\Api\UserDashboardController;
 use App\Http\Controllers\Frontend\SubscriberController;
 use App\Http\Controllers\Frontend\OrderController;
@@ -80,6 +81,11 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::post('store', [PlanController::class, 'store'])->name('plan.store');
         Route::put('update/{id}', [PlanController::class, 'update'])->name('plan.update');
         Route::delete('delete/{id}', [PlanController::class, 'destroy'])->name('plan.destroy');
+    });
+
+    //Stripe
+    Route::prefix('stripe')->group(function () {
+        Route::post('upsert', [StripeController::class, 'upsert'])->name('stripe.upsert');
     });
 
     // subcategory
