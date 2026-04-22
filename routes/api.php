@@ -86,6 +86,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     //Stripe
     Route::prefix('stripe')->group(function () {
         Route::post('upsert', [StripeController::class, 'upsert'])->name('stripe.upsert');
+        Route::get('show', [StripeController::class, 'show'])->name('stripe.show');
     });
 
     // subcategory
