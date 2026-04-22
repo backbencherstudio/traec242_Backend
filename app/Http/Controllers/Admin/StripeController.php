@@ -41,4 +41,14 @@ class StripeController extends Controller
             'data' => $stripe
         ]);
     }
+
+    public function show()
+    {
+        $stripe = Stripe::firstOrFail();
+
+        return response()->json([
+            'success' => true,
+            'data' => $stripe,
+        ]);
+    }
 }
