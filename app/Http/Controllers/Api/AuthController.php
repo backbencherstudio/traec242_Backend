@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\SendUserOtpMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -70,13 +72,79 @@ class AuthController extends Controller
             ], 422);
         }
 
+        $otp = (string) rand(100000, 999999);
+
         $user = User::create([
             'name' => $request->name,
             'last_name' => $request->last_name,
             'email' => $request->email,
             'type' => 0,
             'password' => Hash::make($request->password),
+            'status' => 0,
+            'otp' => $otp,
+            'otp_expires_at' => Carbon::now()->addMinutes(10),
         ]);
+
+        Mail::to($user->email)->queue(new SendUserOtpMail($otp));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'OTP sent to your email',
+        ]);
+    }
+
+    public function verifyUserOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+            'otp' => 'required|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found',
+            ], 404);
+        }
+
+        if (!$user->otp_expires_at) {
+            return response()->json([
+                'success' => false,
+                'message' => 'OTP not generated. Please request again.',
+            ], 400);
+        }
+
+        if (Carbon::now()->gt($user->otp_expires_at)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'OTP expired',
+            ], 400);
+        }
+
+        if (trim((string)$user->otp) !== trim((string)$request->otp)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid OTP',
+            ], 400);
+        }
+
+        $user->update([
+            'status' => 1,
+            'otp' => null,
+            'otp_expires_at' => null,
+            'email_verified_at' => Carbon::now(),
+        ]);
+
+        $user = $user->fresh();
 
         $token = Auth::guard('api')->login($user);
 
@@ -86,10 +154,10 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'User registered successfully',
+            'message' => 'Account verified successfully',
             'user' => $user,
             'token' => $token,
-        ], 201);
+        ]);
     }
 
     public function adminregister(Request $request)

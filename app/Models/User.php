@@ -34,7 +34,9 @@ class User extends Authenticatable implements JWTSubject
         'zip_code',
         'category_id',
         'jwt_token',
-        'provider_status'
+        'provider_status',
+        'otp',
+        'otp_expires_at',
     ];
 
     protected $hidden = [
@@ -70,9 +72,9 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Order::class);
     }
     public function conversations()
-{
-    return $this->belongsToMany(Conversation::class)
-                ->withPivot('last_read_at', 'is_admin')
-                ->withTimestamps();
-}
+    {
+        return $this->belongsToMany(Conversation::class)
+            ->withPivot('last_read_at', 'is_admin')
+            ->withTimestamps();
+    }
 }

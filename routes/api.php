@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Route;
 // Route::get('index', [CategoryController::class, 'index'])->name('admin.category.index');
 // user login
 Route::post('/user-register', [AuthController::class, 'register']);
+Route::post('verify-user-otp', [AuthController::class, 'verifyUserOtp']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'sendOtp']);
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
