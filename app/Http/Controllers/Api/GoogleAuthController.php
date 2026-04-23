@@ -49,7 +49,7 @@ class GoogleAuthController extends Controller
             return response()->json([
                 'token' => $jwtToken,
                 'token_type' => 'bearer',
-                'expires_in' => auth('api')->factory()->getTTL() * 3600,
+                'expires_in' => auth('api')->factory()->getTTL() * 12222600,
                 'user' => $user,
             ]);
 
