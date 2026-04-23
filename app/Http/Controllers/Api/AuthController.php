@@ -82,7 +82,7 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
             'status' => 0,
             'otp' => $otp,
-            'otp_expires_at' => Carbon::now()->addMinutes(10),
+            'otp_expires_at' => Carbon::now()->addMinutes(5),
         ]);
 
         Mail::to($user->email)->queue(new SendUserOtpMail($otp));
