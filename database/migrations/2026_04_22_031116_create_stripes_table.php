@@ -11,18 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('subscribers', function (Blueprint $table) {
+        Schema::create('stripes', function (Blueprint $table) {
             $table->id();
-            $table->string('email')->unique();
+            $table->enum('stripe_mode', ['test', 'live'])->default('test');
+            $table->string('stripe_secret_key');
+            $table->string('stripe_public_key');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
+    
     public function down(): void
     {
-        Schema::dropIfExists('subscribers');
+        Schema::dropIfExists('stripes');
     }
 };

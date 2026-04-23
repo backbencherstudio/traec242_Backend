@@ -13,6 +13,9 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Admin\MessageController;
+use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\StripeController;
+use App\Http\Controllers\Api\UserDashboardController;
 use App\Http\Controllers\Frontend\SubscriberController;
 use App\Http\Controllers\Frontend\OrderController;
 use App\Http\Controllers\NotificationController;
@@ -20,10 +23,10 @@ use Illuminate\Support\Facades\Route;
 
 // Admin Public Routes
 // Route::post('/admin/login', [AdminController::class, 'login'])->name('admin.login');
-Route::get('index', [CategoryController::class, 'index'])->name('admin.category.index');
+// Route::get('index', [CategoryController::class, 'index'])->name('admin.category.index');
 // user login
-Route::post('/user-register', [AuthController::class, 'register'])->name('register');
-Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/user-register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'sendOtp']);
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('/reset-password', [AuthController::class, 'resetPasswordWithOtp']);
@@ -31,7 +34,7 @@ Route::post('/reset-password', [AuthController::class, 'resetPasswordWithOtp']);
 Route::post('/subscriber', [SubscriberController::class, 'store'])->name('subscriber.store');
 // Route::middleware('auth:api')->post('/user/logout', [UserController::class, 'logout']);
 
-// Route::post('/admin/register', [AuthController::class, 'adminregister'])->name('register');
+// Route::post('/admin/register', [AuthController::class, 'adminregister']);
 
 // google login api
 Route::get('/auth/google', [GoogleAuthController::class, 'redirectToGoogle']);
@@ -40,7 +43,7 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleC
 // Admin Protected Routes
 Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/index', [AuthController::class, 'index'])->name('index');
-    Route::post('/register', [AuthController::class, 'adminregister'])->name('register');
+    Route::post('/register', [AuthController::class, 'adminregister'])->name('registerr');
     Route::get('/edit/{id}', [AuthController::class, 'edit'])->name('edit');
     Route::post('/update/{id}', [AuthController::class, 'adminUpdate'])->name('update');
     Route::delete('/delete/{id}', [AuthController::class, 'delete'])->name('delete');
@@ -71,6 +74,21 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::put('update/{id}', [CategoryController::class, 'update'])->name('category.update');
         Route::delete('/delete/{id}', [CategoryController::class, 'destroy'])->name('category.destroy');
     });
+
+    //Plan
+    Route::prefix('plan')->group(function () {
+        Route::get('index', [PlanController::class, 'index'])->name('plan.index');
+        Route::post('store', [PlanController::class, 'store'])->name('plan.store');
+        Route::put('update/{id}', [PlanController::class, 'update'])->name('plan.update');
+        Route::delete('delete/{id}', [PlanController::class, 'destroy'])->name('plan.destroy');
+    });
+
+    //Stripe
+    Route::prefix('stripe')->group(function () {
+        Route::post('upsert', [StripeController::class, 'upsert'])->name('stripe.upsert');
+        Route::get('show', [StripeController::class, 'show'])->name('stripe.show');
+    });
+
     // subcategory
     Route::prefix('subcategory')->group(function () {
         Route::get('index', [SubcategoryController::class, 'index'])->name('subcategory.index');
@@ -139,13 +157,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     Route::prefix('message')->group(function () {
         Route::get('index', [MessageController::class, 'index']);
         Route::post('send', [MessageController::class, 'sendMessage']);
-
     });
-    // Route::prefix('message')->group(function () {
-    //     Route::get('index', [MessageController::class, 'index']);
-    //     Route::post('send', [MessageController::class, 'sendMessage']);
-
-    // });
 
     //Order
     Route::prefix('order')->group(function () {
@@ -154,6 +166,13 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('show/{id}', [OrderController::class, 'show'])->name('order.show');
     });
 
+    Route::prefix('user-dashboard')->group(function () {
+        Route::get('summary', [UserDashboardController::class, 'summary']);
+        Route::get('recent-orders', [UserDashboardController::class, 'recentOrders']);
+        Route::get('recent-activity', [UserDashboardController::class, 'recentActivity']);
+        Route::get('recent-message', [UserDashboardController::class, 'recentMessages']);
+        Route::get('chat-list', [UserDashboardController::class, 'chat']);
+    });
 });
 
 Route::get('/order/success/{orderId}', [OrderController::class, 'success'])->name('order.success');
