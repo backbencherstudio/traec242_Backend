@@ -258,7 +258,7 @@ class OrderController extends Controller
                     $order->status = 'confirmed';
                     $order->save();
 
-                    $payment = Payment::where('order_id', $order->id)->first();
+                    $payment = ProviderPayment::where('order_id', $order->id)->first();
                     $payment->transaction_id = $payment_intent->id;
                     $payment->status = 'successful';
                     $payment->save();
@@ -275,7 +275,7 @@ class OrderController extends Controller
                     $order->status = 'failed';
                     $order->save();
 
-                    $payment = Payment::where('order_id', $order->id)->first();
+                    $payment = ProviderPayment::where('order_id', $order->id)->first();
                     $payment->status = 'failed';
                     $payment->save();
 
@@ -290,7 +290,7 @@ class OrderController extends Controller
                     $order->status = 'canceled';
                     $order->save();
 
-                    $payment = Payment::where('order_id', $order->id)->first();
+                    $payment = ProviderPayment::where('order_id', $order->id)->first();
                     $payment->status = 'canceled';
                     $payment->save();
 

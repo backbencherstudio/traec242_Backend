@@ -14,9 +14,11 @@ return new class extends Migration
         Schema::create('provider_payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('plan_id')->constrained('plans')->cascadeOnDelete();
+            $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
             $table->string('transaction_id')->unique()->nullable();
             $table->decimal('amount', 10, 2);
+            $table->decimal('admin_commission_amount', 10, 2)->default(0.00);
+            $table->decimal('provider_amount', 10, 2)->default(0.00);
             $table->string('currency')->default('USD');
             $table->string('payment_method');
             $table->enum('status', ['pending', 'successful', 'failed', 'refunded'])->default('pending');
@@ -24,7 +26,9 @@ return new class extends Migration
         });
     }
 
-
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('provider_payments');
