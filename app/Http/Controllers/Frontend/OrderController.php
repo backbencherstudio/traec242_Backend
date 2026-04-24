@@ -321,7 +321,7 @@ class OrderController extends Controller
         $order = Order::with(['service', 'Pricing', 'user'])->findOrFail($orderId);
 
         $pricing = $order->Pricing;
-        $payment = Payment::where('order_id', $order->id)->first();
+        $payment = ProviderPayment::where('order_id', $order->id)->first();
 
         $data = [
             'order' => $order,
@@ -329,7 +329,7 @@ class OrderController extends Controller
             'service' => $order->service,
             'pricing' => $pricing,
             'payment' => $payment,
-            'total_amount' => $pricing->price,
+            'total_amount' => $payment->amount,
             'transaction_id' => $payment->transaction_id,
             'payment_method' => $payment->payment_method,
             'payment_status' => $payment->status,

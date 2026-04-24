@@ -119,7 +119,7 @@
                 </tr>
                 <tr>
                     <th>Service Price</th>
-                    <td>${{ number_format($pricing->price, 2) }}</td>
+                    <td>${{ number_format($total_amount, 2) }}</td>
                 </tr>
             </table>
         </div>
