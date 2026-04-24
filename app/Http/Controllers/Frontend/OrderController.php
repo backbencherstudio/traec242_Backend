@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Models\IncludeOrder;
 use App\Models\Order;
-use App\Models\Payment;
+use App\Models\ProviderPayment;
 use App\Models\ServicePricing;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -212,7 +212,7 @@ class OrderController extends Controller
             $adminCommission = $finalAmount * 0.20;
             $providerAmount = $finalAmount - $adminCommission;
 
-            Payment::create([
+            ProviderPayment::create([
                 'order_id' => $order->id,
                 'user_id' => auth()->id(),
                 'transaction_id' => null,
