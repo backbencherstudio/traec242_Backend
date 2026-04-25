@@ -37,4 +37,28 @@ class ProviderStripeController extends Controller
             'data' => $stripe
         ]);
     }
+
+    public function show()
+    {
+        $user = auth()->user();
+
+        if ($user->type != 2) {
+            return response()->json([
+                'message' => 'Only provider can view Stripe keys.'
+            ], 403);
+        }
+
+        $stripe = ProviderStripe::where('user_id', $user->id)->first();
+
+        if (!$stripe) {
+            return response()->json([
+                'message' => 'Stripe key not found.'
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Stripe key retrieved successfully.',
+            'data' => $stripe
+        ]);
+    }
 }
