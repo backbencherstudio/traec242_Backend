@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\UserDashboardController;
 use App\Http\Controllers\Frontend\SubscriberController;
 use App\Http\Controllers\Frontend\OrderController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Provider\ProviderStripeController;
 use Illuminate\Support\Facades\Route;
 
 // Admin Public Routes
@@ -84,10 +85,16 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::delete('delete/{id}', [PlanController::class, 'destroy'])->name('plan.destroy');
     });
 
-    //Stripe
+    //Admin Stripe
     Route::prefix('stripe')->group(function () {
         Route::post('upsert', [StripeController::class, 'upsert'])->name('stripe.upsert');
         Route::get('show', [StripeController::class, 'show'])->name('stripe.show');
+    });
+
+    //Provider Stripe
+    Route::prefix('p-stripe')->group(function () {
+        Route::post('upsert', [ProviderStripeController::class, 'upsert'])->name('p-stripe.upsert');
+        Route::get('show', [ProviderStripeController::class, 'show'])->name('p-stripe.show');
     });
 
     // subcategory
