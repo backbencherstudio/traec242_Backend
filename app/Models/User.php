@@ -39,6 +39,7 @@ class User extends Authenticatable implements JWTSubject
         'plan_id',
         'jwt_token',
         'provider_status',
+        'is_verified',
     ];
 
     protected $hidden = [

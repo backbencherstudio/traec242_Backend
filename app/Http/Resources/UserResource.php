@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Laravel\Cashier\Subscription;
@@ -17,7 +18,12 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'phone' => $this->phone,
             'image' => $this->image,
-            'type' => $this->type,
+            'type' => match ($this->type) {
+                0 => 'user',
+                1 => 'admin',
+                2 => 'provider',
+                default => 'user',
+            },
             'status' => $this->status,
             'provider_status' => $this->provider_status,
             'address' => $this->address,
@@ -53,14 +59,31 @@ class UserResource extends JsonResource
             return [
                 'status' => 'not_subscribed',
                 'stripe_status' => null,
-                'ends_at' => null,
+                'current_period_start' => null,
+                'current_period_end' => null,
+                'cancel_at_period_end' => false,
             ];
+        }
+
+        $subscriptionCreatedAt = $subscription->created_at;
+        $currentPeriodStart = $subscription->start_date
+            ? Carbon::createFromTimestamp($subscription->start_date)
+            : $subscriptionCreatedAt;
+
+        $currentPeriodEnd = $subscription->billing_cycle_anchor
+            ? Carbon::createFromTimestamp($subscription->billing_cycle_anchor)
+            : $currentPeriodStart->copy()->addMonth();
+
+        if ($subscription->stripe_status === 'active' && $subscription->canceled()) {
+            $currentPeriodEnd = $subscription->ends_at;
         }
 
         return [
             'status' => $this->mapSubscriptionStatus($subscription),
             'stripe_status' => $subscription->stripe_status,
-            'ends_at' => $subscription->ends_at,
+            'current_period_start' => $currentPeriodStart,
+            'current_period_end' => $currentPeriodEnd,
+            'cancel_at_period_end' => $subscription->cancel_at_period_end,
         ];
     }
 
