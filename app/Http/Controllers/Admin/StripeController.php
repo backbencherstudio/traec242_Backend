@@ -14,6 +14,7 @@ class StripeController extends Controller
             'stripe_mode' => 'required|in:test,live',
             'stripe_secret_key' => 'required|string',
             'stripe_public_key' => 'required|string',
+            'stripe_webhook_secret' => 'nullable|string',
         ]);
 
         $stripe = Stripe::first();
@@ -24,6 +25,7 @@ class StripeController extends Controller
                     'stripe_mode' => $request->stripe_mode,
                     'stripe_secret_key' => $request->stripe_secret_key,
                     'stripe_public_key' => $request->stripe_public_key,
+                    'stripe_webhook_secret' => $request->stripe_webhook_secret,
                 ]
             );
         } else {
@@ -32,13 +34,14 @@ class StripeController extends Controller
                     'stripe_mode' => $request->stripe_mode,
                     'stripe_secret_key' => $request->stripe_secret_key,
                     'stripe_public_key' => $request->stripe_public_key,
+                    'stripe_webhook_secret' => $request->stripe_webhook_secret,
                 ]
             );
         }
 
         return response()->json([
             'message' => 'Stripe payment settings saved successfully.',
-            'data' => $stripe
+            'data' => $stripe,
         ]);
     }
 

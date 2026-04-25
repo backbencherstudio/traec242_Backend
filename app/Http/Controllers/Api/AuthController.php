@@ -3,17 +3,18 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Tymon\JWTAuth\Facades\JWTAuth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
 {
@@ -48,7 +49,7 @@ class AuthController extends Controller
         $user->update(['jwt_token' => $token]);
 
         return response()->json([
-            'user' => $user,
+            'user' => UserResource::make($user->loadMissing(['plan', 'subscriptions'])),
             'message' => 'User login successfully',
             'token' => $token,
         ]);
@@ -87,7 +88,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'User registered successfully',
-            'user' => $user,
+            'user' => UserResource::make($user->loadMissing(['plan', 'subscriptions'])),
             'token' => $token,
         ], 201);
     }
@@ -118,9 +119,9 @@ class AuthController extends Controller
         $imagePath = null;
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+            $imageName = time().'_'.Str::random(10).'.'.$image->getClientOriginalExtension();
             $image->move(public_path('user'), $imageName);
-            $imagePath = 'user/' . $imageName;
+            $imagePath = 'user/'.$imageName;
         }
 
         $user = User::create([
@@ -142,7 +143,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Admin registered successfully',
-            'user' => $user,
+            'user' => UserResource::make($user->loadMissing(['plan', 'subscriptions'])),
             'token' => $token,
         ], 201);
     }
@@ -184,8 +185,8 @@ class AuthController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'phone' => 'nullable|string|max:20|unique:users,phone,' . $user->id,
+            'email' => 'required|email|unique:users,email,'.$user->id,
+            'phone' => 'nullable|string|max:20|unique:users,phone,'.$user->id,
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:0,1',
             'role' => 'required|exists:roles,id',
@@ -204,9 +205,9 @@ class AuthController extends Controller
             }
 
             $image = $request->file('image');
-            $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+            $imageName = time().'_'.Str::random(10).'.'.$image->getClientOriginalExtension();
             $image->move(public_path('user'), $imageName);
-            $user->image = 'user/' . $imageName;
+            $user->image = 'user/'.$imageName;
         }
 
         $user->name = $request->name;
@@ -328,7 +329,6 @@ class AuthController extends Controller
         ], 200);
     }
 
-
     public function sendOtp(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -343,7 +343,7 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $key = 'otp-' . $request->email;
+        $key = 'otp-'.$request->email;
 
         if (RateLimiter::tooManyAttempts($key, 1)) {
             $seconds = RateLimiter::availableIn($key);
@@ -432,7 +432,6 @@ class AuthController extends Controller
             'message' => 'OTP verified successfully',
         ]);
     }
-
 
     public function resetPasswordWithOtp(Request $request)
     {
