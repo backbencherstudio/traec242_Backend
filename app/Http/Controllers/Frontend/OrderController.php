@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Models\IncludeOrder;
 use App\Models\Order;
-use App\Models\Payment;
+use App\Models\ProviderPayment;
 use App\Models\ServicePricing;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -212,7 +212,7 @@ class OrderController extends Controller
             $adminCommission = $finalAmount * 0.20;
             $providerAmount = $finalAmount - $adminCommission;
 
-            Payment::create([
+            ProviderPayment::create([
                 'order_id' => $order->id,
                 'user_id' => auth()->id(),
                 'transaction_id' => null,
@@ -258,7 +258,7 @@ class OrderController extends Controller
                     $order->status = 'confirmed';
                     $order->save();
 
-                    $payment = Payment::where('order_id', $order->id)->first();
+                    $payment = ProviderPayment::where('order_id', $order->id)->first();
                     $payment->transaction_id = $payment_intent->id;
                     $payment->status = 'successful';
                     $payment->save();
@@ -275,7 +275,7 @@ class OrderController extends Controller
                     $order->status = 'failed';
                     $order->save();
 
-                    $payment = Payment::where('order_id', $order->id)->first();
+                    $payment = ProviderPayment::where('order_id', $order->id)->first();
                     $payment->status = 'failed';
                     $payment->save();
 
@@ -290,7 +290,7 @@ class OrderController extends Controller
                     $order->status = 'canceled';
                     $order->save();
 
-                    $payment = Payment::where('order_id', $order->id)->first();
+                    $payment = ProviderPayment::where('order_id', $order->id)->first();
                     $payment->status = 'canceled';
                     $payment->save();
 
@@ -321,7 +321,7 @@ class OrderController extends Controller
         $order = Order::with(['service', 'Pricing', 'user'])->findOrFail($orderId);
 
         $pricing = $order->Pricing;
-        $payment = Payment::where('order_id', $order->id)->first();
+        $payment = ProviderPayment::where('order_id', $order->id)->first();
 
         $data = [
             'order' => $order,
@@ -329,7 +329,7 @@ class OrderController extends Controller
             'service' => $order->service,
             'pricing' => $pricing,
             'payment' => $payment,
-            'total_amount' => $pricing->price,
+            'total_amount' => $payment->amount,
             'transaction_id' => $payment->transaction_id,
             'payment_method' => $payment->payment_method,
             'payment_status' => $payment->status,

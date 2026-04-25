@@ -3,20 +3,26 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\OtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Tymon\JWTAuth\Facades\JWTAuth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        protected OtpService $otpService
+    ) {}
+
     public function index()
     {
         $admins = User::where('type', 1)->get();
@@ -38,6 +44,19 @@ class AuthController extends Controller
 
         $user = Auth::guard('api')->user();
 
+        if (! $user->is_verified) {
+            Auth::guard('api')->logout();
+
+            $this->otpService->sendRegistrationOtp($user);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Please verify your email. A new OTP has been sent to your email.',
+                'requires_verification' => true,
+                'email' => $user->email,
+            ], 403);
+        }
+
         if ($user->jwt_token) {
             try {
                 JWTAuth::setToken($user->jwt_token)->invalidate();
@@ -48,7 +67,7 @@ class AuthController extends Controller
         $user->update(['jwt_token' => $token]);
 
         return response()->json([
-            'user' => $user,
+            'user' => UserResource::make($user->loadMissing(['plan', 'subscriptions'])),
             'message' => 'User login successfully',
             'token' => $token,
         ]);
@@ -70,25 +89,23 @@ class AuthController extends Controller
             ], 422);
         }
 
+        $otp = (string) rand(100000, 999999);
+
         $user = User::create([
             'name' => $request->name,
             'last_name' => $request->last_name,
             'email' => $request->email,
             'type' => 0,
             'password' => Hash::make($request->password),
+            'is_verified' => false,
         ]);
 
-        $token = Auth::guard('api')->login($user);
-
-        $user->update([
-            'jwt_token' => $token,
-        ]);
+        $this->otpService->sendRegistrationOtp($user);
 
         return response()->json([
             'success' => true,
-            'message' => 'User registered successfully',
-            'user' => $user,
-            'token' => $token,
+            'message' => 'User registered. Please verify your email with OTP sent to your email.',
+            'user' => UserResource::make($user->loadMissing(['plan', 'subscriptions'])),
         ], 201);
     }
 
@@ -142,7 +159,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Admin registered successfully',
-            'user' => $user,
+            'user' => UserResource::make($user->loadMissing(['plan', 'subscriptions'])),
             'token' => $token,
         ], 201);
     }
@@ -328,7 +345,6 @@ class AuthController extends Controller
         ], 200);
     }
 
-
     public function sendOtp(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -432,7 +448,6 @@ class AuthController extends Controller
             'message' => 'OTP verified successfully',
         ]);
     }
-
 
     public function resetPasswordWithOtp(Request $request)
     {

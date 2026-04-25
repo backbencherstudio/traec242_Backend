@@ -25,6 +25,8 @@ return new class extends Migration
             $table->json('languages')->nullable()->after('bio');
             $table->json('category_id')->nullable()->after('languages');
             $table->string('plan_id')->nullable()->after('category_id');
+            $table->string('otp')->nullable()->after('plan_id');
+            $table->string('otp_expires_at')->nullable()->after('otp');
             $table->string('status')->nullable()->comment('0 = Inactive, 1 = Active')->after('role');
             $table->boolean('provider_status')->nullable()->default(false)->comment('0 = Pending, 1 = Approved')->after('status');
         });

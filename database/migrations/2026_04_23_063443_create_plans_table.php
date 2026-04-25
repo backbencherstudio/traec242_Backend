@@ -13,15 +13,20 @@ return new class extends Migration
     {
         Schema::create('plans', function (Blueprint $table) {
             $table->id();
-            $table->enum('name', ['free', 'premium'])->default('free');
+            $table->string('name');
             $table->string('title')->nullable();
             $table->decimal('price', 10, 2)->default(0);
-            $table->string('currency', 10)->default('USD');
-            $table->enum('package', ['free', 'monthly', 'yearly'])->default('free');
-            $table->integer('day')->default(0);
+            $table->string('currency', 3)->default('USD');
+            $table->enum('package', ['free', 'monthly', 'yearly']);
+            $table->unsignedInteger('day')->default(0);
             $table->json('features')->nullable();
-            $table->tinyInteger('status')->default(1);
+            $table->string('stripe_product_id')->nullable();
+            $table->string('stripe_price_id')->nullable();
+            $table->boolean('status')->default(true);
             $table->timestamps();
+
+            $table->index(['package', 'status']);
+            $table->unique('stripe_price_id');
         });
     }
 
