@@ -14,10 +14,17 @@ class Plan extends Model
         'package',
         'day',
         'features',
+        'stripe_product_id',
+        'stripe_price_id',
         'status',
     ];
 
-    protected $casts = [
-        'features' => 'array',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'features' => 'array',
+            'price' => 'decimal:2',
+            'status' => 'boolean',
+        ];
+    }
 }

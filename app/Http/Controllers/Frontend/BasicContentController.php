@@ -19,21 +19,24 @@ class BasicContentController extends Controller
             'other_data' => [
                 'total_user' => User::where('type', 0)->count(),
                 'total_provider' => User::where('type', 2)->count(),
-                'avg_rating' => 3.3
-            ]
+                'avg_rating' => 3.3,
+            ],
         ];
+
         return $this->sendResponse($data);
     }
 
     public function faq()
     {
         $content = Faq::all();
+
         return $this->sendResponse($content);
     }
 
     public function privacy()
     {
         $content = PrivacyPolicy::first();
+
         return $this->sendResponse($content);
     }
 }
