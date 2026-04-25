@@ -15,7 +15,10 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             PermisionSeeder::class,
             ContentSeeder::class,
-            FaqSedder::class
+            FaqSedder::class,
+            CategorySeeder::class,
+            PlanSeeder::class,
+            StripeSeeder::class,
         ]);
     }
 }

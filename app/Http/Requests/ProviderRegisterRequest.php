@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ProviderRegisterRequest extends FormRequest
 {
@@ -23,19 +24,28 @@ class ProviderRegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'last_name'  => 'required|string|max:255',
-            'email'      => 'required|string|email|max:255|unique:users,email',
-            'phone'      => 'required|string|max:20',
-            'address'    => 'required|string|max:255',
-            'city'       => 'required|string|max:100',
-            'state'      => 'required|string|max:100',
-            'zip_code'   => 'required|string|max:20',
-            'password'   => 'required|string|min:8|confirmed',
-            'category_id' => 'required|array',
-            'category_id.*' => 'exists:categories,id',
-            'plan_id' => 'required|array',
-            'plan_id.*'     => 'integer|exists:plans,id',
+            'name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['required', 'string', 'max:20'],
+            'address' => ['required', 'string', 'max:255'],
+            'city' => ['required', 'string', 'max:100'],
+            'state' => ['required', 'string', 'max:100'],
+            'zip_code' => ['required', 'string', 'max:20'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'category_id' => ['required', 'array'],
+            'category_id.*' => ['integer', 'exists:categories,id'],
+            'plan_id' => [
+                'required',
+                'integer',
+                Rule::exists('plans', 'id')->where(function ($query) {
+                    $query
+                        ->where('status', true)
+                        ->where('package', 'monthly')
+                        ->whereNotNull('stripe_price_id');
+                }),
+            ],
+            'payment_method' => ['required', 'string'],
         ];
     }
 }
