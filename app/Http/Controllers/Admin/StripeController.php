@@ -10,6 +10,14 @@ class StripeController extends Controller
 {
     public function upsert(Request $request)
     {
+
+        $user = auth()->user();
+        if ($user->type != 1) {
+            return response()->json([
+                'message' => 'Only Admin can update Stripe key.'
+            ], 403);
+        }
+
         $request->validate([
             'stripe_mode' => 'required|in:test,live',
             'stripe_secret_key' => 'required|string',
@@ -47,6 +55,12 @@ class StripeController extends Controller
 
     public function show()
     {
+        $user = auth()->user();
+        if ($user->type != 1) {
+            return response()->json([
+                'message' => 'Only Admin can view Stripe keys.'
+            ], 403);
+        }
         $stripe = Stripe::firstOrFail();
 
         return response()->json([
