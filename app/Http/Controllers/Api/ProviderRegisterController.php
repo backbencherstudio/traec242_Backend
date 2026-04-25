@@ -7,6 +7,7 @@ use App\Http\Requests\ProviderRegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Plan;
 use App\Models\User;
+use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Laravel\Cashier\Exceptions\IncompletePayment;
@@ -14,6 +15,10 @@ use Stripe\Exception\ApiErrorException;
 
 class ProviderRegisterController extends Controller
 {
+    public function __construct(
+        protected OtpService $otpService
+    ) {}
+
     public function store(ProviderRegisterRequest $request): JsonResponse
     {
         $validated = $request->validated();
@@ -43,6 +48,7 @@ class ProviderRegisterController extends Controller
                 'type' => 2,
                 'status' => 1,
                 'provider_status' => false,
+                'is_verified' => false,
             ]);
 
             $user->newSubscription('provider', $plan->stripe_price_id)
@@ -53,27 +59,27 @@ class ProviderRegisterController extends Controller
                 ])
                 ->create($validated['payment_method']);
 
-            $token = auth('api')->login($user);
-            $user->update(['jwt_token' => $token]);
-
             DB::commit();
 
+            if ($user) {
+                $this->otpService->sendRegistrationOtp($user);
+            }
+
             return $this->sendResponse([
-                'user' => UserResource::make($user->fresh(['plan', 'subscriptions'])),
-                'token' => $token,
-            ], 'Provider registered and subscribed successfully', 201);
+                'user' => $user ? UserResource::make($user->fresh(['plan', 'subscriptions'])) : null,
+            ], 'Provider registered. Please verify your email with OTP sent to your email.', 201);
         } catch (IncompletePayment $exception) {
             DB::commit();
 
-            $token = auth('api')->login($user);
-            $user->update(['jwt_token' => $token]);
+            if ($user) {
+                $this->otpService->sendRegistrationOtp($user);
+            }
 
-            return $this->sendError('Additional payment confirmation is required.', [
-                'user' => UserResource::make($user->fresh(['plan', 'subscriptions'])),
-                'token' => $token,
+            return $this->sendResponse([
+                'user' => $user ? UserResource::make($user->fresh(['plan', 'subscriptions'])) : null,
                 'payment_intent_client_secret' => $exception->payment->clientSecret(),
                 'payment_status' => $exception->payment->status,
-            ], 202);
+            ], 'Provider registered. Please verify your email with OTP sent to your email.', 201);
         } catch (ApiErrorException $exception) {
             DB::rollBack();
 
