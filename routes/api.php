@@ -4,20 +4,21 @@ use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\FaqCategoryController;
 use App\Http\Controllers\Admin\FaqController;
+use App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\SliderController;
+use App\Http\Controllers\Admin\StripeController;
 use App\Http\Controllers\Admin\SubcategoryController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\GoogleAuthController;
-use App\Http\Controllers\Admin\MessageController;
-use App\Http\Controllers\Admin\PlanController;
-use App\Http\Controllers\Admin\StripeController;
 use App\Http\Controllers\Api\UserDashboardController;
-use App\Http\Controllers\Frontend\SubscriberController;
+use App\Http\Controllers\Api\VerifyRegistrationOtpController;
 use App\Http\Controllers\Frontend\OrderController;
+use App\Http\Controllers\Frontend\SubscriberController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -26,7 +27,8 @@ use Illuminate\Support\Facades\Route;
 // Route::get('index', [CategoryController::class, 'index'])->name('admin.category.index');
 // user login
 Route::post('/user-register', [AuthController::class, 'register']);
-Route::post('verify-user-otp', [AuthController::class, 'verifyUserOtp']);
+Route::post('/verify-email-otp', [VerifyRegistrationOtpController::class, 'verify']);
+Route::post('/resend-email-otp', [VerifyRegistrationOtpController::class, 'resend']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'sendOtp']);
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
@@ -76,7 +78,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::delete('/delete/{id}', [CategoryController::class, 'destroy'])->name('category.destroy');
     });
 
-    //Plan
+    // Plan
     Route::prefix('plan')->group(function () {
         Route::get('index', [PlanController::class, 'index'])->name('plan.index');
         Route::post('store', [PlanController::class, 'store'])->name('plan.store');
@@ -84,7 +86,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::delete('delete/{id}', [PlanController::class, 'destroy'])->name('plan.destroy');
     });
 
-    //Stripe
+    // Stripe
     Route::prefix('stripe')->group(function () {
         Route::post('upsert', [StripeController::class, 'upsert'])->name('stripe.upsert');
         Route::get('show', [StripeController::class, 'show'])->name('stripe.show');
@@ -150,7 +152,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::post('/send-email', [EmailController::class, 'sendEmail']);
     });
 
-    //Subscriber
+    // Subscriber
     Route::prefix('subscriber')->group(function () {
         Route::get('index', [SubscriberController::class, 'index']);
     });
@@ -160,7 +162,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::post('send', [MessageController::class, 'sendMessage']);
     });
 
-    //Order
+    // Order.....
     Route::prefix('order')->group(function () {
         Route::post('/create-order', [OrderController::class, 'store']);
         Route::get('index', [OrderController::class, 'index'])->name('order.index');
@@ -179,7 +181,5 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
 Route::get('/order/success/{orderId}', [OrderController::class, 'success'])->name('order.success');
 Route::get('/order/cancel/{orderId}', [OrderController::class, 'cancel'])->name('order.cancel');
 Route::get('/order/invoice/{orderId}', [OrderController::class, 'generateInvoice'])->name('order.invoice');
-
-
 
 require __DIR__ . '/mahmudul.php';

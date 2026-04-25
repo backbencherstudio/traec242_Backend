@@ -4,14 +4,17 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Cashier\Billable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
+    use Billable;
     use HasApiTokens, HasFactory, Notifiable;
     use HasRoles;
 
@@ -33,10 +36,10 @@ class User extends Authenticatable implements JWTSubject
         'state',
         'zip_code',
         'category_id',
+        'plan_id',
         'jwt_token',
         'provider_status',
-        'otp',
-        'otp_expires_at',
+        'is_verified',
     ];
 
     protected $hidden = [
@@ -52,8 +55,10 @@ class User extends Authenticatable implements JWTSubject
             'password' => 'hashed',
             'languages' => 'array',
             'category_id' => 'array',
+            'plan_id' => 'integer',
             'type' => 'integer',
             'status' => 'boolean',
+            'provider_status' => 'boolean',
         ];
     }
 
@@ -71,6 +76,12 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(Order::class);
     }
+
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
     public function conversations()
     {
         return $this->belongsToMany(Conversation::class)

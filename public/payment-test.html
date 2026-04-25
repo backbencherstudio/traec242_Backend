@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provider Payment Test</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #6772e5;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .row>div {
+            flex: 1;
+        }
+
+        #card-element {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: white;
+        }
+
+        #card-errors {
+            color: #fa755a;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #6772e5;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background: #7795f8;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .result.loading {
+            background: #cce5ff;
+            color: #004085;
+            display: block;
+        }
+
+        .stripe-badge {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Provider Payment Test</h2>
+
+        <form id="payment-form">
+            <div class="row">
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" id="name" value="John" required>
+                </div>
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <input type="text" id="last_name" value="Doe" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="email" value="john.doe@example.com" required>
+            </div>
+
+            <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" id="phone" value="+1234567890" required>
+            </div>
+
+            <div class="form-group">
+                <label>Address</label>
+                <input type="text" id="address" value="123 Main Street" required>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" id="city" value="New York" required>
+                </div>
+                <div class="form-group">
+                    <label>State</label>
+                    <input type="text" id="state" value="NY" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label>Zip Code</label>
+                    <input type="text" id="zip_code" value="10001" required>
+                </div>
+                <div class="form-group">
+                    <label>Category ID</label>
+                    <select id="category_id">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Plan ID</label>
+                <select id="plan_id">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" value="password123" required>
+            </div>
+
+            <div class="form-group">
+                <label>Confirm Password</label>
+                <input type="password" id="password_confirmation" value="password123" required>
+            </div>
+
+            <div class="form-group">
+                <label>Card Details</label>
+                <div id="card-element"></div>
+                <div id="card-errors"></div>
+            </div>
+
+            <button type="submit" id="submit-btn">Test Payment</button>
+        </form>
+
+        <div id="result" class="result"></div>
+
+        <div class="stripe-badge">
+            Powered by Stripe Test Mode
+        </div>
+    </div>
+
+    <script>
+        const stripe = Stripe('pk_test_51SSTv4ALLuOtlOzLGNLihqixur1Qum57SYcn2zxnoEjpkF4t5RVLg41SWkItnxu1nVfDX173IDTepQd7isJhEFXk00xDena5UA');
+        const elements = stripe.elements();
+        const cardElement = elements.create('card', {
+            style: {
+                base: {
+                    fontSize: '16px',
+                    color: '#333',
+                    '::placeholder': { color: '#ccc' }
+                }
+            }
+        });
+        cardElement.mount('#card-element');
+
+        cardElement.on('change', (event) => {
+            const errorDiv = document.getElementById('card-errors');
+            if (event.error) {
+                errorDiv.textContent = event.error.message;
+            } else {
+                errorDiv.textContent = '';
+            }
+        });
+
+        const form = document.getElementById('payment-form');
+        const resultDiv = document.getElementById('result');
+        const submitBtn = document.getElementById('submit-btn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            submitBtn.disabled = true;
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = 'Processing payment...';
+
+            try {
+                const { paymentMethod, error } = await stripe.createPaymentMethod({
+                    type: 'card',
+                    card: cardElement,
+                    billing_details: {
+                        name: document.getElementById('name').value + ' ' + document.getElementById('last_name').value,
+                        email: document.getElementById('email').value,
+                        phone: document.getElementById('phone').value,
+                    }
+                });
+
+                if (error) {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = 'Card Error: ' + error.message;
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                const formData = {
+                    name: document.getElementById('name').value,
+                    last_name: document.getElementById('last_name').value,
+                    email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+                    address: document.getElementById('address').value,
+                    city: document.getElementById('city').value,
+                    state: document.getElementById('state').value,
+                    zip_code: document.getElementById('zip_code').value,
+                    category_id: [parseInt(document.getElementById('category_id').value)],
+                    plan_id: parseInt(document.getElementById('plan_id').value),
+                    password: document.getElementById('password').value,
+                    password_confirmation: document.getElementById('password_confirmation').value,
+                    payment_method: paymentMethod.id
+                };
+
+                resultDiv.textContent = 'Payment method created! Submitting to API...';
+
+                const response = await fetch('/api/register_provider', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                console.log(data)
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = '<strong>Success!</strong><br>Payment Method ID: ' + paymentMethod.id + '<br>User: ' + data.data.user.name + ' ' + data.data.user.last_name + '<br>Subscription: ' + data.data.user.provider_subscription.stripe_status;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = '<strong>API Error:</strong><br>' + (data.message || JSON.stringify(data));
+                }
+
+            } catch (err) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'Error: ' + err.message;
+            }
+
+            submitBtn.disabled = false;
+        });
+    </script>
+</body>
+
+</html>
