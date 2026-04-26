@@ -51,6 +51,11 @@ class OrderController extends Controller
         ]);
     }
 
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function show($id)
     {
         $order = Order::with(['service', 'pricing', 'payment', 'user'])
@@ -120,6 +125,11 @@ class OrderController extends Controller
         ]);
     }
 
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -247,6 +257,11 @@ class OrderController extends Controller
         }
     }
 
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function success(Request $request, $orderId)
     {
         Stripe::setApiKey(env('STRIPE_SECRET_KEY'));

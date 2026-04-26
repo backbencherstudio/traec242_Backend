@@ -31,12 +31,23 @@ class BasicContentController extends Controller
         return $this->sendResponse($data);
     }
 
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function faq()
     {
         $content = Faq::all();
 
         return $this->sendResponse($content);
     }
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
 
     public function privacy()
     {

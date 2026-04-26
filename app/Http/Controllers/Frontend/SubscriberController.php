@@ -11,6 +11,10 @@ use App\Mail\SubscriberMail;
 
 class SubscriberController extends Controller
 {
+    /* Display a listing of the resource.
+        *
+        * @return \Illuminate\Http\Response
+        */
     public function index()
     {
         $subscribers = Subscriber::all();
@@ -20,6 +24,14 @@ class SubscriberController extends Controller
             'data' => $subscribers,
         ]);
     }
+
+
+    /*
+        * Store a newly created resource in storage.
+        *
+        * @param  \Illuminate\Http\Request  $request
+        * @return \Illuminate\Http\Response
+        */
 
     public function store(Request $request)
     {
