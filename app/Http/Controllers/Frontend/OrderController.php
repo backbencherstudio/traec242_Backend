@@ -51,6 +51,11 @@ class OrderController extends Controller
         ]);
     }
 
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function show($id)
     {
         $order = Order::with(['service', 'pricing', 'payment', 'user'])
