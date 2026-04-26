@@ -43,6 +43,12 @@ class BasicContentController extends Controller
         return $this->sendResponse($content);
     }
 
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+
     public function privacy()
     {
         $content = PrivacyPolicy::first();
