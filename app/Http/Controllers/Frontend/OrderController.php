@@ -257,6 +257,11 @@ class OrderController extends Controller
         }
     }
 
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function success(Request $request, $orderId)
     {
         Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
