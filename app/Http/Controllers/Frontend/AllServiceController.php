@@ -9,6 +9,12 @@ use Illuminate\Http\Request;
 
 class AllServiceController extends Controller
 {
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function index(Request $request)
     {
         $services = Service::where('status', 1)

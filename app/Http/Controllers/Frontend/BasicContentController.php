@@ -10,6 +10,11 @@ use App\Models\User;
 
 class BasicContentController extends Controller
 {
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function home_response()
     {
         $content = Content::pluck('value', 'key');
