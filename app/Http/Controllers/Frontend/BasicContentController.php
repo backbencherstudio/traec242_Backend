@@ -31,6 +31,11 @@ class BasicContentController extends Controller
         return $this->sendResponse($data);
     }
 
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function faq()
     {
         $content = Faq::all();
