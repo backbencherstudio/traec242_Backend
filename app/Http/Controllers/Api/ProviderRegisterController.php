@@ -28,6 +28,32 @@ class ProviderRegisterController extends Controller
             ->where('status', true)
             ->firstOrFail();
 
+        if (! $request->filled('otp')) {
+            $secondsUntilNextAttempt = $this->otpService->getSecondsUntilNextAttempt($validated['email']);
+            if ($secondsUntilNextAttempt > 0) {
+                return $this->sendError(
+                    "Please wait {$secondsUntilNextAttempt} seconds before requesting another OTP.",
+                    [],
+                    429
+                );
+            }
+
+            $otpSent = $this->otpService->sendRegistrationOtp($validated['email']);
+
+            if (! $otpSent) {
+                return $this->sendError('Failed to send OTP', [], 500);
+            }
+
+            return $this->sendResponse([
+                'email' => $validated['email'],
+                'requires_verification' => true,
+            ], 'OTP sent to your email. Submit the registration again with the OTP to complete provider signup.');
+        }
+
+        if (! $this->otpService->verifyRegistrationOtp($validated['email'], $validated['otp'])) {
+            return $this->sendError('Invalid or expired OTP', [], 400);
+        }
+
         $user = null;
 
         try {
@@ -48,7 +74,7 @@ class ProviderRegisterController extends Controller
                 'type' => 2,
                 'status' => 1,
                 'provider_status' => false,
-                'is_verified' => false,
+                'is_verified' => true,
             ]);
 
             $user->newSubscription('provider', $plan->stripe_price_id)
@@ -61,25 +87,15 @@ class ProviderRegisterController extends Controller
 
             DB::commit();
 
-            if ($user) {
-                $this->otpService->sendRegistrationOtp($user);
-            }
-
-            return $this->sendResponse([
-                'user' => $user ? UserResource::make($user->fresh(['plan', 'subscriptions'])) : null,
-            ], 'Provider registered. Please verify your email with OTP sent to your email.', 201);
+            return $this->registeredProviderResponse($user);
         } catch (IncompletePayment $exception) {
             DB::commit();
 
-            if ($user) {
-                $this->otpService->sendRegistrationOtp($user);
-            }
-
-            return $this->sendResponse([
-                'user' => $user ? UserResource::make($user->fresh(['plan', 'subscriptions'])) : null,
-                'payment_intent_client_secret' => $exception->payment->clientSecret(),
-                'payment_status' => $exception->payment->status,
-            ], 'Provider registered. Please verify your email with OTP sent to your email.', 201);
+            return $this->registeredProviderResponse(
+                $user,
+                $exception->payment->clientSecret(),
+                $exception->payment->status
+            );
         } catch (ApiErrorException $exception) {
             DB::rollBack();
 
@@ -107,5 +123,25 @@ class ProviderRegisterController extends Controller
             'stripe_public_key' => config('services.stripe.key'),
             'plans' => $plans,
         ]);
+    }
+
+    protected function registeredProviderResponse(
+        ?User $user,
+        ?string $paymentIntentClientSecret = null,
+        ?string $paymentStatus = null
+    ): JsonResponse {
+        if (! $user) {
+            return $this->sendError('Registration failed', [], 500);
+        }
+
+        $token = auth('api')->login($user);
+        $user->update(['jwt_token' => $token]);
+
+        return $this->sendResponse(array_filter([
+            'user' => UserResource::make($user->fresh(['plan', 'subscriptions'])),
+            'token' => $token,
+            'payment_intent_client_secret' => $paymentIntentClientSecret,
+            'payment_status' => $paymentStatus,
+        ], fn ($value) => ! is_null($value)), 'Provider registered successfully', 201);
     }
 }
