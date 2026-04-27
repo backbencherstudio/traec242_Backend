@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\IncludeOrder;
 use App\Models\Order;
 use App\Models\ProviderPayment;
+use App\Models\ProviderStripe;
 use App\Models\ServicePricing;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -198,7 +199,7 @@ class OrderController extends Controller
                 'status' => 'pending',
             ]);
 
-            $includeOrderIds = $request->include_order_ids;
+            $includeOrderIds = $request->include_order_ids ?? [];
             $includeOrders = IncludeOrder::whereIn('id', $includeOrderIds)->get();
             $includeOrderTotal = $includeOrders->sum('price');
 
@@ -206,7 +207,18 @@ class OrderController extends Controller
             $servicePrice = $pricing->price;
             $finalAmount = $servicePrice + $includeOrderTotal;
 
-            Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
+            $providerStripe = ProviderStripe::where('user_id', auth()->id())->first();
+
+            if (!$providerStripe) {
+                DB::rollBack();
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Stripe key not found'
+                ], 404);
+            }
+
+            Stripe::setApiKey($providerStripe->stripe_secret_key);
+
             $checkoutSession = Session::create([
                 'payment_method_types' => ['card'],
                 'line_items' => [
@@ -216,7 +228,7 @@ class OrderController extends Controller
                             'product_data' => [
                                 'name' => $request->event_name,
                             ],
-                            'unit_amount' => $finalAmount * 100,
+                            'unit_amount' => (int) round($finalAmount * 100),
                         ],
                         'quantity' => 1,
                     ],
@@ -264,27 +276,80 @@ class OrderController extends Controller
      */
     public function success(Request $request, $orderId)
     {
-        Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
-
         $order = Order::findOrFail($orderId);
 
         $session_id = $request->query('session_id');
 
+        if (!$session_id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Session ID missing'
+            ], 400);
+        }
+
+        if ($order->status === 'confirmed') {
+            return response()->json([
+                'status' => true,
+                'message' => 'Order already confirmed',
+                'order' => $order,
+            ], 200);
+        }
+
+        $providerStripe = ProviderStripe::where('user_id', $order->user_id)->first();
+
+        if (!$providerStripe) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Stripe key not found'
+            ], 404);
+        }
+
+        Stripe::setApiKey($providerStripe->stripe_secret_key);
+
+        DB::beginTransaction();
+
         try {
 
             $session = Session::retrieve($session_id);
+            if (!$session || !$session->payment_intent) {
+                DB::rollBack();
+
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid Stripe session'
+                ], 400);
+            }
             $payment_intent = PaymentIntent::retrieve($session->payment_intent);
 
+            if (!$payment_intent || !isset($payment_intent->status)) {
+                DB::rollBack();
+
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid payment intent'
+                ], 400);
+            }
+
+            $payment = ProviderPayment::where('order_id', $order->id)->first();
+
+            if (!$payment) {
+                DB::rollBack();
+
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Payment record not found'
+                ], 404);
+            }
             switch ($payment_intent->status) {
                 case 'succeeded':
                     $order->status = 'confirmed';
                     $order->save();
 
-                    $payment = ProviderPayment::where('order_id', $order->id)->first();
                     $payment->transaction_id = $payment_intent->id;
                     $payment->status = 'successful';
                     $payment->save();
 
+                    DB::commit();
                     return response()->json([
                         'status' => true,
                         'message' => 'Payment successful',
@@ -294,13 +359,13 @@ class OrderController extends Controller
                     ], 200);
 
                 case 'failed':
-                    $order->status = 'failed';
+                    $order->status = 'cancelled';
                     $order->save();
 
-                    $payment = ProviderPayment::where('order_id', $order->id)->first();
                     $payment->status = 'failed';
                     $payment->save();
 
+                    DB::commit();
                     return response()->json([
                         'status' => false,
                         'message' => 'Payment failed',
@@ -309,13 +374,13 @@ class OrderController extends Controller
                     ], 400);
 
                 case 'canceled':
-                    $order->status = 'canceled';
+                    $order->status = 'cancelled';
                     $order->save();
 
-                    $payment = ProviderPayment::where('order_id', $order->id)->first();
-                    $payment->status = 'canceled';
+                    $payment->status = 'failed';
                     $payment->save();
 
+                    DB::commit();
                     return response()->json([
                         'status' => false,
                         'message' => 'Payment canceled',
@@ -324,12 +389,16 @@ class OrderController extends Controller
                     ], 400);
 
                 default:
+                    DB::rollBack();
+
                     return response()->json([
                         'status' => false,
                         'message' => 'Unexpected payment status: ' . $payment_intent->status,
                     ], 500);
             }
         } catch (\Exception $e) {
+            DB::rollBack();
+
             return response()->json([
                 'status' => false,
                 'message' => 'Payment processing failed: ' . $e->getMessage(),
