@@ -29,16 +29,11 @@ class VerifyRegistrationOtpController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if ($user->is_verified) {
+        if ($user?->is_verified) {
             return $this->sendError('Email already verified', [], 400);
         }
 
-        $isValid = $this->otpService->verifyRegistrationOtp(
-            $request->email,
-            $request->otp
-        );
-
-        if (! $isValid) {
+        if (! $this->otpService->verifyRegistrationOtp($request->email, $request->otp)) {
             return $this->sendError('Invalid or expired OTP', [], 400);
         }
 
@@ -56,7 +51,7 @@ class VerifyRegistrationOtpController extends Controller
     public function resend(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email|exists:users,email',
+            'email' => 'required|email',
         ]);
 
         if ($validator->fails()) {
@@ -65,7 +60,7 @@ class VerifyRegistrationOtpController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if ($user->is_verified) {
+        if ($user?->is_verified) {
             return $this->sendError('Email already verified', [], 400);
         }
 
@@ -74,7 +69,7 @@ class VerifyRegistrationOtpController extends Controller
             return $this->sendError("Please wait {$seconds} seconds before requesting another OTP.", [], 429);
         }
 
-        $sent = $this->otpService->sendRegistrationOtp($user);
+        $sent = $this->otpService->sendRegistrationOtp($request->email, $user?->id);
 
         if (! $sent) {
             return $this->sendError('Failed to send OTP', [], 500);

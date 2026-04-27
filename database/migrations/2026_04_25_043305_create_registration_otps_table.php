@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('registration_otps', function (Blueprint $table) {
             $table->id();
             $table->string('email')->unique();
-            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->string('otp');
             $table->timestamp('expires_at');
             $table->timestamps();

@@ -133,8 +133,56 @@
             color: #888;
         }
 
-        .d-none {
+        .helper-text {
+            margin-top: 6px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .otp-panel {
             display: none;
+            margin-top: 20px;
+            padding: 16px;
+            border: 1px solid #d9def7;
+            border-radius: 8px;
+            background: #f7f8ff;
+        }
+
+        .otp-panel.active {
+            display: block;
+        }
+
+        .otp-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .otp-actions button {
+            margin-top: 0;
+        }
+
+        .secondary-btn {
+            background: #e9ecfb;
+            color: #334;
+        }
+
+        .secondary-btn:hover {
+            background: #dce1fb;
+        }
+
+        .payment-summary {
+            display: none;
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 6px;
+            background: #f3f5fb;
+            color: #334;
+            font-size: 14px;
+        }
+
+        .payment-summary.active {
+            display: block;
         }
     </style>
 </head>
@@ -217,9 +265,25 @@
                 <label>Card Details</label>
                 <div id="card-element"></div>
                 <div id="card-errors"></div>
+                <div class="helper-text" id="card-helper">Use the card once to generate a payment method before the OTP
+                    step.</div>
             </div>
 
-            <button type="submit" id="submit-btn">Test Payment</button>
+            <div id="payment-summary" class="payment-summary"></div>
+
+            <div id="otp-panel" class="otp-panel">
+                <div class="form-group">
+                    <label>OTP</label>
+                    <input type="text" id="otp" inputmode="numeric" maxlength="4" placeholder="Enter the 4-digit OTP">
+                    <div class="helper-text">The same provider form will be submitted again with this OTP.</div>
+                </div>
+
+                <div class="otp-actions">
+                    <button type="button" id="resend-btn" class="secondary-btn">Resend OTP</button>
+                </div>
+            </div>
+
+            <button type="submit" id="submit-btn">Send OTP</button>
         </form>
 
         <div id="result" class="result"></div>
@@ -255,68 +319,147 @@
         const form = document.getElementById('payment-form');
         const resultDiv = document.getElementById('result');
         const submitBtn = document.getElementById('submit-btn');
+        const resendBtn = document.getElementById('resend-btn');
+        const otpPanel = document.getElementById('otp-panel');
+        const paymentSummary = document.getElementById('payment-summary');
+        const cardHelper = document.getElementById('card-helper');
+        const cardContainer = document.getElementById('card-element').parentElement;
+
+        let pendingPaymentMethodId = null;
+        let awaitingOtp = false;
+        let registrationComplete = false;
+
+        function getFormData() {
+            return {
+                name: document.getElementById('name').value,
+                last_name: document.getElementById('last_name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value,
+                state: document.getElementById('state').value,
+                zip_code: document.getElementById('zip_code').value,
+                category_id: [parseInt(document.getElementById('category_id').value, 10)],
+                plan_id: parseInt(document.getElementById('plan_id').value, 10),
+                password: document.getElementById('password').value,
+                password_confirmation: document.getElementById('password_confirmation').value,
+                payment_method: pendingPaymentMethodId
+            };
+        }
+
+        function setLoadingState(message) {
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = message;
+            submitBtn.disabled = true;
+            resendBtn.disabled = true;
+        }
+
+        function clearLoadingState() {
+            submitBtn.disabled = registrationComplete;
+            resendBtn.disabled = registrationComplete || !awaitingOtp;
+        }
+
+        function renderApiError(data) {
+            if (data.errors) {
+                return JSON.stringify(data.errors, null, 2);
+            }
+
+            return data.message || JSON.stringify(data);
+        }
+
+        function enterOtpStep(email) {
+            awaitingOtp = true;
+            otpPanel.classList.add('active');
+            paymentSummary.classList.add('active');
+            paymentSummary.innerHTML = '<strong>Payment Method Ready</strong><br>ID: ' + pendingPaymentMethodId + '<br>Email OTP sent to: ' + email;
+            cardContainer.style.display = 'none';
+            cardHelper.textContent = 'Payment method saved for the confirmation step.';
+            submitBtn.textContent = 'Confirm OTP & Create Provider';
+            resendBtn.disabled = false;
+        }
+
+        async function createPaymentMethod() {
+            const { paymentMethod, error } = await stripe.createPaymentMethod({
+                type: 'card',
+                card: cardElement,
+                billing_details: {
+                    name: document.getElementById('name').value + ' ' + document.getElementById('last_name').value,
+                    email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+                }
+            });
+
+            if (error) {
+                throw new Error('Card Error: ' + error.message);
+            }
+
+            pendingPaymentMethodId = paymentMethod.id;
+        }
+
+        async function submitProviderRegistration(payload) {
+            const response = await fetch('/api/register_provider', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            return { response, data };
+        }
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            submitBtn.disabled = true;
-            resultDiv.className = 'result loading';
-            resultDiv.textContent = 'Processing payment...';
+            setLoadingState(awaitingOtp ? 'Verifying OTP and creating provider...' : 'Creating payment method and sending OTP...');
 
             try {
-                const { paymentMethod, error } = await stripe.createPaymentMethod({
-                    type: 'card',
-                    card: cardElement,
-                    billing_details: {
-                        name: document.getElementById('name').value + ' ' + document.getElementById('last_name').value,
-                        email: document.getElementById('email').value,
-                        phone: document.getElementById('phone').value,
-                    }
-                });
-
-                if (error) {
-                    resultDiv.className = 'result error';
-                    resultDiv.textContent = 'Card Error: ' + error.message;
-                    submitBtn.disabled = false;
-                    return;
+                if (!awaitingOtp) {
+                    await createPaymentMethod();
                 }
 
-                const formData = {
-                    name: document.getElementById('name').value,
-                    last_name: document.getElementById('last_name').value,
-                    email: document.getElementById('email').value,
-                    phone: document.getElementById('phone').value,
-                    address: document.getElementById('address').value,
-                    city: document.getElementById('city').value,
-                    state: document.getElementById('state').value,
-                    zip_code: document.getElementById('zip_code').value,
-                    category_id: [parseInt(document.getElementById('category_id').value)],
-                    plan_id: parseInt(document.getElementById('plan_id').value),
-                    password: document.getElementById('password').value,
-                    password_confirmation: document.getElementById('password_confirmation').value,
-                    payment_method: paymentMethod.id
-                };
+                const formData = getFormData();
 
-                resultDiv.textContent = 'Payment method created! Submitting to API...';
+                if (awaitingOtp) {
+                    const otp = document.getElementById('otp').value.trim();
 
-                const response = await fetch('/api/register_provider', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
+                    if (otp.length !== 4) {
+                        throw new Error('Enter the 4-digit OTP first.');
+                    }
 
-                const data = await response.json();
+                    formData.otp = otp;
+                }
 
-                console.log(data)
+                const { response, data } = await submitProviderRegistration(formData);
 
                 if (response.ok) {
-                    resultDiv.className = 'result success';
-                    resultDiv.innerHTML = '<strong>Success!</strong><br>Payment Method ID: ' + paymentMethod.id + '<br>User: ' + data.data.user.name + ' ' + data.data.user.last_name + '<br>Subscription: ' + data.data.user.provider_subscription.stripe_status;
+                    if (!awaitingOtp && data.data && data.data.requires_verification) {
+                        enterOtpStep(formData.email);
+                        resultDiv.className = 'result success';
+                        resultDiv.innerHTML = '<strong>OTP Sent</strong><br>Payment Method ID: ' + pendingPaymentMethodId + '<br>Email: ' + formData.email;
+                    } else {
+                        registrationComplete = true;
+                        awaitingOtp = false;
+                        resultDiv.className = 'result success';
+                        resultDiv.innerHTML = '<strong>Success!</strong><br>Payment Method ID: ' + pendingPaymentMethodId + '<br>User: ' + data.data.user.name + ' ' + data.data.user.last_name + '<br>Subscription: ' + data.data.user.provider_subscription.stripe_status;
+
+                        if (data.data.payment_status) {
+                            resultDiv.innerHTML += '<br>Payment Status: ' + data.data.payment_status;
+                        }
+
+                        if (data.data.payment_intent_client_secret) {
+                            resultDiv.innerHTML += '<br>Client Secret: ' + data.data.payment_intent_client_secret;
+                        }
+
+                        submitBtn.textContent = 'Provider Created';
+                        submitBtn.disabled = true;
+                        resendBtn.disabled = true;
+                    }
                 } else {
                     resultDiv.className = 'result error';
-                    resultDiv.innerHTML = '<strong>API Error:</strong><br>' + (data.message || JSON.stringify(data));
+                    resultDiv.innerHTML = '<strong>API Error:</strong><br><pre style="white-space:pre-wrap;margin:8px 0 0;">' + renderApiError(data) + '</pre>';
                 }
 
             } catch (err) {
@@ -324,7 +467,39 @@
                 resultDiv.textContent = 'Error: ' + err.message;
             }
 
-            submitBtn.disabled = false;
+            clearLoadingState();
+        });
+
+        resendBtn.addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+
+            setLoadingState('Sending another OTP...');
+
+            try {
+                const response = await fetch('/api/resend-email-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = '<strong>OTP Resent</strong><br>' + data.message;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = '<strong>API Error:</strong><br><pre style="white-space:pre-wrap;margin:8px 0 0;">' + renderApiError(data) + '</pre>';
+                }
+            } catch (err) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'Error: ' + err.message;
+            }
+
+            clearLoadingState();
         });
     </script>
 </body>

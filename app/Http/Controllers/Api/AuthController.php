@@ -47,11 +47,25 @@ class AuthController extends Controller
         if (! $user->is_verified) {
             Auth::guard('api')->logout();
 
-            $this->otpService->sendRegistrationOtp($user);
+            $message = 'Please verify your email.';
+            $secondsUntilNextAttempt = $this->otpService->getSecondsUntilNextAttempt($user->email);
+
+            if ($secondsUntilNextAttempt > 0) {
+                $message .= ' Use the OTP already sent to your email.';
+            } else {
+                $otpSent = $this->otpService->sendRegistrationOtp(
+                    $user->email,
+                    $user->id
+                );
+
+                $message .= $otpSent
+                    ? ' A new OTP has been sent to your email.'
+                    : ' We could not send a new OTP right now.';
+            }
 
             return response()->json([
                 'success' => false,
-                'message' => 'Please verify your email. A new OTP has been sent to your email.',
+                'message' => $message,
                 'requires_verification' => true,
                 'email' => $user->email,
             ], 403);
@@ -80,6 +94,7 @@ class AuthController extends Controller
             'last_name' => 'nullable|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
+            'otp' => 'nullable|digits:4',
         ]);
 
         if ($validator->fails()) {
@@ -89,23 +104,58 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $otp = (string) rand(100000, 999999);
+        if (! $request->filled('otp')) {
+            $secondsUntilNextAttempt = $this->otpService->getSecondsUntilNextAttempt($request->email);
+            if ($secondsUntilNextAttempt > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Please wait {$secondsUntilNextAttempt} seconds before requesting another OTP.",
+                ], 429);
+            }
+
+            $otpSent = $this->otpService->sendRegistrationOtp($request->email);
+
+            if (! $otpSent) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to send OTP.',
+                ], 500);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'OTP sent to your email. Submit the registration again with the OTP to complete signup.',
+                'data' => [
+                    'email' => $request->email,
+                    'requires_verification' => true,
+                ],
+            ], 200);
+        }
+
+        if (! $this->otpService->verifyRegistrationOtp($request->email, $request->otp)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired OTP',
+            ], 400);
+        }
 
         $user = User::create([
             'name' => $request->name,
             'last_name' => $request->last_name,
             'email' => $request->email,
             'type' => 0,
-            'password' => Hash::make($request->password),
-            'is_verified' => false,
+            'password' => $request->password,
+            'is_verified' => true,
         ]);
 
-        $this->otpService->sendRegistrationOtp($user);
+        $token = Auth::guard('api')->login($user);
+        $user->update(['jwt_token' => $token]);
 
         return response()->json([
             'success' => true,
-            'message' => 'User registered. Please verify your email with OTP sent to your email.',
+            'message' => 'User registered successfully',
             'user' => UserResource::make($user->loadMissing(['plan', 'subscriptions'])),
+            'token' => $token,
         ], 201);
     }
 
@@ -135,9 +185,9 @@ class AuthController extends Controller
         $imagePath = null;
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+            $imageName = time().'_'.Str::random(10).'.'.$image->getClientOriginalExtension();
             $image->move(public_path('user'), $imageName);
-            $imagePath = 'user/' . $imageName;
+            $imagePath = 'user/'.$imageName;
         }
 
         $user = User::create([
@@ -201,8 +251,8 @@ class AuthController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'phone' => 'nullable|string|max:20|unique:users,phone,' . $user->id,
+            'email' => 'required|email|unique:users,email,'.$user->id,
+            'phone' => 'nullable|string|max:20|unique:users,phone,'.$user->id,
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:0,1',
             'role' => 'required|exists:roles,id',
@@ -221,9 +271,9 @@ class AuthController extends Controller
             }
 
             $image = $request->file('image');
-            $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+            $imageName = time().'_'.Str::random(10).'.'.$image->getClientOriginalExtension();
             $image->move(public_path('user'), $imageName);
-            $user->image = 'user/' . $imageName;
+            $user->image = 'user/'.$imageName;
         }
 
         $user->name = $request->name;
@@ -359,7 +409,7 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $key = 'otp-' . $request->email;
+        $key = 'otp-'.$request->email;
 
         if (RateLimiter::tooManyAttempts($key, 1)) {
             $seconds = RateLimiter::availableIn($key);
