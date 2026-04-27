@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -10,9 +9,9 @@ use Illuminate\Support\Facades\RateLimiter;
 
 class OtpService
 {
-    public function sendRegistrationOtp(User $user): bool
+    public function sendRegistrationOtp(string $email, ?int $userId = null): bool
     {
-        $key = 'registration-otp-'.$user->email;
+        $key = $this->getRateLimitKey($email);
 
         if (RateLimiter::tooManyAttempts($key, 1)) {
             return false;
@@ -21,11 +20,11 @@ class OtpService
         $otp = random_int(1000, 9999);
 
         DB::table('registration_otps')->updateOrInsert(
-            ['email' => $user->email],
+            ['email' => $email],
             [
                 'otp' => Hash::make($otp),
                 'expires_at' => now()->addMinutes(10),
-                'user_id' => $user->id,
+                'user_id' => $userId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]
@@ -34,15 +33,15 @@ class OtpService
         try {
             Mail::raw(
                 "Your verification OTP is: {$otp}. It will expire in 10 minutes.",
-                function ($message) use ($user) {
-                    $message->to($user->email)
+                function ($message) use ($email) {
+                    $message->to($email)
                         ->subject('Email Verification OTP');
                 }
             );
             RateLimiter::hit($key, 60);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (\Throwable $exception) {
             return false;
         }
     }
@@ -58,7 +57,7 @@ class OtpService
         }
 
         if (now()->gt($record->expires_at)) {
-            DB::table('registration_otps')->where('email', $email)->delete();
+            $this->deleteRegistrationAttempt($email);
 
             return false;
         }
@@ -67,7 +66,7 @@ class OtpService
             return false;
         }
 
-        DB::table('registration_otps')->where('email', $email)->delete();
+        $this->deleteRegistrationAttempt($email);
 
         return true;
     }
@@ -80,5 +79,12 @@ class OtpService
     public function getSecondsUntilNextAttempt(string $email): int
     {
         return RateLimiter::availableIn($this->getRateLimitKey($email));
+    }
+
+    public function deleteRegistrationAttempt(string $email): void
+    {
+        DB::table('registration_otps')
+            ->where('email', $email)
+            ->delete();
     }
 }

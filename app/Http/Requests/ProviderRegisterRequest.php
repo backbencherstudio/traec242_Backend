@@ -46,6 +46,7 @@ class ProviderRegisterRequest extends FormRequest
                 }),
             ],
             'payment_method' => ['required', 'string'],
+            'otp' => ['nullable', 'digits:4'],
         ];
     }
 }

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Stripe\Customer;
 use Stripe\PaymentMethod;
 use Stripe\StripeClient;
@@ -15,7 +16,7 @@ class ProviderRegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_provider_can_register_with_a_cashier_subscription(): void
+    public function test_provider_registration_sends_otp_first_and_only_creates_the_account_after_otp_confirmation(): void
     {
         $this->fakeStripeClient();
 
@@ -42,7 +43,7 @@ class ProviderRegistrationTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $response = $this->postJson('/api/register_provider', [
+        $initialResponse = $this->postJson('/api/register_provider', [
             'name' => 'John',
             'last_name' => 'Provider',
             'email' => 'provider@example.com',
@@ -58,11 +59,42 @@ class ProviderRegistrationTest extends TestCase
             'payment_method' => 'pm_card_visa',
         ]);
 
-        $this->assertSame(201, $response->status(), $response->getContent());
-
-        $response
+        $initialResponse->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.user.type', 2)
+            ->assertJsonPath('data.email', 'provider@example.com')
+            ->assertJsonPath('data.requires_verification', true);
+
+        $this->assertDatabaseMissing('users', [
+            'email' => 'provider@example.com',
+        ]);
+
+        DB::table('registration_otps')
+            ->where('email', 'provider@example.com')
+            ->update([
+                'otp' => Hash::make('1234'),
+                'updated_at' => now(),
+            ]);
+
+        $finalResponse = $this->postJson('/api/register_provider', [
+            'name' => 'John',
+            'last_name' => 'Provider',
+            'email' => 'provider@example.com',
+            'phone' => '123456789',
+            'address' => '123 Main Street',
+            'city' => 'Austin',
+            'state' => 'Texas',
+            'zip_code' => '78701',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'category_id' => [$categoryId],
+            'plan_id' => $planId,
+            'payment_method' => 'pm_card_visa',
+            'otp' => '1234',
+        ]);
+
+        $finalResponse->assertStatus(201)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.user.type', 'provider')
             ->assertJsonPath('data.user.plan_id', $planId)
             ->assertJsonPath('data.user.provider_subscription.status', 'subscribed')
             ->assertJsonPath('data.user.provider_subscription.stripe_status', 'active');
@@ -73,6 +105,7 @@ class ProviderRegistrationTest extends TestCase
             'plan_id' => $planId,
             'stripe_id' => 'cus_provider_test',
             'pm_last_four' => '4242',
+            'is_verified' => true,
         ]);
 
         $this->assertDatabaseHas('subscriptions', [
@@ -80,6 +113,68 @@ class ProviderRegistrationTest extends TestCase
             'stripe_id' => 'sub_provider_test',
             'stripe_status' => 'active',
             'stripe_price' => 'price_provider_monthly',
+        ]);
+    }
+
+    public function test_provider_registration_requires_a_valid_otp(): void
+    {
+        $this->fakeStripeClient();
+
+        $categoryId = DB::table('categories')->insertGetId([
+            'name' => 'Photography',
+            'slug' => 'photography',
+            'status' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $planId = DB::table('plans')->insertGetId([
+            'name' => 'premium',
+            'title' => 'Provider Monthly Plan',
+            'price' => 100,
+            'currency' => 'USD',
+            'package' => 'monthly',
+            'day' => 30,
+            'features' => json_encode(['Featured provider listing']),
+            'stripe_product_id' => 'prod_provider',
+            'stripe_price_id' => 'price_provider_monthly',
+            'status' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('registration_otps')->insert([
+            'email' => 'provider@example.com',
+            'user_id' => null,
+            'otp' => Hash::make('9999'),
+            'expires_at' => now()->addMinutes(10),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->postJson('/api/register_provider', [
+            'name' => 'John',
+            'last_name' => 'Provider',
+            'email' => 'provider@example.com',
+            'phone' => '123456789',
+            'address' => '123 Main Street',
+            'city' => 'Austin',
+            'state' => 'Texas',
+            'zip_code' => '78701',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'category_id' => [$categoryId],
+            'plan_id' => $planId,
+            'payment_method' => 'pm_card_visa',
+            'otp' => '1234',
+        ]);
+
+        $response->assertStatus(400)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Invalid or expired OTP');
+
+        $this->assertDatabaseMissing('users', [
+            'email' => 'provider@example.com',
         ]);
     }
 
