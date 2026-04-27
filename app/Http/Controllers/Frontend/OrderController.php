@@ -148,7 +148,7 @@ class OrderController extends Controller
             'guest_count' => 'nullable|integer',
             'event_duration' => 'nullable|string',
             'event_description' => 'nullable|string',
-            'event_start_date' => 'required|date',
+            'event_start_date' => 'required|date|after_or_equal:today',
             'event_end_date' => 'required|date|after_or_equal:event_start_date',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
