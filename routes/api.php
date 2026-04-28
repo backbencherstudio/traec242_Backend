@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\SubcategoryController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\GoogleAuthController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\UserDashboardController;
 use App\Http\Controllers\Api\VerifyRegistrationOtpController;
 use App\Http\Controllers\Frontend\OrderController;
@@ -176,6 +177,10 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('show/{id}', [OrderController::class, 'show'])->name('order.show');
     });
 
+    //Profile
+    Route::prefix('profile')->group(function () {
+        Route::get('provider-profile/{id}', [ProfileController::class, 'providerProfile']);
+    });
 
     Route::prefix('user-dashboard')->group(function () {
         Route::get('summary', [UserDashboardController::class, 'summary']);
