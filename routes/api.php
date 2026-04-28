@@ -179,7 +179,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
 
     //Profile
     Route::prefix('profile')->group(function () {
-        Route::get('provider-profile/{id}', [ProfileController::class, 'providerProfile']);
+        Route::get('provider-profile', [ProfileController::class, 'providerProfile']);
     });
 
     Route::prefix('user-dashboard')->group(function () {
