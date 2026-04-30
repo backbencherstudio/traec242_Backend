@@ -184,13 +184,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('recent-message', [UserDashboardController::class, 'recentMessages']);
         Route::get('chat-list', [UserDashboardController::class, 'chat']);
     });
-    // Route::prefix('user-dashboard')->group(function () {
-    //     Route::get('summary', [UserDashboardController::class, 'summary']);
-    //     Route::get('recent-orders', [UserDashboardController::class, 'recentOrders']);
-    //     Route::get('recent-activity', [UserDashboardController::class, 'recentActivity']);
-    //     Route::get('recent-message', [UserDashboardController::class, 'recentMessages']);
-    //     Route::get('chat-list', [UserDashboardController::class, 'chat']);
-    // });
+    
 });
 
 Route::get('/order/success/{orderId}', [OrderController::class, 'success'])->name('order.success');
