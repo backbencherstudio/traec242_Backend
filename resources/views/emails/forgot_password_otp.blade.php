@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>You're Subscribed – {{ config('app.name') }}</title>
+    <title>Password Reset OTP – {{ config('app.name') }}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#FFF5F0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FFF5F0;padding:48px 16px;">
@@ -48,76 +48,57 @@
                                             <tr>
                                                 <td align="center" style="padding-bottom:28px;">
                                                     <div style="display:inline-block;width:64px;height:64px;background:linear-gradient(135deg,#FF6B2C,#FF8C55);border-radius:50%;text-align:center;line-height:64px;font-size:28px;">
-                                                        💌
+                                                        🔑
                                                     </div>
                                                 </td>
                                             </tr>
                                         </table>
 
                                         <h2 style="margin:0 0 10px;font-size:24px;font-weight:700;color:#1a1a2e;text-align:center;">
-                                            You're All Set!
+                                            Reset Your Password
                                         </h2>
                                         <p style="margin:0 0 36px;font-size:15px;color:#6b7280;text-align:center;line-height:1.7;">
-                                            Welcome to <strong style="color:#FF6B2C;">{{ config('app.name') }}</strong>! You'll be the first to know about new services, events, and exclusive updates.
+                                            We received a request to reset the password for your account.<br>
+                                            Use the code below to proceed. Do not share it with anyone.
                                         </p>
 
-                                        {{-- Email display --}}
+                                        {{-- OTP Box --}}
                                         <table width="100%" cellpadding="0" cellspacing="0">
                                             <tr>
-                                                <td style="background-color:#FFF5F0;border:1px solid #FFE0D0;border-radius:10px;padding:18px 24px;">
-                                                    <table width="100%" cellpadding="0" cellspacing="0">
-                                                        <tr>
-                                                            <td>
-                                                                <p style="margin:0 0 2px;font-size:11px;font-weight:700;color:#FF6B2C;text-transform:uppercase;letter-spacing:1px;">
-                                                                    Subscribed Email
-                                                                </p>
-                                                                <p style="margin:0;font-size:16px;font-weight:600;color:#1a1a2e;">
-                                                                    {{ $email }}
-                                                                </p>
-                                                            </td>
-                                                            <td style="text-align:right;vertical-align:middle;font-size:22px;">
-                                                                ✅
-                                                            </td>
-                                                        </tr>
-                                                    </table>
+                                                <td align="center" style="padding-bottom:28px;">
+                                                    <div style="display:inline-block;background-color:#FFF5F0;border:2px dashed #FF6B2C;border-radius:14px;padding:22px 52px;">
+                                                        <span style="font-size:44px;font-weight:800;letter-spacing:14px;color:#FF6B2C;font-family:'Courier New',Courier,monospace;">
+                                                            {{ $otp }}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         </table>
 
-                                        {{-- What to expect section --}}
-                                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px;">
+                                        {{-- Expiry banner --}}
+                                        <table width="100%" cellpadding="0" cellspacing="0">
                                             <tr>
-                                                <td>
-                                                    <p style="margin:0 0 16px;font-size:13px;font-weight:700;color:#1a1a2e;text-transform:uppercase;letter-spacing:0.8px;">
-                                                        What to Expect
+                                                <td style="background-color:#FFF3CD;border-left:4px solid #FF6B2C;border-radius:8px;padding:14px 20px;">
+                                                    <p style="margin:0;font-size:13px;color:#7c4a00;">
+                                                        ⏱&nbsp; This code is valid for <strong>5 minutes</strong> only. Request a new one if it expires.
                                                     </p>
                                                 </td>
                                             </tr>
+                                        </table>
+
+                                        {{-- Security warning --}}
+                                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;">
                                             <tr>
-                                                <td>
-                                                    <table width="100%" cellpadding="0" cellspacing="0">
-                                                        <tr>
-                                                            <td style="padding:8px 0;font-size:14px;color:#374151;">
-                                                                <span style="color:#FF6B2C;margin-right:8px;">✦</span> New service announcements &amp; updates
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td style="padding:8px 0;font-size:14px;color:#374151;">
-                                                                <span style="color:#FF6B2C;margin-right:8px;">✦</span> Exclusive event tips &amp; guides
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td style="padding:8px 0;font-size:14px;color:#374151;">
-                                                                <span style="color:#FF6B2C;margin-right:8px;">✦</span> Featured providers &amp; success stories
-                                                            </td>
-                                                        </tr>
-                                                    </table>
+                                                <td style="background-color:#FEF2F2;border-left:4px solid #EF4444;border-radius:8px;padding:14px 20px;">
+                                                    <p style="margin:0;font-size:13px;color:#991b1b;">
+                                                        🚨&nbsp; If you did not request a password reset, please ignore this email and secure your account immediately.
+                                                    </p>
                                                 </td>
                                             </tr>
                                         </table>
 
                                         <p style="margin:32px 0 0;font-size:13px;color:#9ca3af;text-align:center;line-height:1.7;">
-                                            Not you? Simply ignore this email — we won't send anything without your interest.
+                                            For your security, this request was logged. If you need further help, contact our support team.
                                         </p>
 
                                     </td>

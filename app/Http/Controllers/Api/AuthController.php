@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
+use App\Mail\ForgotPasswordOtpMail;
 use App\Models\User;
 use App\Services\OtpService;
 use Illuminate\Http\Request;
@@ -441,13 +442,7 @@ class AuthController extends Controller
         );
 
         try {
-            Mail::raw(
-                "Your password reset OTP is: {$otp} It will expire in 5 minutes.",
-                function ($message) use ($request) {
-                    $message->to($request->email)
-                        ->subject('Password Reset OTP');
-                }
-            );
+            Mail::to($request->email)->send(new ForgotPasswordOtpMail($otp));
             RateLimiter::hit($key, 30);
         } catch (\Exception $e) {
             return response()->json([

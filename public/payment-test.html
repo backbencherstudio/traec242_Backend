@@ -460,6 +460,7 @@
                 } else {
                     resultDiv.className = 'result error';
                     resultDiv.innerHTML = '<strong>API Error:</strong><br><pre style="white-space:pre-wrap;margin:8px 0 0;">' + renderApiError(data) + '</pre>';
+                    console.log(data)
                 }
 
             } catch (err) {

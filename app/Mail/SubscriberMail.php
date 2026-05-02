@@ -2,25 +2,26 @@
 
 namespace App\Mail;
 
-use Illuminate\Mail\Mailable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class SubscriberMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public $email;
+    public function __construct(public string $email) {}
 
-    public function __construct($email)
+    public function envelope(): Envelope
     {
-        $this->email = $email;
+        return new Envelope(subject: 'You\'re Subscribed to Evoke!');
     }
 
-    public function build()
+    public function content(): Content
     {
-        return $this->subject('Subscription Successful')
-                    ->view('emails.subscriber');
+        return new Content(view: 'emails.subscriber');
     }
 }
