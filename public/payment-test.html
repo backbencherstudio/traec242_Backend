@@ -4,505 +4,892 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Provider Payment Test</title>
+    <title>Provider Registration</title>
     <script src="https://js.stripe.com/v3/"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            background: #f5f5f5;
-            padding: 20px;
-            margin: 0;
-        }
-
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        h2 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #555;
-            font-weight: 500;
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #6772e5;
-        }
-
-        .row {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
             display: flex;
-            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
         }
 
-        .row>div {
-            flex: 1;
-        }
+        .wizard-wrapper { width: 100%; max-width: 680px; }
 
-        #card-element {
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background: white;
-        }
-
-        #card-errors {
-            color: #fa755a;
-            font-size: 13px;
-            margin-top: 5px;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #6772e5;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-
-        button:hover {
-            background: #7795f8;
-        }
-
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .result {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 5px;
-            display: none;
-        }
-
-        .result.success {
-            background: #d4edda;
-            color: #155724;
-            display: block;
-        }
-
-        .result.error {
-            background: #f8d7da;
-            color: #721c24;
-            display: block;
-        }
-
-        .result.loading {
-            background: #cce5ff;
-            color: #004085;
-            display: block;
-        }
-
-        .stripe-badge {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 12px;
-            color: #888;
-        }
-
-        .helper-text {
-            margin-top: 6px;
-            font-size: 13px;
-            color: #666;
-        }
-
-        .otp-panel {
-            display: none;
-            margin-top: 20px;
-            padding: 16px;
-            border: 1px solid #d9def7;
-            border-radius: 8px;
-            background: #f7f8ff;
-        }
-
-        .otp-panel.active {
-            display: block;
-        }
-
-        .otp-actions {
+        /* ── Stepper ── */
+        .stepper {
             display: flex;
-            gap: 10px;
-            margin-top: 12px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 28px;
         }
 
-        .otp-actions button {
-            margin-top: 0;
+        .step-item { display: flex; align-items: center; gap: 8px; }
+
+        .step-circle {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 600;
+            border: 2px solid #d1d5db;
+            background: #fff; color: #9ca3af;
+            transition: all .3s; flex-shrink: 0;
+        }
+        .step-circle.active  { background: #111827; border-color: #111827; color: #fff; }
+        .step-circle.done    { background: #111827; border-color: #111827; color: #fff; }
+        .step-circle.done::after { content: '✓'; }
+        .step-circle.done span   { display: none; }
+
+        .step-label { font-size: 12px; font-weight: 500; color: #9ca3af; white-space: nowrap; }
+        .step-label.active { color: #111827; font-weight: 600; }
+
+        .step-connector {
+            width: 48px; height: 2px;
+            background: #e5e7eb;
+            margin: 0 6px; flex-shrink: 0;
+            transition: background .3s;
+        }
+        .step-connector.done { background: #111827; }
+
+        /* ── Card ── */
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 24px rgba(0,0,0,.06);
+            overflow: hidden;
         }
 
-        .secondary-btn {
-            background: #e9ecfb;
-            color: #334;
+        .card-header { padding: 28px 32px 20px; border-bottom: 1px solid #f3f4f6; }
+        .card-header h2 { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 4px; }
+        .card-header p  { font-size: 14px; color: #6b7280; }
+        .card-body   { padding: 28px 32px; }
+
+        /* ── Steps ── */
+        .step         { display: none; }
+        .step.active  { display: block; }
+
+        /* ── Plan Cards ── */
+        .plan-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 14px;
         }
 
-        .secondary-btn:hover {
-            background: #dce1fb;
+        .plan-card {
+            border: 2px solid #e5e7eb; border-radius: 12px;
+            padding: 20px 16px; cursor: pointer;
+            transition: all .2s; position: relative;
+        }
+        .plan-card:hover    { border-color: #9ca3af; }
+        .plan-card.selected { border-color: #111827; background: #f9fafb; }
+
+        .plan-badge {
+            display: inline-block; font-size: 10px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: .06em;
+            background: #f3f4f6; color: #6b7280;
+            padding: 3px 8px; border-radius: 20px; margin-bottom: 10px;
+        }
+        .plan-card.selected .plan-badge { background: #111827; color: #fff; }
+
+        .plan-name  { font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 6px; }
+        .plan-price { font-size: 22px; font-weight: 800; color: #111827; }
+        .plan-price span { font-size: 14px; font-weight: 500; color: #9ca3af; }
+
+        .plan-features { margin-top: 12px; list-style: none; }
+        .plan-features li {
+            font-size: 13px; color: #6b7280; padding: 3px 0;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .plan-features li::before { content: '✓'; font-size: 11px; color: #111827; font-weight: 700; }
+
+        .plan-check {
+            position: absolute; top: 12px; right: 12px;
+            width: 20px; height: 20px; border-radius: 50%;
+            border: 2px solid #d1d5db;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .plan-card.selected .plan-check { background: #111827; border-color: #111827; }
+        .plan-card.selected .plan-check::after { content: '✓'; color: #fff; font-size: 11px; font-weight: 700; }
+
+        .plan-loading { text-align: center; color: #9ca3af; padding: 40px 0; font-size: 14px; }
+
+        /* ── Form Fields ── */
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px; }
+
+        .form-group input,
+        .form-group select {
+            width: 100%; padding: 11px 14px;
+            border: 1.5px solid #e5e7eb; border-radius: 10px;
+            font-size: 14px; color: #111827; background: #fff;
+            transition: border-color .2s; outline: none;
+        }
+        .form-group input:focus,
+        .form-group select:focus { border-color: #111827; }
+        .form-group input::placeholder { color: #c4c7ce; }
+
+        /* ── Category Checkboxes ── */
+        .category-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        .category-item {
+            border: 1.5px solid #e5e7eb; border-radius: 10px;
+            padding: 12px 14px; cursor: pointer;
+            display: flex; align-items: center; gap: 10px;
+            transition: all .2s; user-select: none;
+        }
+        .category-item:hover    { border-color: #9ca3af; background: #f9fafb; }
+        .category-item.selected { border-color: #111827; background: #f9fafb; }
+
+        .category-checkbox {
+            width: 18px; height: 18px; border-radius: 4px;
+            border: 2px solid #d1d5db; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            transition: all .2s;
+        }
+        .category-item.selected .category-checkbox { background: #111827; border-color: #111827; }
+        .category-item.selected .category-checkbox::after { content: '✓'; color: #fff; font-size: 11px; font-weight: 700; }
+
+        .category-name { font-size: 14px; font-weight: 600; color: #111827; }
+
+        /* ── Stripe separate fields ── */
+        .stripe-field {
+            border: 1.5px solid #e5e7eb; border-radius: 10px;
+            padding: 12px 14px; background: #fff;
+            transition: border-color .2s;
+        }
+        .stripe-field.focused { border-color: #111827; }
+
+        .card-field-errors { color: #ef4444; font-size: 12px; margin-top: 5px; min-height: 16px; }
+
+        /* ── Alerts ── */
+        .alert {
+            padding: 12px 16px; border-radius: 10px;
+            font-size: 13px; margin-top: 16px; display: none;
+        }
+        .alert.success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; display: block; }
+        .alert.error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; display: block; }
+        .alert.info    { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; display: block; }
+
+        /* ── Card Footer ── */
+        .card-footer {
+            padding: 20px 32px; border-top: 1px solid #f3f4f6;
+            display: flex; align-items: center; justify-content: space-between;
         }
 
-        .payment-summary {
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 11px 22px; border-radius: 10px;
+            font-size: 14px; font-weight: 600;
+            cursor: pointer; border: none; transition: all .2s;
+        }
+        .btn-primary { background: #111827; color: #fff; }
+        .btn-primary:hover:not(:disabled) { background: #1f2937; }
+        .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+        .btn-ghost   { background: transparent; color: #6b7280; border: 1.5px solid #e5e7eb; }
+        .btn-ghost:hover { background: #f9fafb; color: #111827; }
+        .btn-outline { background: transparent; color: #111827; border: 1.5px solid #d1d5db; }
+        .btn-outline:hover { background: #f9fafb; }
+
+        .step-counter { font-size: 13px; color: #9ca3af; }
+
+        .summary-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #f3f4f6; border-radius: 20px;
+            padding: 5px 12px; font-size: 13px; color: #374151; font-weight: 500;
+        }
+
+        .section-label {
+            font-size: 12px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: .06em;
+            color: #9ca3af; margin-bottom: 14px;
+        }
+
+        .stripe-footer {
+            text-align: center; margin-top: 16px;
+            font-size: 12px; color: #9ca3af;
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+
+        /* ── OTP Modal ── */
+        .modal-overlay {
             display: none;
-            margin-top: 10px;
-            padding: 12px;
-            border-radius: 6px;
-            background: #f3f5fb;
-            color: #334;
-            font-size: 14px;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,.45);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: #fff; border-radius: 16px;
+            box-shadow: 0 8px 40px rgba(0,0,0,.18);
+            width: 100%; max-width: 400px;
+            padding: 32px 28px;
+            position: relative;
+            animation: slideUp .25s ease;
         }
 
-        .payment-summary.active {
-            display: block;
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-close {
+            position: absolute; top: 16px; right: 16px;
+            width: 30px; height: 30px; border-radius: 50%;
+            background: #f3f4f6; border: none; cursor: pointer;
+            font-size: 16px; color: #6b7280;
+            display: flex; align-items: center; justify-content: center;
+            transition: background .2s;
+        }
+        .modal-close:hover { background: #e5e7eb; color: #111827; }
+
+        .modal-icon {
+            width: 52px; height: 52px; border-radius: 50%;
+            background: #f0fdf4; margin: 0 auto 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+        }
+
+        .modal h3 {
+            font-size: 18px; font-weight: 700; color: #111827;
+            text-align: center; margin-bottom: 6px;
+        }
+
+        .modal-sub {
+            font-size: 13px; color: #6b7280;
+            text-align: center; margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        /* OTP digit inputs */
+        .otp-digits {
+            display: flex; gap: 10px; justify-content: center;
+            margin-bottom: 20px;
+        }
+        .otp-digit {
+            width: 58px; height: 58px;
+            border: 1.5px solid #e5e7eb; border-radius: 12px;
+            font-size: 24px; font-weight: 700; color: #111827;
+            text-align: center; outline: none;
+            transition: border-color .2s;
+        }
+        .otp-digit:focus { border-color: #111827; }
+
+        .modal-actions { display: flex; flex-direction: column; gap: 10px; }
+        .modal-actions .btn { justify-content: center; width: 100%; }
+
+        .resend-row {
+            text-align: center; font-size: 13px; color: #9ca3af; margin-top: 12px;
+        }
+        .resend-row button {
+            background: none; border: none; color: #111827;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            padding: 0; text-decoration: underline;
+        }
+        .resend-row button:disabled { color: #9ca3af; text-decoration: none; cursor: default; }
+
+        #modal-result { margin-top: 12px; }
+
+        @media (max-width: 520px) {
+            .card-header, .card-body, .card-footer { padding-left: 20px; padding-right: 20px; }
+            .form-row     { grid-template-columns: 1fr; }
+            .category-grid { grid-template-columns: 1fr; }
+            .plan-grid    { grid-template-columns: 1fr; }
+            .step-label   { display: none; }
+            .step-connector { width: 28px; }
+            .otp-digit    { width: 48px; height: 48px; font-size: 20px; }
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <h2>Provider Payment Test</h2>
 
-        <form id="payment-form">
-            <div class="row">
-                <div class="form-group">
-                    <label>First Name</label>
-                    <input type="text" id="name" value="John" required>
-                </div>
-                <div class="form-group">
-                    <label>Last Name</label>
-                    <input type="text" id="last_name" value="Doe" required>
-                </div>
-            </div>
+<div class="wizard-wrapper">
 
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="email" value="john.doe@example.com" required>
-            </div>
-
-            <div class="form-group">
-                <label>Phone</label>
-                <input type="tel" id="phone" value="+1234567890" required>
-            </div>
-
-            <div class="form-group">
-                <label>Address</label>
-                <input type="text" id="address" value="123 Main Street" required>
-            </div>
-
-            <div class="row">
-                <div class="form-group">
-                    <label>City</label>
-                    <input type="text" id="city" value="New York" required>
-                </div>
-                <div class="form-group">
-                    <label>State</label>
-                    <input type="text" id="state" value="NY" required>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="form-group">
-                    <label>Zip Code</label>
-                    <input type="text" id="zip_code" value="10001" required>
-                </div>
-                <div class="form-group">
-                    <label>Category ID</label>
-                    <select id="category_id">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-group d-none">
-                <label>Plan ID</label>
-                <select id="plan_id">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="password" value="password123" required>
-            </div>
-
-            <div class="form-group">
-                <label>Confirm Password</label>
-                <input type="password" id="password_confirmation" value="password123" required>
-            </div>
-
-            <div class="form-group">
-                <label>Card Details</label>
-                <div id="card-element"></div>
-                <div id="card-errors"></div>
-                <div class="helper-text" id="card-helper">Use the card once to generate a payment method before the OTP
-                    step.</div>
-            </div>
-
-            <div id="payment-summary" class="payment-summary"></div>
-
-            <div id="otp-panel" class="otp-panel">
-                <div class="form-group">
-                    <label>OTP</label>
-                    <input type="text" id="otp" inputmode="numeric" maxlength="4" placeholder="Enter the 4-digit OTP">
-                    <div class="helper-text">The same provider form will be submitted again with this OTP.</div>
-                </div>
-
-                <div class="otp-actions">
-                    <button type="button" id="resend-btn" class="secondary-btn">Resend OTP</button>
-                </div>
-            </div>
-
-            <button type="submit" id="submit-btn">Send OTP</button>
-        </form>
-
-        <div id="result" class="result"></div>
-
-        <div class="stripe-badge">
-            Powered by Stripe Test Mode
+    <!-- Stepper -->
+    <div class="stepper" id="stepper">
+        <div class="step-item">
+            <div class="step-circle active" id="sc-1"><span>1</span></div>
+            <div class="step-label active" id="sl-1">Select Plan</div>
+        </div>
+        <div class="step-connector" id="conn-1"></div>
+        <div class="step-item">
+            <div class="step-circle" id="sc-2"><span>2</span></div>
+            <div class="step-label" id="sl-2">Personal Info</div>
+        </div>
+        <div class="step-connector" id="conn-2"></div>
+        <div class="step-item">
+            <div class="step-circle" id="sc-3"><span>3</span></div>
+            <div class="step-label" id="sl-3">Preferences</div>
+        </div>
+        <div class="step-connector" id="conn-3"></div>
+        <div class="step-item">
+            <div class="step-circle" id="sc-4"><span>4</span></div>
+            <div class="step-label" id="sl-4">Payment</div>
         </div>
     </div>
 
-    <script>
-        const stripe = Stripe('pk_test_51SSTv4ALLuOtlOzLGNLihqixur1Qum57SYcn2zxnoEjpkF4t5RVLg41SWkItnxu1nVfDX173IDTepQd7isJhEFXk00xDena5UA');
-        const elements = stripe.elements();
-        const cardElement = elements.create('card', {
-            style: {
-                base: {
-                    fontSize: '16px',
-                    color: '#333',
-                    '::placeholder': { color: '#ccc' }
-                }
-            }
+    <!-- Card -->
+    <div class="card">
+
+        <!-- Step 1: Select Plan -->
+        <div class="step active" id="step-1">
+            <div class="card-header">
+                <h2>Choose Your Plan</h2>
+                <p>Select the plan that fits your business needs</p>
+            </div>
+            <div class="card-body">
+                <div id="plan-list" class="plan-grid">
+                    <div class="plan-loading">Loading plans…</div>
+                </div>
+                <div id="plan-error" class="alert error" style="display:none;"></div>
+            </div>
+            <div class="card-footer">
+                <span class="step-counter">Step 1 of 4</span>
+                <button class="btn btn-primary" id="next-1" disabled>Next &rsaquo;</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Personal Information -->
+        <div class="step" id="step-2">
+            <div class="card-header">
+                <h2>Personal Information</h2>
+                <p>Tell us a bit about yourself</p>
+            </div>
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" id="name" placeholder="Enter your first name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" id="last_name" placeholder="Enter your last name" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="phone" placeholder="Enter your phone number" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Street Address</label>
+                    <input type="text" id="address" placeholder="Enter your street address" required>
+                </div>
+                <div class="form-row" style="grid-template-columns: 2fr 1fr 1fr;">
+                    <div class="form-group">
+                        <label>City</label>
+                        <input type="text" id="city" placeholder="City" required>
+                    </div>
+                    <div class="form-group">
+                        <label>State</label>
+                        <input type="text" id="state" placeholder="State" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Zip</label>
+                        <input type="text" id="zip_code" placeholder="Zip code" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="password" placeholder="Minimum 8 characters" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="password_confirmation" placeholder="Repeat password" required>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-ghost" id="back-2">&lsaquo; Back</button>
+                <span class="step-counter">Step 2 of 4</span>
+                <button class="btn btn-primary" id="next-2">Next &rsaquo;</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Preferences -->
+        <div class="step" id="step-3">
+            <div class="card-header">
+                <h2>Your Preferences</h2>
+                <p>Personalize your experience</p>
+            </div>
+            <div class="card-body">
+                <p class="section-label">What services are you interested in? (Select at least one)</p>
+                <div id="category-list" class="category-grid">
+                    <div class="plan-loading">Loading categories…</div>
+                </div>
+                <div id="category-error" class="alert error" style="display:none;"></div>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-ghost" id="back-3">&lsaquo; Back</button>
+                <span class="step-counter">Step 3 of 4</span>
+                <button class="btn btn-primary" id="next-3" disabled>Next &rsaquo;</button>
+            </div>
+        </div>
+
+        <!-- Step 4: Payment -->
+        <div class="step" id="step-4">
+            <div class="card-header">
+                <h2>Payment Details</h2>
+                <p>Secure payment powered by Stripe</p>
+            </div>
+            <div class="card-body">
+                <div id="order-summary" style="margin-bottom:20px; display:flex; gap:8px; flex-wrap:wrap;"></div>
+
+                <!-- Card Number -->
+                <div class="form-group">
+                    <label>Card Number</label>
+                    <div class="stripe-field" id="card-number-element"></div>
+                    <div class="card-field-errors" id="card-number-errors"></div>
+                </div>
+
+                <!-- Expiry + CVC -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Expiry Date</label>
+                        <div class="stripe-field" id="card-expiry-element"></div>
+                        <div class="card-field-errors" id="card-expiry-errors"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>CVC</label>
+                        <div class="stripe-field" id="card-cvc-element"></div>
+                        <div class="card-field-errors" id="card-cvc-errors"></div>
+                    </div>
+                </div>
+
+                <div id="result" class="alert"></div>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-ghost" id="back-4">&lsaquo; Back</button>
+                <span class="step-counter">Step 4 of 4</span>
+                <button class="btn btn-primary" id="submit-btn">Send OTP &rsaquo;</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="stripe-footer">
+        <svg viewBox="0 0 60 25" xmlns="http://www.w3.org/2000/svg" fill="#9ca3af" height="14">
+            <path d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a8.33 8.33 0 0 1-4.56 1.1c-4.01 0-6.83-2.5-6.83-7.48 0-4.19 2.39-7.52 6.3-7.52 3.92 0 5.96 3.28 5.96 7.5 0 .4-.04 1.26-.06 1.48zm-5.92-5.62c-1.03 0-2.17.73-2.17 2.58h4.25c0-1.85-1.07-2.58-2.08-2.58zM40.95 20.3c-1.44 0-2.32-.6-2.9-1.04l-.02 4.63-4.12.87V6.27h3.64l.19 1.02a4.7 4.7 0 0 1 3.2-1.29c2.9 0 5.62 2.6 5.62 7.28 0 5.16-2.7 7.02-5.61 7.02zM40 9.83c-.95 0-1.54.34-1.97.81l.02 6.12c.4.44.98.78 1.95.78 1.52 0 2.54-1.65 2.54-3.87 0-2.15-1.04-3.84-2.54-3.84zM28.24 5.07a2.14 2.14 0 0 1 0-4.28 2.14 2.14 0 0 1 0 4.28zm-2.07 1.2h4.17v13.86h-4.17V6.27zm-5.42 13.86H16.6V6.27h4.15V20.13zm-2.07-15.06a2.14 2.14 0 0 1 0-4.28 2.14 2.14 0 0 1 0 4.28zM8.7 20.13H4.58V6.27h4.12v13.86zM6.65 5.07a2.14 2.14 0 0 1 0-4.28 2.14 2.14 0 0 1 0 4.28z"/>
+        </svg>
+        Secured by Stripe · Test Mode
+    </div>
+
+</div>
+
+<!-- ── OTP Modal ── -->
+<div class="modal-overlay" id="otp-modal">
+    <div class="modal">
+        <button class="modal-close" id="modal-close-btn" title="Close">✕</button>
+        <div class="modal-icon">📧</div>
+        <h3>Check Your Email</h3>
+        <p class="modal-sub" id="modal-sub-text">
+            We sent a 4-digit code to your email address.<br>Enter it below to complete registration.
+        </p>
+
+        <div class="otp-digits">
+            <input class="otp-digit" id="d1" type="text" inputmode="numeric" maxlength="1">
+            <input class="otp-digit" id="d2" type="text" inputmode="numeric" maxlength="1">
+            <input class="otp-digit" id="d3" type="text" inputmode="numeric" maxlength="1">
+            <input class="otp-digit" id="d4" type="text" inputmode="numeric" maxlength="1">
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn btn-primary" id="confirm-otp-btn">Confirm & Register</button>
+        </div>
+
+        <div class="resend-row">
+            Didn't receive it? <button id="resend-btn">Resend OTP</button>
+        </div>
+
+        <div id="modal-result" class="alert"></div>
+    </div>
+</div>
+
+<script>
+    // ── State ──
+    let currentStep = 1;
+    let selectedPlanId = null;
+    let selectedCategoryIds = [];
+    let pendingPaymentMethodId = null;
+    let registrationComplete = false;
+
+    // ── Stripe ──
+    const stripe = Stripe('pk_test_51SSTv4ALLuOtlOzLGNLihqixur1Qum57SYcn2zxnoEjpkF4t5RVLg41SWkItnxu1nVfDX173IDTepQd7isJhEFXk00xDena5UA');
+    const elements = stripe.elements();
+
+    const stripeStyle = {
+        base: { fontSize: '15px', color: '#111827', '::placeholder': { color: '#d1d5db' } }
+    };
+
+    const cardNumberEl = elements.create('cardNumber', { style: stripeStyle });
+    const cardExpiryEl = elements.create('cardExpiry', { style: stripeStyle });
+    const cardCvcEl    = elements.create('cardCvc',    { style: stripeStyle });
+
+    cardNumberEl.mount('#card-number-element');
+    cardExpiryEl.mount('#card-expiry-element');
+    cardCvcEl.mount('#card-cvc-element');
+
+    function bindStripeField(el, containerId, errorId) {
+        el.on('focus', () => document.getElementById(containerId).classList.add('focused'));
+        el.on('blur',  () => document.getElementById(containerId).classList.remove('focused'));
+        el.on('change', e => {
+            document.getElementById(errorId).textContent = e.error ? e.error.message : '';
         });
-        cardElement.mount('#card-element');
+    }
 
-        cardElement.on('change', (event) => {
-            const errorDiv = document.getElementById('card-errors');
-            if (event.error) {
-                errorDiv.textContent = event.error.message;
-            } else {
-                errorDiv.textContent = '';
+    bindStripeField(cardNumberEl, 'card-number-element', 'card-number-errors');
+    bindStripeField(cardExpiryEl, 'card-expiry-element', 'card-expiry-errors');
+    bindStripeField(cardCvcEl,    'card-cvc-element',    'card-cvc-errors');
+
+    // ── Stepper UI ──
+    function updateStepper(step) {
+        for (let i = 1; i <= 4; i++) {
+            const circle = document.getElementById('sc-' + i);
+            const label  = document.getElementById('sl-' + i);
+            circle.classList.remove('active', 'done');
+            label.classList.remove('active');
+            circle.innerHTML = '<span>' + i + '</span>';
+            if (i < step) {
+                circle.classList.add('done');
+                circle.innerHTML = '';
+                if (i <= 3) document.getElementById('conn-' + i).classList.add('done');
+            } else if (i === step) {
+                circle.classList.add('active');
+                label.classList.add('active');
             }
+        }
+    }
+
+    function goToStep(n) {
+        document.getElementById('step-' + currentStep).classList.remove('active');
+        currentStep = n;
+        document.getElementById('step-' + currentStep).classList.add('active');
+        updateStepper(currentStep);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ── Plans ──
+    async function loadPlans() {
+        try {
+            const res  = await fetch('/api/plans');
+            const data = await res.json();
+            const plans = data.data || data;
+            renderPlans(Array.isArray(plans) ? plans : []);
+        } catch {
+            document.getElementById('plan-error').style.display = 'block';
+            document.getElementById('plan-error').textContent = 'Failed to load plans. Please refresh.';
+            document.getElementById('plan-list').innerHTML = '';
+        }
+    }
+
+    function renderPlans(plans) {
+        const container = document.getElementById('plan-list');
+        if (!plans.length) {
+            container.innerHTML = '<p style="color:#9ca3af;font-size:14px;">No plans available.</p>';
+            return;
+        }
+        container.innerHTML = plans.map(plan => {
+            const features = Array.isArray(plan.features) ? plan.features : [];
+            const featureHtml = features.slice(0, 4).map(f => '<li>' + f + '</li>').join('');
+            return `<div class="plan-card" data-id="${plan.id}" onclick="selectPlan(${plan.id}, this)">
+                <div class="plan-check"></div>
+                <div class="plan-badge">${plan.package || 'monthly'}</div>
+                <div class="plan-name">${plan.title || plan.name}</div>
+                <div class="plan-price">$${parseFloat(plan.price).toFixed(0)}<span>/${plan.package || 'mo'}</span></div>
+                ${featureHtml ? '<ul class="plan-features">' + featureHtml + '</ul>' : ''}
+            </div>`;
+        }).join('');
+    }
+
+    function selectPlan(id, el) {
+        document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedPlanId = id;
+        document.getElementById('next-1').disabled = false;
+    }
+
+    // ── Categories ──
+    async function loadCategories() {
+        try {
+            const res  = await fetch('/api/categories');
+            const data = await res.json();
+            const cats = data.data || data;
+            renderCategories(Array.isArray(cats) ? cats : []);
+        } catch {
+            document.getElementById('category-error').style.display = 'block';
+            document.getElementById('category-error').textContent = 'Failed to load categories.';
+            document.getElementById('category-list').innerHTML = '';
+        }
+    }
+
+    function renderCategories(cats) {
+        const container = document.getElementById('category-list');
+        if (!cats.length) {
+            container.innerHTML = '<p style="color:#9ca3af;font-size:14px;">No categories available.</p>';
+            return;
+        }
+        container.innerHTML = cats.map(cat => `
+            <div class="category-item" data-id="${cat.id}" onclick="toggleCategory(${cat.id}, this)">
+                <div class="category-checkbox"></div>
+                <span class="category-name">${cat.name}</span>
+            </div>`
+        ).join('');
+    }
+
+    function toggleCategory(id, el) {
+        el.classList.toggle('selected');
+        selectedCategoryIds = el.classList.contains('selected')
+            ? [...selectedCategoryIds, id]
+            : selectedCategoryIds.filter(c => c !== id);
+        document.getElementById('next-3').disabled = selectedCategoryIds.length === 0;
+    }
+
+    // ── Validation ──
+    function validateStep2() {
+        const ids = ['name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zip_code', 'password', 'password_confirmation'];
+        for (const id of ids) {
+            if (!document.getElementById(id).value.trim()) return 'Please fill in all fields.';
+        }
+        if (document.getElementById('password').value !== document.getElementById('password_confirmation').value) {
+            return 'Passwords do not match.';
+        }
+        return null;
+    }
+
+    // ── Order Summary ──
+    function renderOrderSummary() {
+        const planCard = document.querySelector('.plan-card.selected');
+        const planName  = planCard ? planCard.querySelector('.plan-name').textContent  : '';
+        const planPrice = planCard ? planCard.querySelector('.plan-price').textContent : '';
+        const catCount  = selectedCategoryIds.length;
+        document.getElementById('order-summary').innerHTML =
+            `<span class="summary-pill">📋 ${planName} · ${planPrice}</span>` +
+            `<span class="summary-pill">🏷️ ${catCount} service${catCount !== 1 ? 's' : ''} selected</span>`;
+    }
+
+    // ── Form Data ──
+    function getFormData() {
+        return {
+            name:                  document.getElementById('name').value.trim(),
+            last_name:             document.getElementById('last_name').value.trim(),
+            email:                 document.getElementById('email').value.trim(),
+            phone:                 document.getElementById('phone').value.trim(),
+            address:               document.getElementById('address').value.trim(),
+            city:                  document.getElementById('city').value.trim(),
+            state:                 document.getElementById('state').value.trim(),
+            zip_code:              document.getElementById('zip_code').value.trim(),
+            category_id:           selectedCategoryIds,
+            plan_id:               selectedPlanId,
+            password:              document.getElementById('password').value,
+            password_confirmation: document.getElementById('password_confirmation').value,
+            payment_method:        pendingPaymentMethodId
+        };
+    }
+
+    function renderApiError(data) {
+        if (data.errors) {
+            return '<strong>Validation Errors:</strong><ul style="margin:6px 0 0 16px;">' +
+                Object.values(data.errors).flat().map(e => '<li>' + e + '</li>').join('') + '</ul>';
+        }
+        return data.message || JSON.stringify(data);
+    }
+
+    function showResult(elId, type, html) {
+        const el = document.getElementById(elId);
+        el.className = 'alert ' + type;
+        el.innerHTML = html;
+    }
+
+    // ── OTP Modal ──
+    function openOtpModal(email) {
+        document.getElementById('modal-sub-text').innerHTML =
+            'We sent a 4-digit code to <strong>' + email + '</strong>.<br>Enter it below to complete registration.';
+        ['d1','d2','d3','d4'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('modal-result').className = 'alert';
+        document.getElementById('otp-modal').classList.add('open');
+        document.getElementById('d1').focus();
+    }
+
+    function closeOtpModal() {
+        document.getElementById('otp-modal').classList.remove('open');
+    }
+
+    function getOtpValue() {
+        return ['d1','d2','d3','d4'].map(id => document.getElementById(id).value).join('');
+    }
+
+    // Auto-advance OTP digits
+    document.querySelectorAll('.otp-digit').forEach((input, idx, all) => {
+        input.addEventListener('input', () => {
+            input.value = input.value.replace(/\D/g, '');
+            if (input.value && idx < all.length - 1) all[idx + 1].focus();
         });
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Backspace' && !input.value && idx > 0) all[idx - 1].focus();
+        });
+    });
 
-        const form = document.getElementById('payment-form');
-        const resultDiv = document.getElementById('result');
-        const submitBtn = document.getElementById('submit-btn');
-        const resendBtn = document.getElementById('resend-btn');
-        const otpPanel = document.getElementById('otp-panel');
-        const paymentSummary = document.getElementById('payment-summary');
-        const cardHelper = document.getElementById('card-helper');
-        const cardContainer = document.getElementById('card-element').parentElement;
+    // ── Submit (Step 4) — sends OTP ──
+    document.getElementById('submit-btn').addEventListener('click', async () => {
+        const btn = document.getElementById('submit-btn');
+        btn.disabled = true;
+        btn.textContent = 'Processing…';
+        document.getElementById('result').className = 'alert';
 
-        let pendingPaymentMethodId = null;
-        let awaitingOtp = false;
-        let registrationComplete = false;
-
-        function getFormData() {
-            return {
-                name: document.getElementById('name').value,
-                last_name: document.getElementById('last_name').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                address: document.getElementById('address').value,
-                city: document.getElementById('city').value,
-                state: document.getElementById('state').value,
-                zip_code: document.getElementById('zip_code').value,
-                category_id: [parseInt(document.getElementById('category_id').value, 10)],
-                plan_id: parseInt(document.getElementById('plan_id').value, 10),
-                password: document.getElementById('password').value,
-                password_confirmation: document.getElementById('password_confirmation').value,
-                payment_method: pendingPaymentMethodId
-            };
-        }
-
-        function setLoadingState(message) {
-            resultDiv.className = 'result loading';
-            resultDiv.textContent = message;
-            submitBtn.disabled = true;
-            resendBtn.disabled = true;
-        }
-
-        function clearLoadingState() {
-            submitBtn.disabled = registrationComplete;
-            resendBtn.disabled = registrationComplete || !awaitingOtp;
-        }
-
-        function renderApiError(data) {
-            if (data.errors) {
-                return JSON.stringify(data.errors, null, 2);
-            }
-
-            return data.message || JSON.stringify(data);
-        }
-
-        function enterOtpStep(email) {
-            awaitingOtp = true;
-            otpPanel.classList.add('active');
-            paymentSummary.classList.add('active');
-            paymentSummary.innerHTML = '<strong>Payment Method Ready</strong><br>ID: ' + pendingPaymentMethodId + '<br>Email OTP sent to: ' + email;
-            cardContainer.style.display = 'none';
-            cardHelper.textContent = 'Payment method saved for the confirmation step.';
-            submitBtn.textContent = 'Confirm OTP & Create Provider';
-            resendBtn.disabled = false;
-        }
-
-        async function createPaymentMethod() {
+        try {
             const { paymentMethod, error } = await stripe.createPaymentMethod({
                 type: 'card',
-                card: cardElement,
+                card: cardNumberEl,
                 billing_details: {
-                    name: document.getElementById('name').value + ' ' + document.getElementById('last_name').value,
+                    name:  document.getElementById('name').value + ' ' + document.getElementById('last_name').value,
                     email: document.getElementById('email').value,
-                    phone: document.getElementById('phone').value,
+                    phone: document.getElementById('phone').value
                 }
             });
 
-            if (error) {
-                throw new Error('Card Error: ' + error.message);
-            }
-
+            if (error) throw new Error(error.message);
             pendingPaymentMethodId = paymentMethod.id;
-        }
 
-        async function submitProviderRegistration(payload) {
+            const payload  = getFormData();
             const response = await fetch('/api/register_provider', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify(payload)
             });
-
             const data = await response.json();
 
-            return { response, data };
+            if (response.ok && data.data && data.data.requires_verification) {
+                openOtpModal(payload.email);
+                showResult('result', 'info', 'OTP sent! Check your email.');
+            } else if (response.ok) {
+                registrationComplete = true;
+                const user = data.data.user;
+                showResult('result', 'success',
+                    '<strong>Registration Successful!</strong><br>Welcome, ' + user.name + ' ' + user.last_name + '!');
+                btn.textContent = 'Done ✓';
+            } else {
+                showResult('result', 'error', renderApiError(data));
+                btn.disabled = false;
+                btn.textContent = 'Send OTP ›';
+            }
+        } catch (err) {
+            showResult('result', 'error', err.message);
+            btn.disabled = false;
+            btn.textContent = 'Send OTP ›';
+        }
+    });
+
+    // ── Confirm OTP ──
+    document.getElementById('confirm-otp-btn').addEventListener('click', async () => {
+        const otp = getOtpValue();
+        if (otp.length !== 4) {
+            showResult('modal-result', 'error', 'Please enter the complete 4-digit code.');
+            return;
         }
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            setLoadingState(awaitingOtp ? 'Verifying OTP and creating provider...' : 'Creating payment method and sending OTP...');
+        const btn = document.getElementById('confirm-otp-btn');
+        btn.disabled = true;
+        btn.textContent = 'Verifying…';
+        document.getElementById('modal-result').className = 'alert';
 
-            try {
-                if (!awaitingOtp) {
-                    await createPaymentMethod();
-                }
+        try {
+            const payload  = { ...getFormData(), otp };
+            const response = await fetch('/api/register_provider', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
 
-                const formData = getFormData();
-
-                if (awaitingOtp) {
-                    const otp = document.getElementById('otp').value.trim();
-
-                    if (otp.length !== 4) {
-                        throw new Error('Enter the 4-digit OTP first.');
-                    }
-
-                    formData.otp = otp;
-                }
-
-                const { response, data } = await submitProviderRegistration(formData);
-
-                if (response.ok) {
-                    if (!awaitingOtp && data.data && data.data.requires_verification) {
-                        enterOtpStep(formData.email);
-                        resultDiv.className = 'result success';
-                        resultDiv.innerHTML = '<strong>OTP Sent</strong><br>Payment Method ID: ' + pendingPaymentMethodId + '<br>Email: ' + formData.email;
-                    } else {
-                        registrationComplete = true;
-                        awaitingOtp = false;
-                        resultDiv.className = 'result success';
-                        resultDiv.innerHTML = '<strong>Success!</strong><br>Payment Method ID: ' + pendingPaymentMethodId + '<br>User: ' + data.data.user.name + ' ' + data.data.user.last_name + '<br>Subscription: ' + data.data.user.provider_subscription.stripe_status;
-
-                        if (data.data.payment_status) {
-                            resultDiv.innerHTML += '<br>Payment Status: ' + data.data.payment_status;
-                        }
-
-                        if (data.data.payment_intent_client_secret) {
-                            resultDiv.innerHTML += '<br>Client Secret: ' + data.data.payment_intent_client_secret;
-                        }
-
-                        submitBtn.textContent = 'Provider Created';
-                        submitBtn.disabled = true;
-                        resendBtn.disabled = true;
-                    }
-                } else {
-                    resultDiv.className = 'result error';
-                    resultDiv.innerHTML = '<strong>API Error:</strong><br><pre style="white-space:pre-wrap;margin:8px 0 0;">' + renderApiError(data) + '</pre>';
-                    console.log(data)
-                }
-
-            } catch (err) {
-                resultDiv.className = 'result error';
-                resultDiv.textContent = 'Error: ' + err.message;
+            if (response.ok) {
+                registrationComplete = true;
+                closeOtpModal();
+                const user = data.data.user;
+                showResult('result', 'success',
+                    '<strong>Registration Successful!</strong><br>Welcome, ' + user.name + ' ' + user.last_name + '!<br>' +
+                    'Subscription: ' + (user.provider_subscription ? user.provider_subscription.stripe_status : 'active'));
+                document.getElementById('submit-btn').textContent = 'Done ✓';
+                document.getElementById('submit-btn').disabled = true;
+                document.getElementById('back-4').disabled = true;
+            } else {
+                showResult('modal-result', 'error', renderApiError(data));
+                btn.disabled = false;
+                btn.textContent = 'Confirm & Register';
             }
+        } catch (err) {
+            showResult('modal-result', 'error', err.message);
+            btn.disabled = false;
+            btn.textContent = 'Confirm & Register';
+        }
+    });
 
-            clearLoadingState();
-        });
+    // ── Resend OTP ──
+    document.getElementById('resend-btn').addEventListener('click', async () => {
+        const email = document.getElementById('email').value.trim();
+        const btn   = document.getElementById('resend-btn');
+        btn.disabled = true;
 
-        resendBtn.addEventListener('click', async () => {
-            const email = document.getElementById('email').value;
+        try {
+            const res  = await fetch('/api/resend-email-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+            showResult('modal-result', res.ok ? 'info' : 'error',
+                res.ok ? 'OTP resent to ' + email : renderApiError(data));
+        } catch (err) {
+            showResult('modal-result', 'error', err.message);
+        }
 
-            setLoadingState('Sending another OTP...');
+        setTimeout(() => { btn.disabled = false; }, 30000);
+    });
 
-            try {
-                const response = await fetch('/api/resend-email-otp', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ email })
-                });
+    // ── Modal close ──
+    document.getElementById('modal-close-btn').addEventListener('click', closeOtpModal);
+    document.getElementById('otp-modal').addEventListener('click', e => {
+        if (e.target === document.getElementById('otp-modal')) closeOtpModal();
+    });
 
-                const data = await response.json();
+    // ── Navigation ──
+    document.getElementById('next-1').addEventListener('click', () => goToStep(2));
 
-                if (response.ok) {
-                    resultDiv.className = 'result success';
-                    resultDiv.innerHTML = '<strong>OTP Resent</strong><br>' + data.message;
-                } else {
-                    resultDiv.className = 'result error';
-                    resultDiv.innerHTML = '<strong>API Error:</strong><br><pre style="white-space:pre-wrap;margin:8px 0 0;">' + renderApiError(data) + '</pre>';
-                }
-            } catch (err) {
-                resultDiv.className = 'result error';
-                resultDiv.textContent = 'Error: ' + err.message;
-            }
+    document.getElementById('back-2').addEventListener('click', () => goToStep(1));
+    document.getElementById('next-2').addEventListener('click', () => {
+        const err = validateStep2();
+        if (err) { alert(err); return; }
+        if (!document.getElementById('category-list').querySelector('.category-item')) loadCategories();
+        goToStep(3);
+    });
 
-            clearLoadingState();
-        });
-    </script>
+    document.getElementById('back-3').addEventListener('click', () => goToStep(2));
+    document.getElementById('next-3').addEventListener('click', () => {
+        renderOrderSummary();
+        goToStep(4);
+    });
+
+    document.getElementById('back-4').addEventListener('click', () => goToStep(3));
+
+    // ── Init ──
+    loadPlans();
+    updateStepper(1);
+</script>
+
 </body>
-
 </html>
