@@ -107,6 +107,13 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::post('update/{id}', [SubcategoryController::class, 'update'])->name('subcategory.update');
         Route::delete('/delete/{id}', [SubcategoryController::class, 'destroy'])->name('subcategory.destroy');
     });
+    // Route::prefix('subcategory')->group(function () {
+    //     Route::get('index', [SubcategoryController::class, 'index'])->name('subcategory.index');
+    //     Route::post('store', [SubcategoryController::class, 'store'])->name('subcategory.store');
+    //     Route::get('edit/{id}', [SubcategoryController::class, 'edit'])->name('subcategory.edit');
+    //     Route::post('update/{id}', [SubcategoryController::class, 'update'])->name('subcategory.update');
+    //     Route::delete('/delete/{id}', [SubcategoryController::class, 'destroy'])->name('subcategory.destroy');
+    // });
 
     // Brand
     Route::prefix('brand')->group(function () {
