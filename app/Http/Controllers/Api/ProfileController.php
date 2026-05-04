@@ -28,7 +28,7 @@ class ProfileController extends Controller
                 'member_since' => 'Member since ' . $user->created_at?->format('Y'),
                 'about_me' => $user->bio,
                 'completed_orders' => $completedOrders,
-                'languages' => $user->languages ? explode(',', $user->languages) : [],
+                'languages' => $user->languages ?? [],
                 'joined' => 'Joined ' . $user->created_at->format('M Y'),
                 'email' => $user->email,
             ]
