@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ProfileController extends Controller
 {
@@ -30,6 +32,28 @@ class ProfileController extends Controller
                 'joined' => 'Joined ' . $user->created_at->format('M Y'),
                 'email' => $user->email,
             ]
+        ]);
+    }
+
+    public function updateProviderProfile(Request $request)
+    {
+        $user = Auth::user();
+
+        $data = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'last_name'  => 'sometimes|string|max:255',
+            'email'      => 'sometimes|email|unique:users,email,' . $user->id,
+            'phone'      => 'sometimes|string|max:20',
+            'bio'        => 'sometimes|string',
+            'languages'  => 'sometimes|array',
+            'languages.*' => 'string',
+        ]);
+
+        $user->update($data);
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => $user
         ]);
     }
 }

@@ -180,6 +180,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     //Profile
     Route::prefix('profile')->group(function () {
         Route::get('provider-profile', [ProfileController::class, 'providerProfile']);
+        Route::put('update-provider-profile', [ProfileController::class, 'updateProviderProfile']);
     });
 
     Route::prefix('user-dashboard')->group(function () {
