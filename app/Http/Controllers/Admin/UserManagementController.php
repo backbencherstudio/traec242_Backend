@@ -141,4 +141,41 @@ class UserManagementController extends Controller
             ]
         ]);
     }
+
+    public function deleteUser($id)
+    {
+        if (auth()->user()->type !== 1) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You are not authorized to delete user.',
+            ], 403);
+        }
+
+        $user = User::withTrashed()->find($id);
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        if ($user->trashed()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User is already deleted'
+            ], 400);
+        }
+
+        $user->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User deleted successfully.',
+            'data' => [
+                'id' => $user->id,
+                'deleted_at' => $user->deleted_at,
+            ]
+        ]);
+    }
 }
