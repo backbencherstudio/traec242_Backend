@@ -6,12 +6,30 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\ProviderPayment;
 use App\Models\User;
+use Illuminate\Http\Request;
 
 class UserManagementController extends Controller
 {
-    public function clients()
+    public function clients(Request $request)
     {
-        $users = User::where('type', '0')->get();
+        $search = $request->search;
+        $status = $request->status;
+
+        $query = User::where('type', '0');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%$search%")
+                    ->orWhere('last_name', 'like', "%$search%")
+                    ->orWhere('email', 'like', "%$search%");
+            });
+        }
+
+        if (!is_null($status)) {
+            $query->where('status', $status);
+        }
+
+        $users = $query->get();
 
         $data = $users->map(function ($user) {
 
@@ -25,7 +43,7 @@ class UserManagementController extends Controller
 
             return [
                 'image' => $user->image,
-                'name' => trim($user->name . ' ' . $user->last_name),
+                'name' => trim(($user->name ?? '') . ' ' . ($user->last_name ?? '')),
                 'email' => $user->email,
                 'orders' => $totalOrders,
                 'total_spent' => '$' . number_format($totalSpent, 2),
