@@ -60,7 +60,6 @@ class UserManagementController extends Controller
         ]);
     }
 
-
     public function sellers(Request $request)
     {
         $search = $request->search;
@@ -106,6 +105,40 @@ class UserManagementController extends Controller
         return response()->json([
             'success' => true,
             'data' => $data
+        ]);
+    }
+
+    public function changeStatus(Request $request, $id)
+    {
+        if (auth()->user()->type !== 1) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You are not authorized to change status.',
+            ], 403);
+        }
+        $request->validate([
+            'status' => 'required|in:0,1'
+        ]);
+
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        $user->status = $request->status;
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status updated successfully',
+            'data' => [
+                'id' => $user->id,
+                'status' => $user->status
+            ]
         ]);
     }
 }
