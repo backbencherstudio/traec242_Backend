@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\SliderController;
 use App\Http\Controllers\Admin\StripeController;
 use App\Http\Controllers\Admin\SubcategoryController;
+use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\GoogleAuthController;
@@ -180,7 +181,15 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     //Profile
     Route::prefix('profile')->group(function () {
         Route::get('provider-profile', [ProfileController::class, 'providerProfile']);
+        Route::put('update-provider-profile', [ProfileController::class, 'updateProviderProfile']);
     });
+
+    //Admin Dashboard
+    Route::prefix('client')->group(function () {
+        Route::get('index', [UserManagementController::class, 'clients']);
+        Route::get('seller-index', [UserManagementController::class, 'sellers']);
+    });
+
 
     Route::prefix('user-dashboard')->group(function () {
         Route::get('summary', [UserDashboardController::class, 'summary']);
