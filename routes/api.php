@@ -187,6 +187,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     //Admin Dashboard
     Route::prefix('client')->group(function () {
         Route::get('index', [UserManagementController::class, 'clients']);
+        Route::get('seller-index', [UserManagementController::class, 'sellers']);
     });
 
 
