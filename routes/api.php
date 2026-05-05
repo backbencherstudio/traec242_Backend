@@ -188,6 +188,8 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     Route::prefix('client')->group(function () {
         Route::get('index', [UserManagementController::class, 'clients']);
         Route::get('seller-index', [UserManagementController::class, 'sellers']);
+        Route::patch('change-status/{id}', [UserManagementController::class, 'changeStatus']);
+        Route::delete('delete-user/{id}', [UserManagementController::class, 'deleteUser']);
     });
 
 
