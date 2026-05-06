@@ -8,7 +8,10 @@ return [
 
     'allowed_origins' => ['*'],
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> dev
     'allowed_origins_patterns' => [],
 
     'allowed_headers' => ['*'],

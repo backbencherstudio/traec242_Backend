@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\SendUserOtpMail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -31,13 +32,7 @@ class OtpService
         );
 
         try {
-            Mail::raw(
-                "Your verification OTP is: {$otp}. It will expire in 10 minutes.",
-                function ($message) use ($email) {
-                    $message->to($email)
-                        ->subject('Email Verification OTP');
-                }
-            );
+            Mail::to($email)->send(new SendUserOtpMail($otp));
             RateLimiter::hit($key, 60);
 
             return true;

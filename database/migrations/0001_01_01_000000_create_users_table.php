@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('jwt_token', 1000)->nullable();
             $table->string('google_id')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
