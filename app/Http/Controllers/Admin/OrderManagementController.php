@@ -34,6 +34,10 @@ class OrderManagementController extends Controller
         $data = $users->map(function ($user) {
 
             $totalOrders = Order::where('user_id', $user->id)->count();
+            $completeOrders = Order::where('user_id', $user->id)
+                ->where('status', 'completed')->count();
+            $pendingOrders = Order::where('user_id', $user->id)
+                ->whereIn('status', ['pending', 'confirmed'])->count();
 
             $totalSpent = ProviderPayment::join('orders', 'provider_payments.order_id', '=', 'orders.id')
                 ->where('provider_payments.user_id', $user->id)
@@ -46,7 +50,9 @@ class OrderManagementController extends Controller
                 'image' => $user->image,
                 'name' => trim(($user->name ?? '') . ' ' . ($user->last_name ?? '')),
                 'email' => $user->email,
-                'order' => $totalOrders,
+                'total_order' => $totalOrders,
+                'complete_order' => $completeOrders,
+                'pending_order' => $pendingOrders,
                 'total_spent' => '$' . number_format($totalSpent, 2),
             ];
         });
