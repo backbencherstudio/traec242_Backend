@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\FaqCategoryController;
 use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\MessageController;
+use App\Http\Controllers\Admin\OrderManagementController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\RoleController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Frontend\OrderController;
 use App\Http\Controllers\Frontend\SubscriberController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Provider\ProviderStripeController;
+use App\Models\Order;
 use Illuminate\Support\Facades\Route;
 
 // Admin Public Routes
@@ -190,6 +192,11 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('seller-index', [UserManagementController::class, 'sellers']);
         Route::patch('change-status/{id}', [UserManagementController::class, 'changeStatus']);
         Route::delete('delete-user/{id}', [UserManagementController::class, 'deleteUser']);
+    });
+
+    //Admin Order Management
+    Route::prefix('admin-order')->group(function () {
+        Route::get('index', [OrderManagementController::class, 'index']);
     });
 
 
