@@ -48,9 +48,9 @@ class Order extends Model
         return $this->belongsTo(ServicePricing::class, 'service_pricing_id');
     }
 
-    public function payment()
+    public function providerPayments()
     {
-        return $this->hasOne(Payment::class);
+        return $this->hasMany(ProviderPayment::class, 'order_id');
     }
 
     public function user()
