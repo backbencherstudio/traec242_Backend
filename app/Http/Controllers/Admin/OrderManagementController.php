@@ -15,7 +15,18 @@ class OrderManagementController extends Controller
         $search = $request->search;
         $status = $request->status;
 
-        $query = User::where('type', '0');
+        $query = User::where('type', '0')
+            ->withCount([
+                'orders as total_order',
+
+                'orders as complete_order' => function ($q) {
+                    $q->where('status', 'completed');
+                },
+
+                'orders as pending_order' => function ($q) {
+                    $q->whereIn('status', ['pending', 'confirmed']);
+                }
+            ]);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -30,14 +41,16 @@ class OrderManagementController extends Controller
         }
 
         $users = $query->get();
+        $summary = Order::count();
+        $processing = Order::whereIn('status', ['pending', 'confirmed'])->count();
+        $delivered = Order::where('status', 'completed')->count();
+        $activeOrder = Order::where('status', 'confirmed')
+            ->whereHas('providerPayments', function ($q) {
+                $q->where('status', 'successful');
+            })
+            ->count();
 
         $data = $users->map(function ($user) {
-
-            $totalOrders = Order::where('user_id', $user->id)->count();
-            $completeOrders = Order::where('user_id', $user->id)
-                ->where('status', 'completed')->count();
-            $pendingOrders = Order::where('user_id', $user->id)
-                ->whereIn('status', ['pending', 'confirmed'])->count();
 
             $totalSpent = ProviderPayment::join('orders', 'provider_payments.order_id', '=', 'orders.id')
                 ->where('provider_payments.user_id', $user->id)
@@ -46,19 +59,27 @@ class OrderManagementController extends Controller
                 ->sum('provider_payments.amount');
 
             return [
-                'id' => $user->id,
-                'image' => $user->image,
-                'name' => trim(($user->name ?? '') . ' ' . ($user->last_name ?? '')),
-                'email' => $user->email,
-                'total_order' => $totalOrders,
-                'complete_order' => $completeOrders,
-                'pending_order' => $pendingOrders,
-                'total_spent' => '$' . number_format($totalSpent, 2),
+                'customer_info' => [
+                    'id' => $user->id,
+                    'image' => $user->image,
+                    'name' => trim(($user->name ?? '') . ' ' . ($user->last_name ?? '')),
+                    'email' => $user->email,
+                    'total_order' => $user->total_order,
+                    'complete_order' => $user->complete_order,
+                    'pending_order' => $user->pending_order,
+                    'total_spent' => '$' . number_format($totalSpent, 2),
+                ]
             ];
         });
 
         return response()->json([
             'success' => true,
+            'summary' => [
+                'total_orders' => $summary,
+                'processing' => $processing,
+                'active_orders' => $activeOrder,
+                'delivered' => $delivered,
+            ],
             'data' => $data
         ]);
     }
