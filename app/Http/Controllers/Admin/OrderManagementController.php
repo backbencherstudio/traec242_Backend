@@ -46,7 +46,7 @@ class OrderManagementController extends Controller
         $delivered = Order::where('status', 'completed')->count();
         $activeOrder = Order::where('status', 'confirmed')
             ->whereHas('providerPayments', function ($q) {
-                $q->where('status', 'paid');
+                $q->where('status', 'successful');
             })
             ->count();
 

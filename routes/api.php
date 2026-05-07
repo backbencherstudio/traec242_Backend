@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\FaqCategoryController;
 use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\MessageController;
@@ -192,6 +193,10 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('seller-index', [UserManagementController::class, 'sellers']);
         Route::patch('change-status/{id}', [UserManagementController::class, 'changeStatus']);
         Route::delete('delete-user/{id}', [UserManagementController::class, 'deleteUser']);
+    });
+
+    Route::prefix('admin-dashboard')->group(function() {
+        Route::get('index', [AdminDashboardController::class, 'index']);
     });
 
     //Admin Order Management
