@@ -46,9 +46,11 @@ class UserManagementController extends Controller
             $query->whereYear('created_at', now()->year);
         }
 
-        $users = $query->get();
+        $perPage = $request->per_page ?? 10;
 
-        $data = $users->map(function ($user) use ($period) {
+        $users = $query->paginate($perPage);
+
+        $data = $users->getCollection()->map(function ($user) use ($period) {
 
             $totalOrdersQuery = Order::where('user_id', $user->id);
 
@@ -103,9 +105,17 @@ class UserManagementController extends Controller
             ];
         });
 
+        $users->setCollection($data);
+
         return response()->json([
             'success' => true,
-            'data' => $data
+            'data' => $users->items(),
+            'meta' => [
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
+                'per_page' => $users->perPage(),
+                'total' => $users->total(),
+            ]
         ]);
     }
 
