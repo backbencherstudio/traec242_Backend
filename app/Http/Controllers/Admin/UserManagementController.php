@@ -15,6 +15,7 @@ class UserManagementController extends Controller
     {
         $search = $request->search;
         $status = $request->status;
+        $period = $request->period;
 
         $query = User::where('type', '0');
 
@@ -30,17 +31,35 @@ class UserManagementController extends Controller
             $query->where('status', $status);
         }
 
+        if ($period == 'monthly') {
+            $query->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year);
+        }
+
         $users = $query->get();
 
-        $data = $users->map(function ($user) {
+        $data = $users->map(function ($user) use ($period) {
 
-            $totalOrders = Order::where('user_id', $user->id)->count();
+            $totalOrdersQuery = Order::where('user_id', $user->id);
 
-            $totalSpent = ProviderPayment::join('orders', 'provider_payments.order_id', '=', 'orders.id')
+            if ($period == 'monthly') {
+                $totalOrdersQuery->whereMonth('created_at', now()->month)
+                    ->whereYear('created_at', now()->year);
+            }
+
+            $totalOrders = $totalOrdersQuery->count();
+
+            $totalSpentQuery = ProviderPayment::join('orders', 'provider_payments.order_id', '=', 'orders.id')
                 ->where('provider_payments.user_id', $user->id)
                 ->where('orders.status', 'completed')
-                ->where('provider_payments.status', 'successful')
-                ->sum('provider_payments.amount');
+                ->where('provider_payments.status', 'successful');
+
+            if ($period == 'monthly') {
+                $totalSpentQuery->whereMonth('provider_payments.created_at', now()->month)
+                    ->whereYear('provider_payments.created_at', now()->year);
+            }
+
+            $totalSpent = $totalSpentQuery->sum('provider_payments.amount');
 
             return [
                 'id' => $user->id,
