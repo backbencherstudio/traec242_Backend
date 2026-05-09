@@ -47,6 +47,11 @@ Route::post('/subscriber', [SubscriberController::class, 'store'])->name('subscr
 Route::get('/auth/google', [GoogleAuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
 
+// Authenticated user routes
+Route::middleware(['auth:api'])->group(function () {
+    Route::get('/me', [AuthController::class, 'me'])->name('me');
+});
+
 // Admin Protected Routes
 Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/index', [AuthController::class, 'index'])->name('index');

@@ -7,6 +7,7 @@ use App\Http\Resources\UserResource;
 use App\Mail\ForgotPasswordOtpMail;
 use App\Models\User;
 use App\Services\OtpService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -333,6 +334,16 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Admin deleted successfully',
         ], 200);
+    }
+
+    public function me(): JsonResponse
+    {
+        $user = Auth::guard('api')->user();
+
+        return response()->json([
+            'success' => true,
+            'user' => UserResource::make($user->loadMissing(['plan', 'subscriptions'])),
+        ]);
     }
 
     public function logout()

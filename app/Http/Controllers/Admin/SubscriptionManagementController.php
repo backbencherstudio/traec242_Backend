@@ -56,7 +56,7 @@ class SubscriptionManagementController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $this->formatProviderSubscription($provider, detailed: true),
+            'data' => $this->formatProviderSubscription($provider),
         ]);
     }
 
@@ -230,11 +230,11 @@ class SubscriptionManagementController extends Controller
         return $provider;
     }
 
-    private function formatProviderSubscription(User $provider, bool $detailed = false): array
+    private function formatProviderSubscription(User $provider): array
     {
         $subscription = $provider->subscription('provider');
 
-        $base = [
+        return [
             'id' => $provider->id,
             'name' => trim(($provider->name ?? '').' '.($provider->last_name ?? '')),
             'email' => $provider->email,
@@ -249,17 +249,11 @@ class SubscriptionManagementController extends Controller
             'on_grace_period' => $subscription?->onGracePeriod() ?? false,
             'is_paused' => $subscription ? $this->isPaused($subscription) : false,
             'is_canceled' => $subscription?->canceled() ?? false,
+            'subscription_history' => $provider->subscriptions
+                ->sortByDesc('created_at')
+                ->values()
+                ->map(fn (Subscription $s) => $this->formatSubscription($s)),
         ];
-
-        if ($detailed) {
-            $base['stripe_subscription_id'] = $subscription?->stripe_id;
-            $base['stripe_status'] = $subscription?->stripe_status;
-            $base['all_subscriptions'] = $provider->subscriptions->map(
-                fn (Subscription $s) => $this->formatSubscription($s)
-            );
-        }
-
-        return $base;
     }
 
     private function formatSubscription(Subscription $subscription): array
