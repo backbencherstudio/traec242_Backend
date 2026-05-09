@@ -123,6 +123,7 @@ class UserManagementController extends Controller
     {
         $search = $request->search;
         $status = $request->status;
+        $period = $request->period;
 
         $query = User::where('type', '2');
 
@@ -138,16 +139,65 @@ class UserManagementController extends Controller
             $query->where('status', $status);
         }
 
+        if ($period == 'monthly') {
+
+            $query->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year);
+        } elseif ($period == 'weekly') {
+
+            $query->whereBetween('created_at', [
+                now()->startOfWeek(),
+                now()->endOfWeek()
+            ]);
+        } elseif ($period == 'yearly') {
+
+            $query->whereYear('created_at', now()->year);
+        }
+
         $users = $query->get();
 
-        $data = $users->map(function ($user) {
+        $data = $users->map(function ($user) use ($period) {
 
-            $products = Service::where('user_id', $user->id)->count();
+            $productsQuery = Service::where('user_id', $user->id);
 
-            $totalSales = ProviderPayment::join('orders', 'provider_payments.order_id', '=', 'orders.id')
+            if ($period == 'monthly') {
+
+                $productsQuery->whereMonth('created_at', now()->month)
+                    ->whereYear('created_at', now()->year);
+            } elseif ($period == 'weekly') {
+
+                $productsQuery->whereBetween('created_at', [
+                    now()->startOfWeek(),
+                    now()->endOfWeek()
+                ]);
+            } elseif ($period == 'yearly') {
+
+                $productsQuery->whereYear('created_at', now()->year);
+            }
+
+            $products = $productsQuery->count();
+
+            $totalSalesQuery = ProviderPayment::join('orders', 'provider_payments.order_id', '=', 'orders.id')
+                ->where('provider_payments.user_id', $user->id)
                 ->where('orders.status', 'completed')
-                ->where('provider_payments.status', 'successful')
-                ->sum('provider_payments.amount');
+                ->where('provider_payments.status', 'successful');
+
+            if ($period == 'monthly') {
+
+                $totalSalesQuery->whereMonth('provider_payments.created_at', now()->month)
+                    ->whereYear('provider_payments.created_at', now()->year);
+            } elseif ($period == 'weekly') {
+
+                $totalSalesQuery->whereBetween('provider_payments.created_at', [
+                    now()->startOfWeek(),
+                    now()->endOfWeek()
+                ]);
+            } elseif ($period == 'yearly') {
+
+                $totalSalesQuery->whereYear('provider_payments.created_at', now()->year);
+            }
+
+            $totalSales = $totalSalesQuery->sum('provider_payments.amount');
 
             return [
                 'id' => $user->id,
