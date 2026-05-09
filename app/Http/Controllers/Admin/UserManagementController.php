@@ -32,8 +32,18 @@ class UserManagementController extends Controller
         }
 
         if ($period == 'monthly') {
+
             $query->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year);
+        } elseif ($period == 'weekly') {
+
+            $query->whereBetween('created_at', [
+                now()->startOfWeek(),
+                now()->endOfWeek()
+            ]);
+        } elseif ($period == 'yearly') {
+
+            $query->whereYear('created_at', now()->year);
         }
 
         $users = $query->get();
@@ -43,8 +53,18 @@ class UserManagementController extends Controller
             $totalOrdersQuery = Order::where('user_id', $user->id);
 
             if ($period == 'monthly') {
+
                 $totalOrdersQuery->whereMonth('created_at', now()->month)
                     ->whereYear('created_at', now()->year);
+            } elseif ($period == 'weekly') {
+
+                $totalOrdersQuery->whereBetween('created_at', [
+                    now()->startOfWeek(),
+                    now()->endOfWeek()
+                ]);
+            } elseif ($period == 'yearly') {
+
+                $totalOrdersQuery->whereYear('created_at', now()->year);
             }
 
             $totalOrders = $totalOrdersQuery->count();
@@ -55,8 +75,18 @@ class UserManagementController extends Controller
                 ->where('provider_payments.status', 'successful');
 
             if ($period == 'monthly') {
+
                 $totalSpentQuery->whereMonth('provider_payments.created_at', now()->month)
                     ->whereYear('provider_payments.created_at', now()->year);
+            } elseif ($period == 'weekly') {
+
+                $totalSpentQuery->whereBetween('provider_payments.created_at', [
+                    now()->startOfWeek(),
+                    now()->endOfWeek()
+                ]);
+            } elseif ($period == 'yearly') {
+
+                $totalSpentQuery->whereYear('provider_payments.created_at', now()->year);
             }
 
             $totalSpent = $totalSpentQuery->sum('provider_payments.amount');
