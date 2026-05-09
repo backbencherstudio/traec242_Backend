@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\SliderController;
 use App\Http\Controllers\Admin\StripeController;
 use App\Http\Controllers\Admin\SubcategoryController;
+use App\Http\Controllers\Admin\SubscriptionManagementController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailController;
@@ -48,6 +49,11 @@ Route::post('/subscriber', [SubscriberController::class, 'store'])->name('subscr
 // google login api
 Route::get('/auth/google', [GoogleAuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
+
+// Authenticated user routes
+Route::middleware(['auth:api'])->group(function () {
+    Route::get('/me', [AuthController::class, 'me'])->name('me');
+});
 
 // Admin Protected Routes
 Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function () {
@@ -92,13 +98,13 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::delete('delete/{id}', [PlanController::class, 'destroy'])->name('plan.destroy');
     });
 
-    //Admin Stripe
+    // Admin Stripe
     Route::prefix('stripe')->group(function () {
         Route::post('upsert', [StripeController::class, 'upsert'])->name('stripe.upsert');
         Route::get('show', [StripeController::class, 'show'])->name('stripe.show');
     });
 
-    //Provider Stripe
+    // Provider Stripe
     Route::prefix('p-stripe')->group(function () {
         Route::post('upsert', [ProviderStripeController::class, 'upsert'])->name('p-stripe.upsert');
         Route::get('show', [ProviderStripeController::class, 'show'])->name('p-stripe.show');
@@ -181,13 +187,24 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('show/{id}', [OrderController::class, 'show'])->name('order.show');
     });
 
-    //Profile
+    // Profile
     Route::prefix('profile')->group(function () {
         Route::get('provider-profile', [ProfileController::class, 'providerProfile']);
         Route::put('update-provider-profile', [ProfileController::class, 'updateProviderProfile']);
     });
 
-    //Admin Dashboard
+    // Subscription Management
+    Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
+        Route::get('providers', [SubscriptionManagementController::class, 'index'])->name('providers');
+        Route::get('providers/{providerId}', [SubscriptionManagementController::class, 'show'])->name('show');
+        Route::get('all', [SubscriptionManagementController::class, 'allSubscriptions'])->name('all');
+        Route::post('providers/{providerId}/cancel', [SubscriptionManagementController::class, 'cancel'])->name('cancel');
+        Route::post('providers/{providerId}/cancel-now', [SubscriptionManagementController::class, 'cancelNow'])->name('cancel-now');
+        Route::post('providers/{providerId}/pause', [SubscriptionManagementController::class, 'pause'])->name('pause');
+        Route::post('providers/{providerId}/resume', [SubscriptionManagementController::class, 'resume'])->name('resume');
+    });
+
+    // Admin Dashboard
     Route::prefix('client')->group(function () {
         Route::get('index', [UserManagementController::class, 'clients']);
         Route::get('seller-index', [UserManagementController::class, 'sellers']);
@@ -204,7 +221,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('index', [OrderManagementController::class, 'index']);
     });
 
-
     Route::prefix('user-dashboard')->group(function () {
         Route::get('summary', [UserDashboardController::class, 'summary']);
         Route::get('recent-orders', [UserDashboardController::class, 'recentOrders']);
@@ -218,6 +234,4 @@ Route::get('/order/success/{orderId}', [OrderController::class, 'success'])->nam
 Route::get('/order/cancel/{orderId}', [OrderController::class, 'cancel'])->name('order.cancel');
 Route::get('/order/invoice/{orderId}', [OrderController::class, 'generateInvoice'])->name('order.invoice');
 
-
-
-require __DIR__ . '/mahmudul.php';
+require __DIR__.'/mahmudul.php';
