@@ -89,6 +89,13 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::put('update/{id}', [CategoryController::class, 'update'])->name('category.update');
         Route::delete('/delete/{id}', [CategoryController::class, 'destroy'])->name('category.destroy');
     });
+    // Route::prefix('category')->group(function () {
+    //     Route::get('index', [CategoryController::class, 'index'])->name('category.index');
+    //     Route::post('store', [CategoryController::class, 'store'])->name('category.store');
+    //     Route::get('edit/{id}', [CategoryController::class, 'edit'])->name('category.edit');
+    //     Route::put('update/{id}', [CategoryController::class, 'update'])->name('category.update');
+    //     Route::delete('/delete/{id}', [CategoryController::class, 'destroy'])->name('category.destroy');
+    // });
 
     // Plan
     Route::prefix('plan')->group(function () {
