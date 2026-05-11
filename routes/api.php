@@ -54,6 +54,11 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleC
 // Authenticated user routes
 Route::middleware(['auth:api'])->group(function () {
     Route::get('/me', [AuthController::class, 'me'])->name('me');
+
+    // Profile
+    Route::prefix('profile')->group(function () {
+        Route::put('update', [UpdateProfileController::class, 'update']);
+    });
 });
 
 // Admin Protected Routes
@@ -192,7 +197,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     Route::prefix('profile')->group(function () {
         Route::get('provider-profile', [ProfileController::class, 'providerProfile']);
         Route::put('update-provider-profile', [ProfileController::class, 'updateProviderProfile']);
-        Route::put('update', [UpdateProfileController::class, 'update']);
     });
 
     // Subscription Management
