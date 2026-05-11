@@ -117,7 +117,16 @@ class OrderManagementController extends Controller
 
         return response()->json([
             'success' => true,
+
+            'summary' => [
+                'total_orders' => $summary,
+                'processing' => $processing,
+                'active_orders' => $activeOrder,
+                'delivered' => $delivered,
+            ],
+
             'data' => $users->items(),
+
             'meta' => [
                 'current_page' => $users->currentPage(),
                 'last_page' => $users->lastPage(),
