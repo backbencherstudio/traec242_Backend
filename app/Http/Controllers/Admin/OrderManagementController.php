@@ -14,19 +14,33 @@ class OrderManagementController extends Controller
     {
         $search = $request->search;
         $status = $request->status;
+        $period = $request->period;
 
-        $query = User::where('type', '0')
-            ->withCount([
-                'orders as total_order',
+        $query = User::where('type', '0');
 
-                'orders as complete_order' => function ($q) {
-                    $q->where('status', 'completed');
-                },
+        self::applyPeriodFilter($query, $period);
 
-                'orders as pending_order' => function ($q) {
-                    $q->whereIn('status', ['pending', 'confirmed']);
-                }
-            ]);
+        $query = $query->withCount([
+
+            'orders as total_order' => function ($q) use ($period) {
+
+                self::applyPeriodFilter($q, $period);
+            },
+
+            'orders as complete_order' => function ($q) use ($period) {
+
+                $q->where('status', 'completed');
+
+                self::applyPeriodFilter($q, $period);
+            },
+
+            'orders as pending_order' => function ($q) use ($period) {
+
+                $q->whereIn('status', ['pending', 'confirmed']);
+
+                self::applyPeriodFilter($q, $period);
+            }
+        ]);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -41,22 +55,47 @@ class OrderManagementController extends Controller
         }
 
         $users = $query->get();
-        $summary = Order::count();
-        $processing = Order::whereIn('status', ['pending', 'confirmed'])->count();
-        $delivered = Order::where('status', 'completed')->count();
-        $activeOrder = Order::where('status', 'confirmed')
+
+        $orderQuery = Order::query();
+
+        self::applyPeriodFilter($orderQuery, $period);
+
+        $summary = (clone $orderQuery)->count();
+
+        $processing = (clone $orderQuery)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->count();
+
+        $delivered = (clone $orderQuery)
+            ->where('status', 'completed')
+            ->count();
+
+        $activeOrder = (clone $orderQuery)
+            ->where('status', 'confirmed')
             ->whereHas('providerPayments', function ($q) {
                 $q->where('status', 'successful');
             })
             ->count();
 
-        $data = $users->map(function ($user) {
+        $data = $users->map(function ($user) use ($period) {
 
-            $totalSpent = ProviderPayment::join('orders', 'provider_payments.order_id', '=', 'orders.id')
+            $totalSpentQuery = ProviderPayment::join(
+                'orders',
+                'provider_payments.order_id',
+                '=',
+                'orders.id'
+            )
                 ->where('provider_payments.user_id', $user->id)
                 ->where('orders.status', 'completed')
-                ->where('provider_payments.status', 'successful')
-                ->sum('provider_payments.amount');
+                ->where('provider_payments.status', 'successful');
+
+            self::applyPeriodFilter(
+                $totalSpentQuery,
+                $period,
+                'provider_payments.created_at'
+            );
+
+            $totalSpent = $totalSpentQuery->sum('provider_payments.amount');
 
             return [
                 'customer_info' => [
@@ -82,5 +121,25 @@ class OrderManagementController extends Controller
             ],
             'data' => $data
         ]);
+    }
+
+    private static function applyPeriodFilter($query, $period, $column = 'created_at')
+    {
+        if ($period == 'monthly') {
+
+            $query->whereMonth($column, now()->month)
+                ->whereYear($column, now()->year);
+        } elseif ($period == 'weekly') {
+
+            $query->whereBetween($column, [
+                now()->startOfWeek(),
+                now()->endOfWeek()
+            ]);
+        } elseif ($period == 'yearly') {
+
+            $query->whereYear($column, now()->year);
+        }
+
+        return $query;
     }
 }
