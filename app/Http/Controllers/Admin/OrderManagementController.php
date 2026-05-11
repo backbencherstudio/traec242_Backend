@@ -54,7 +54,9 @@ class OrderManagementController extends Controller
             $query->where('status', $status);
         }
 
-        $users = $query->get();
+        $perPage = $request->per_page ?? 10;
+
+        $users = $query->paginate($perPage);
 
         $orderQuery = Order::query();
 
@@ -77,7 +79,7 @@ class OrderManagementController extends Controller
             })
             ->count();
 
-        $data = $users->map(function ($user) use ($period) {
+        $data = $users->getCollection()->map(function ($user) use ($period) {
 
             $totalSpentQuery = ProviderPayment::join(
                 'orders',
@@ -111,15 +113,17 @@ class OrderManagementController extends Controller
             ];
         });
 
+        $users->setCollection($data);
+
         return response()->json([
             'success' => true,
-            'summary' => [
-                'total_orders' => $summary,
-                'processing' => $processing,
-                'active_orders' => $activeOrder,
-                'delivered' => $delivered,
-            ],
-            'data' => $data
+            'data' => $users->items(),
+            'meta' => [
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
+                'per_page' => $users->perPage(),
+                'total' => $users->total(),
+            ]
         ]);
     }
 
