@@ -54,8 +54,6 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleC
 // Authenticated user routes
 Route::middleware(['auth:api'])->group(function () {
     Route::get('/me', [AuthController::class, 'me'])->name('me');
-
-    // Profile
     Route::prefix('profile')->group(function () {
         Route::put('update', [UpdateProfileController::class, 'update']);
     });
