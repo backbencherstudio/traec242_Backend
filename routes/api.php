@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\UpdateProfileController;
 use App\Http\Controllers\Api\UserDashboardController;
 use App\Http\Controllers\Api\VerifyRegistrationOtpController;
 use App\Http\Controllers\Frontend\OrderController;
@@ -191,6 +192,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     Route::prefix('profile')->group(function () {
         Route::get('provider-profile', [ProfileController::class, 'providerProfile']);
         Route::put('update-provider-profile', [ProfileController::class, 'updateProviderProfile']);
+        Route::put('update', [UpdateProfileController::class, 'update']);
     });
 
     // Subscription Management
