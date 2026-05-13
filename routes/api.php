@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\FaqCategoryController;
 use App\Http\Controllers\Admin\FaqController;
+Use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\Admin\OrderManagementController;
 use App\Http\Controllers\Admin\PermissionController;
@@ -142,6 +143,21 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     });
 
     // faq-category
+    Route::prefix('faq-categories')->group(function () {
+        Route::get('index', [FaqCategoryController::class, 'index'])->name('faq-categories.index');
+        Route::post('store', [FaqCategoryController::class, 'store'])->name('faq-categories.store');
+        Route::get('edit/{id}', [FaqCategoryController::class, 'edit'])->name('faq-categories.edit');
+        Route::post('update/{id}', [FaqCategoryController::class, 'update'])->name('faq-categories.update');
+        Route::delete('delete/{id}', [FaqCategoryController::class, 'destroy'])->name('faq-categories.destroy');
+    });
+    // promition
+    Route::prefix('promotions')->group(function () {
+        Route::get('index', [PromotionController::class, 'index'])->name('promotions.index');
+        Route::post('store', [PromotionController::class, 'store'])->name('promotions.store');
+        Route::get('edit/{id}', [PromotionController::class, 'edit'])->name('promotions.edit');
+        Route::post('update/{id}', [PromotionController::class, 'update'])->name('promotions.update');
+        Route::delete('delete/{id}', [PromotionController::class, 'destroy'])->name('promotions.destroy');
+    });
     Route::prefix('faq-categories')->group(function () {
         Route::get('index', [FaqCategoryController::class, 'index'])->name('faq-categories.index');
         Route::post('store', [FaqCategoryController::class, 'store'])->name('faq-categories.store');
