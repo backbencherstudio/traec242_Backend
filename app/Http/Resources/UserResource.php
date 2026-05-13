@@ -30,6 +30,8 @@ class UserResource extends JsonResource
             'city' => $this->city,
             'state' => $this->state,
             'zip_code' => $this->zip_code,
+            'bio' => $this->bio,
+            'languages' => $this->languages,
             'category_id' => $this->category_id,
             'plan_id' => $this->plan_id,
             'plan' => $this->whenLoaded('plan', function () {

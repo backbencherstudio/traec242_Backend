@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\UpdateProfileController;
 use App\Http\Controllers\Api\UserDashboardController;
 use App\Http\Controllers\Api\VerifyRegistrationOtpController;
 use App\Http\Controllers\Frontend\OrderController;
@@ -53,6 +54,9 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleC
 // Authenticated user routes
 Route::middleware(['auth:api'])->group(function () {
     Route::get('/me', [AuthController::class, 'me'])->name('me');
+    Route::prefix('profile')->group(function () {
+        Route::put('update', [UpdateProfileController::class, 'update']);
+    });
 });
 
 // Admin Protected Routes
