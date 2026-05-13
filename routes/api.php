@@ -94,6 +94,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::put('update/{id}', [CategoryController::class, 'update'])->name('category.update');
         Route::delete('/delete/{id}', [CategoryController::class, 'destroy'])->name('category.destroy');
     });
+    
 
     // Plan
     Route::prefix('plan')->group(function () {
@@ -123,6 +124,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::post('update/{id}', [SubcategoryController::class, 'update'])->name('subcategory.update');
         Route::delete('/delete/{id}', [SubcategoryController::class, 'destroy'])->name('subcategory.destroy');
     });
+
 
     // Brand
     Route::prefix('brand')->group(function () {
@@ -248,6 +250,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('recent-message', [UserDashboardController::class, 'recentMessages']);
         Route::get('chat-list', [UserDashboardController::class, 'chat']);
     });
+
 });
 
 Route::get('/order/success/{orderId}', [OrderController::class, 'success'])->name('order.success');
