@@ -16,7 +16,6 @@ class UpdateProfileController extends Controller
         $rules = [
             'name' => 'sometimes|string|max:255',
             'last_name' => 'sometimes|string|max:255',
-            'password' => 'sometimes|string|min:8|confirmed',
             'phone' => 'sometimes|string|max:20',
             'image' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
             'address' => 'sometimes|string|max:255',
