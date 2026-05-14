@@ -57,6 +57,7 @@ Route::middleware(['auth:api'])->group(function () {
     Route::get('/me', [AuthController::class, 'me'])->name('me');
     Route::prefix('profile')->group(function () {
         Route::put('update', [UpdateProfileController::class, 'update']);
+        Route::post('passwordchange', [AuthController::class, 'passwordchange']);
     });
 });
 
@@ -69,7 +70,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     Route::delete('/delete/{id}', [AuthController::class, 'delete'])->name('delete');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/password/{id}', [AuthController::class, 'password'])->name('password');
-    Route::post('/passwordchange', [AuthController::class, 'passwordchange']);
 
     // Role
     Route::prefix('role')->group(function () {
