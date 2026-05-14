@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Category;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -33,6 +34,9 @@ class UserResource extends JsonResource
             'bio' => $this->bio,
             'languages' => $this->languages,
             'category_id' => $this->category_id,
+            'categories' => $this->type === 2
+                ? Category::whereIn('id', $this->category_id ?? [])->get(['id', 'name', 'slug', 'image'])
+                : null,
             'plan_id' => $this->plan_id,
             'plan' => $this->whenLoaded('plan', function () {
                 return [
