@@ -35,7 +35,7 @@ class UserResource extends JsonResource
             'languages' => $this->languages,
             'category_id' => $this->category_id,
             'categories' => $this->type === 2
-                ? Category::whereIn('id', $this->category_id ?? [])->get(['id', 'name', 'slug', 'image'])
+                ? Category::whereIn('id', $this->category_id ?? [])->get(['id', 'name', 'image'])
                 : null,
             'plan_id' => $this->plan_id,
             'plan' => $this->whenLoaded('plan', function () {
