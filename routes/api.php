@@ -94,7 +94,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::put('update/{id}', [CategoryController::class, 'update'])->name('category.update');
         Route::delete('/delete/{id}', [CategoryController::class, 'destroy'])->name('category.destroy');
     });
-    
+
 
     // Plan
     Route::prefix('plan')->group(function () {
@@ -152,7 +152,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::post('update/{id}', [FaqCategoryController::class, 'update'])->name('faq-categories.update');
         Route::delete('delete/{id}', [FaqCategoryController::class, 'destroy'])->name('faq-categories.destroy');
     });
-    // promition
+    // promition0
     Route::prefix('promotions')->group(function () {
         Route::get('index', [PromotionController::class, 'index'])->name('promotions.index');
         Route::post('store', [PromotionController::class, 'store'])->name('promotions.store');
