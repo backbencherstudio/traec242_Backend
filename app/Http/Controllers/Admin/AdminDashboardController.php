@@ -111,6 +111,7 @@ class AdminDashboardController extends Controller
         }
         return response()->json([
             'success' => true,
+            'message' => 'Dashboard data fetched successfully',
             'overview' => [
                 'total_users' => $totalUser,
                 'total_revenue' => '$' . number_format($totalRevenue),
