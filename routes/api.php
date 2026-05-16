@@ -28,7 +28,6 @@ use App\Http\Controllers\Frontend\OrderController;
 use App\Http\Controllers\Frontend\SubscriberController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Provider\ProviderStripeController;
-use App\Models\Order;
 use Illuminate\Support\Facades\Route;
 
 // Admin Public Routes
@@ -238,7 +237,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('index', [AdminDashboardController::class, 'index']);
     });
 
-    //Admin Order Management
+    // Order Management
     Route::prefix('admin-order')->group(function () {
         Route::get('index', [OrderManagementController::class, 'index']);
     });
