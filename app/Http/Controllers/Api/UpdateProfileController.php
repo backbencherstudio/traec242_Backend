@@ -13,10 +13,9 @@ class UpdateProfileController extends Controller
     {
         $user = Auth::user();
 
-        $data = $request->validate([
+        $rules = [
             'name' => 'sometimes|string|max:255',
             'last_name' => 'sometimes|string|max:255',
-            'password' => 'sometimes|string|min:8|confirmed',
             'phone' => 'sometimes|string|max:20',
             'image' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
             'address' => 'sometimes|string|max:255',
@@ -26,7 +25,14 @@ class UpdateProfileController extends Controller
             'bio' => 'sometimes|string',
             'languages' => 'sometimes|array',
             'languages.*' => 'string',
-        ]);
+        ];
+
+        if ($user->type === 2) {
+            $rules['category_id'] = 'sometimes|array';
+            $rules['category_id.*'] = 'integer|exists:categories,id';
+        }
+
+        $data = $request->validate($rules);
 
         if ($request->hasFile('image')) {
             $image = $request->file('image');

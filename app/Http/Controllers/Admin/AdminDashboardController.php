@@ -41,11 +41,13 @@ class AdminDashboardController extends Controller
                 ->groupBy('week')
                 ->pluck('total', 'week');
 
+            $lastMonth = now()->subMonth();
+
             $lastMonthSales = ProviderPayment::join('orders', 'provider_payments.order_id', '=', 'orders.id')
                 ->where('provider_payments.status', 'successful')
                 ->where('orders.status', 'completed')
-                ->whereMonth('provider_payments.created_at', now()->subMonth()->month)
-                ->whereYear('provider_payments.created_at', now()->year)
+                ->whereMonth('provider_payments.created_at', $lastMonth->month)
+                ->whereYear('provider_payments.created_at', $lastMonth->year)
                 ->select(
                     DB::raw('WEEK(provider_payments.created_at, 1) - WEEK(DATE_SUB(provider_payments.created_at, INTERVAL DAYOFMONTH(provider_payments.created_at)-1 DAY),1) + 1 as week'),
                     DB::raw('SUM(provider_payments.amount) as total')
@@ -111,6 +113,7 @@ class AdminDashboardController extends Controller
         }
         return response()->json([
             'success' => true,
+            'message' => 'Dashboard data fetched successfully',
             'overview' => [
                 'total_users' => $totalUser,
                 'total_revenue' => '$' . number_format($totalRevenue),
