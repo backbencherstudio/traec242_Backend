@@ -13,6 +13,15 @@ class Promotion extends Model
         'start_date',
         'end_date',
         'status',
-       
+
     ];
+    // protected $fillable = [
+    //     'name',
+    //     'discount',
+    //     'type',
+    //     'start_date',
+    //     'end_date',
+    //     'status',
+
+    // ];
 }
