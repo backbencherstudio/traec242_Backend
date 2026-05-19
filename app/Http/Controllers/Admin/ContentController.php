@@ -35,7 +35,7 @@ class ContentController extends Controller
         return $this->sendResponse($data);
     }
     /**
-     * Update content values.
+     * Update content values
      *
      * @param Request $request
      * @return JsonResponse
