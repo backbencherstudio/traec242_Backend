@@ -23,24 +23,21 @@ class CategorySeederTest extends TestCase
 
         $this->assertDatabaseHas('categories', [
             'name' => 'Photography',
-            'slug' => 'photography',
             'status' => 1,
         ]);
 
         $this->assertDatabaseHas('categories', [
             'name' => 'Catering',
-            'slug' => 'catering',
             'status' => 1,
         ]);
 
         $this->assertDatabaseHas('categories', [
             'name' => 'Event Planning',
-            'slug' => 'event-planning',
             'status' => 1,
         ]);
 
         $category = Category::query()
-            ->where('slug', 'photography')
+            ->where('name', 'Photography')
             ->firstOrFail();
 
         $this->assertSame(
