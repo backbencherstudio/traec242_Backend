@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
@@ -38,9 +37,9 @@ class CategoryController extends Controller
 
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $imageName = time() . '_' . $image->getClientOriginalName();
+            $imageName = time().'_'.$image->getClientOriginalName();
             $image->move(public_path('uploads/category'), $imageName);
-            $imagePath = 'uploads/category/' . $imageName;
+            $imagePath = 'uploads/category/'.$imageName;
         }
 
         $category = Category::create([
@@ -48,7 +47,6 @@ class CategoryController extends Controller
             'description' => $request->description,
             'status' => $request->status,
             'image' => $imagePath,
-            'slug' => Str::slug($request->name, '-'),
         ]);
 
         return response()->json([
@@ -87,15 +85,14 @@ class CategoryController extends Controller
 
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $imageName = time() . '_' . $image->getClientOriginalName();
+            $imageName = time().'_'.$image->getClientOriginalName();
             $image->move(public_path('uploads/category'), $imageName);
-            $category->image = 'uploads/category/' . $imageName;
+            $category->image = 'uploads/category/'.$imageName;
         }
 
         $category->name = $request->name;
         $category->description = $request->description;
         $category->status = $request->status;
-        $category->slug = Str::slug($request->name, '-');
 
         $category->save();
 

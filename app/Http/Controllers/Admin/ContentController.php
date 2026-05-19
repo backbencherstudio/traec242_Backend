@@ -8,7 +8,7 @@ use App\Models\Content;
 use App\Models\Faq;
 use App\Models\PrivacyPolicy;
 use App\Models\User;
-use Illuminate\Container\Attributes\Storage;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 
 class ContentController extends Controller
@@ -35,7 +35,7 @@ class ContentController extends Controller
         return $this->sendResponse($data);
     }
     /**
-     * Update content values.
+     * Update content values
      *
      * @param Request $request
      * @return JsonResponse

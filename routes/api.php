@@ -1,15 +1,15 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\FaqCategoryController;
 use App\Http\Controllers\Admin\FaqController;
-Use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\Admin\OrderManagementController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\SliderController;
@@ -90,10 +90,9 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('index', [CategoryController::class, 'index'])->name('category.index');
         Route::post('store', [CategoryController::class, 'store'])->name('category.store');
         Route::get('edit/{id}', [CategoryController::class, 'edit'])->name('category.edit');
-        Route::put('update/{id}', [CategoryController::class, 'update'])->name('category.update');
+        Route::post('update/{id}', [CategoryController::class, 'update'])->name('category.update');
         Route::delete('/delete/{id}', [CategoryController::class, 'destroy'])->name('category.destroy');
     });
-
 
     // Plan
     Route::prefix('plan')->group(function () {
@@ -123,7 +122,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::post('update/{id}', [SubcategoryController::class, 'update'])->name('subcategory.update');
         Route::delete('/delete/{id}', [SubcategoryController::class, 'destroy'])->name('subcategory.destroy');
     });
-
 
     // Brand
     Route::prefix('brand')->group(function () {
@@ -233,7 +231,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::delete('delete-user/{id}', [UserManagementController::class, 'deleteUser']);
     });
 
-    Route::prefix('admin-dashboard')->group(function() {
+    Route::prefix('admin-dashboard')->group(function () {
         Route::get('index', [AdminDashboardController::class, 'index']);
     });
 
@@ -249,7 +247,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('recent-message', [UserDashboardController::class, 'recentMessages']);
         Route::get('chat-list', [UserDashboardController::class, 'chat']);
     });
-
 });
 
 Route::get('/order/success/{orderId}', [OrderController::class, 'success'])->name('order.success');
