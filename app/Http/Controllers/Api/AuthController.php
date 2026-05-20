@@ -75,7 +75,7 @@ class AuthController extends Controller
 
         if ($user->jwt_token) {
             try {
-                JWTAuth::setToken($user->jwt_token)->invalidate();
+                JWTAuth::setToken($user->jwt_token)->invalidate(true);
             } catch (\Exception $e) {
             }
         }
