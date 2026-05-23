@@ -25,6 +25,16 @@ class ServiceController extends Controller
 
         return $this->sendResponse($data);
     }
+    // public function index()
+    // {
+    //     $services = Service::where('user_id', auth()->id())->with(['category', 'pricings'])->latest()->get();
+
+    //     $data = [
+    //         'services' => ServiceResource::collection($services)
+    //     ];
+
+    //     return $this->sendResponse($data);
+    // }
 
     public function store(StoreServiceRequest $request)
     {
