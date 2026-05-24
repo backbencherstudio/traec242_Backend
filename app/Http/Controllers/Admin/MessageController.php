@@ -21,10 +21,9 @@ class MessageController extends Controller
         $senderId = auth()->id();
         $receiverId = $request->receiver_id;
 
-        // Find conversation
         $conversation = Conversation::whereHas('users', function ($q) use ($senderId) {
-            $q->where('user_id', $senderId);
-        })
+                $q->where('user_id', $senderId);
+            })
             ->whereHas('users', function ($q) use ($receiverId) {
                 $q->where('user_id', $receiverId);
             })
@@ -40,13 +39,35 @@ class MessageController extends Controller
         }
 
         $messages = $conversation->messages()
-            ->with(['attachments', 'sender'])
+            ->with([
+                'attachments',
+                'sender:id,name,image',
+                'receiver:id,name,image'
+            ])
             ->orderBy('created_at', 'asc')
-            ->get()->map(function ($msg) {
+            ->get()
+            ->map(function ($msg) {
+
                 return [
-                    'receiver_id' => $msg->receiver_id,
-                    'sender_id'   => $msg->sender_id,
-                    'message'     => $msg->message,
+                    'id' => $msg->id,
+
+                    'sender' => [
+                        'id'    => $msg->sender?->id,
+                        'name'  => $msg->sender?->name,
+                        'image' => $msg->sender?->image,
+                    ],
+
+                    'receiver' => [
+                        'id'    => $msg->receiver?->id,
+                        'name'  => $msg->receiver?->name,
+                        'image' => $msg->receiver?->image,
+                    ],
+
+                    'message' => $msg->message,
+
+                    // 'attachments' => $msg->attachments,
+
+                    'created_at' => $msg->created_at->format('Y-m-d H:i:s'),
                 ];
             });
 
