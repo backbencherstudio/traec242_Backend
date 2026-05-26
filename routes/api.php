@@ -196,6 +196,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
 
     Route::prefix('message')->group(function () {
         Route::get('index', [MessageController::class, 'index']);
+        Route::get('sms-list', [MessageController::class, 'messageslist']);
         Route::post('send', [MessageController::class, 'sendMessage']);
     });
 

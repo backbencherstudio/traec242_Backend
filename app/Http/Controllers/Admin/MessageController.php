@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
-// use App\Models\Message;
+use App\Models\Message;
 use App\Models\Conversation;
 // use App\Models\Attachment;
 use Illuminate\Http\Request;
@@ -14,6 +14,7 @@ class MessageController extends Controller
 {
     public function index(Request $request)
     {
+
         $request->validate([
             'receiver_id' => 'required|exists:users,id',
         ]);
@@ -76,6 +77,20 @@ class MessageController extends Controller
             'data' => $messages,
         ]);
     }
+
+    public function messageslist()
+{
+    $messanger = Message::where('sender_id', auth()->id())
+        ->orWhere('receiver_id', auth()->id())
+        ->with(['sender:id,name,image'])
+        ->get();
+
+    return response()->json([
+        'status' => 'success',
+        'data' => $messanger,
+    ]);
+}
+
 
     public function sendMessage(Request $request)
     {
