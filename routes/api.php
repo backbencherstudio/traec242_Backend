@@ -28,6 +28,7 @@ use App\Http\Controllers\Frontend\OrderController;
 use App\Http\Controllers\Frontend\SubscriberController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Provider\ProviderStripeController;
+use App\Http\Controllers\Api\ProviderController;
 use Illuminate\Support\Facades\Route;
 
 // Admin Public Routes
@@ -44,6 +45,10 @@ Route::post('/reset-password', [AuthController::class, 'resetPasswordWithOtp']);
 
 Route::post('/subscriber', [SubscriberController::class, 'store'])->name('subscriber.store');
 // Route::middleware('auth:api')->post('/user/logout', [UserController::class, 'logout']);
+
+// Public provider listing and details
+Route::get('/providers', [ProviderController::class, 'index']);
+Route::get('/providers/{id}', [ProviderController::class, 'show']);
 
 // Route::post('/admin/register', [AuthController::class, 'adminregister']);
 

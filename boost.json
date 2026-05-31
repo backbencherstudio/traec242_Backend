@@ -1,11 +1,13 @@
 {
     "agents": [
         "codex",
-        "claude_code"
+        "claude_code",
+        "copilot"
     ],
+    "cloud": false,
     "guidelines": true,
     "mcp": true,
-    "nightwatch_mcp": false,
+    "nightwatch": false,
     "sail": false,
     "skills": [
         "cashier-stripe-development",
