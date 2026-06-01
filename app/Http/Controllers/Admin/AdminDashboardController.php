@@ -61,8 +61,8 @@ class AdminDashboardController extends Controller
             $lastPeriod = [];
 
             for ($i = 1; $i <= 4; $i++) {
-                $thisPeriod[] = $thisMonthSales[$i] ?? 0;
-                $lastPeriod[] = $lastMonthSales[$i] ?? 0;
+                $thisPeriod[] = (float) ($thisMonthSales[$i] ?? 0);
+                $lastPeriod[] = (float) ($lastMonthSales[$i] ?? 0);
             }
         } else {
 
@@ -107,8 +107,8 @@ class AdminDashboardController extends Controller
             $lastPeriod = [];
 
             for ($i = 1; $i <= 12; $i++) {
-                $thisPeriod[] = $thisYearSales[$i] ?? 0;
-                $lastPeriod[] = $lastYearSales[$i] ?? 0;
+                $thisPeriod[] = (float) ($thisYearSales[$i] ?? 0);
+                $lastPeriod[] = (float) ($lastYearSales[$i] ?? 0);
             }
         }
         return response()->json([

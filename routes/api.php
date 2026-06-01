@@ -154,7 +154,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::post('update/{id}', [FaqCategoryController::class, 'update'])->name('faq-categories.update');
         Route::delete('delete/{id}', [FaqCategoryController::class, 'destroy'])->name('faq-categories.destroy');
     });
-    // promition
+    // promition0
     Route::prefix('promotions')->group(function () {
         Route::get('index', [PromotionController::class, 'index'])->name('promotions.index');
         Route::post('store', [PromotionController::class, 'store'])->name('promotions.store');
@@ -201,6 +201,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
 
     Route::prefix('message')->group(function () {
         Route::get('index', [MessageController::class, 'index']);
+        Route::get('sms-list', [MessageController::class, 'messageslist']);
         Route::post('send', [MessageController::class, 'sendMessage']);
     });
 
