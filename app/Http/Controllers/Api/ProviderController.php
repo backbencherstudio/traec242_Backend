@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Service;
 use App\Models\User;
+use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProviderController extends Controller
 {
@@ -29,7 +31,7 @@ class ProviderController extends Controller
             $query->where(function ($qb) use ($category) {
                 $qb->whereJsonContains('category_id', $category)
                     ->orWhereExists(function ($sub) use ($category) {
-                        $sub->select(\DB::raw(1))
+                        $sub->select(DB::raw(1))
                             ->from('services')
                             ->whereColumn('services.user_id', 'users.id')
                             ->where('services.category_id', $category);
@@ -38,6 +40,17 @@ class ProviderController extends Controller
         }
 
         $providers = $query->paginate($perPage);
+
+        // Attach category details for each provider (category_id is stored as JSON array)
+        $providers->getCollection()->transform(function ($provider) {
+            if (! empty($provider->category_id) && is_array($provider->category_id)) {
+                $provider->categories = Category::whereIn('id', $provider->category_id)->get();
+            } else {
+                $provider->categories = collect();
+            }
+
+            return $provider;
+        });
 
         return $this->sendResponse($providers);
     }
@@ -52,8 +65,14 @@ class ProviderController extends Controller
 
         $services = Service::where('user_id', $provider->id)->get();
 
+        $categories = collect();
+        if (! empty($provider->category_id) && is_array($provider->category_id)) {
+            $categories = Category::whereIn('id', $provider->category_id)->get();
+        }
+
         return $this->sendResponse([
             'provider' => $provider,
+            'categories' => $categories,
             'services' => $services,
         ]);
     }
