@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\ProviderController;
 use App\Http\Controllers\Api\UpdateProfileController;
 use App\Http\Controllers\Api\UserDashboardController;
 use App\Http\Controllers\Api\VerifyRegistrationOtpController;
@@ -28,7 +29,6 @@ use App\Http\Controllers\Frontend\OrderController;
 use App\Http\Controllers\Frontend\SubscriberController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Provider\ProviderStripeController;
-use App\Http\Controllers\Api\ProviderController;
 use Illuminate\Support\Facades\Route;
 
 // Admin Public Routes

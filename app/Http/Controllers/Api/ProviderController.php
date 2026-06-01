@@ -15,12 +15,11 @@ class ProviderController extends Controller
 
         $query = User::where('type', 2);
 
-        if ($request->filled('q')) {
-            $q = $request->get('q');
-            $query->where(function ($qBuilder) use ($q) {
-                $qBuilder->where('name', 'like', "%{$q}%")
-                    ->orWhere('last_name', 'like', "%{$q}%")
-                    ->orWhere('email', 'like', "%{$q}%");
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function ($qBuilder) use ($search) {
+                $qBuilder->where('name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%");
             });
         }
 
@@ -29,12 +28,12 @@ class ProviderController extends Controller
 
             $query->where(function ($qb) use ($category) {
                 $qb->whereJsonContains('category_id', $category)
-                   ->orWhereExists(function ($sub) use ($category) {
-                       $sub->select(\DB::raw(1))
-                           ->from('services')
-                           ->whereColumn('services.user_id', 'users.id')
-                           ->where('services.category_id', $category);
-                   });
+                    ->orWhereExists(function ($sub) use ($category) {
+                        $sub->select(\DB::raw(1))
+                            ->from('services')
+                            ->whereColumn('services.user_id', 'users.id')
+                            ->where('services.category_id', $category);
+                    });
             });
         }
 
