@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\ProviderController;
 use App\Http\Controllers\Api\UpdateProfileController;
 use App\Http\Controllers\Api\UserDashboardController;
 use App\Http\Controllers\Api\VerifyRegistrationOtpController;
@@ -44,6 +45,10 @@ Route::post('/reset-password', [AuthController::class, 'resetPasswordWithOtp']);
 
 Route::post('/subscriber', [SubscriberController::class, 'store'])->name('subscriber.store');
 // Route::middleware('auth:api')->post('/user/logout', [UserController::class, 'logout']);
+
+// Public provider listing and details
+Route::get('/providers', [ProviderController::class, 'index']);
+Route::get('/providers/{id}', [ProviderController::class, 'show']);
 
 // Route::post('/admin/register', [AuthController::class, 'adminregister']);
 
