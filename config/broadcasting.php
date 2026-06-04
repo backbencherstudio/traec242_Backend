@@ -2,10 +2,7 @@
 
 return [
 
-
-    'default' => env('BROADCAST_CONNECTION', 'null'),
-
-
+    'default' => env('BROADCAST_CONNECTION', 'log'),
 
     'connections' => [
 
@@ -21,7 +18,7 @@ return [
                 'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
             ],
             'client_options' => [
-             
+
             ],
         ],
 
