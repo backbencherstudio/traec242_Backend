@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Events;
-
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -18,14 +17,17 @@ class MessageSent implements ShouldBroadcast
         $this->message = $message;
     }
 
-    public function broadcastOn()
+    public function broadcastOn(): array
     {
-        return new PrivateChannel('conversation.' . $this->message->conversation_id);
+        return [
+            new PrivateChannel(
+                'conversation.' . $this->message->conversation_id
+            ),
+        ];
     }
 
-    public function broadcastAs()
+    public function broadcastAs(): string
     {
         return 'message.sent';
     }
-
 }
