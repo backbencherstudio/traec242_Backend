@@ -88,7 +88,7 @@ class MessageController extends Controller
         'status' => 'success',
         'data' => $messages,
     ]);
-}
+    }
 
 
     // public function index(Request $request)
@@ -228,7 +228,7 @@ class MessageController extends Controller
             }
 
             $conversation->touch();
-            
+
             event(new \App\Events\MessageSent($message));
 
             broadcast(new MessageSent(
