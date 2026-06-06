@@ -20,7 +20,7 @@ class Message extends Model
 
     public function attachments()
     {
-        return $this->hasMany(Attachment::class);
+        return $this->hasMany(Attachment::class, 'message_id');
     }
 
     public function receiver()

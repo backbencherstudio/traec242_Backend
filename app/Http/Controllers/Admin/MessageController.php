@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 
 class MessageController extends Controller
 {
+
+
     public function index(Request $request)
     {
 
@@ -22,6 +24,7 @@ class MessageController extends Controller
         $senderId = auth()->id();
         $receiverId = $request->receiver_id;
 
+
         $conversation = Conversation::whereHas('users', function ($q) use ($senderId) {
                 $q->where('user_id', $senderId);
             })
@@ -31,13 +34,15 @@ class MessageController extends Controller
             ->where('is_group', false)
             ->first();
 
-        if (! $conversation) {
+
+        if (!$conversation) {
             return response()->json([
                 'status' => 'success',
                 'data' => [],
                 'message' => 'No conversation found',
             ]);
         }
+
 
         $messages = $conversation->messages()
             ->with([
@@ -48,7 +53,6 @@ class MessageController extends Controller
             ->orderBy('created_at', 'asc')
             ->get()
             ->map(function ($msg) {
-
                 return [
                     'id' => $msg->id,
 
@@ -66,17 +70,97 @@ class MessageController extends Controller
 
                     'message' => $msg->message,
 
-                    // 'attachments' => $msg->attachments,
+                    'attachments' => $msg->attachments->map(function ($file) {
+                        return [
+                            'id'         => $file->id,
+                            'file_name'  => $file->file_name,
+                            'file_type'  => $file->file_type,
+                            'file_size'  => $file->file_size,
+                            'file_url'   => $file->file_path ? asset('storage/' . $file->file_path) : null,
+                        ];
+                    }),
 
                     'created_at' => $msg->created_at->format('Y-m-d H:i:s'),
                 ];
-            });
+    });
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $messages,
-        ]);
-    }
+    return response()->json([
+        'status' => 'success',
+        'data' => $messages,
+    ]);
+}
+
+
+    // public function index(Request $request)
+    // {
+
+    //     $request->validate([
+    //         'receiver_id' => 'required|exists:users,id',
+    //     ]);
+
+    //     $senderId = auth()->id();
+    //     $receiverId = $request->receiver_id;
+
+    //     $conversation = Conversation::whereHas('users', function ($q) use ($senderId) {
+    //             $q->where('user_id', $senderId);
+    //         })
+    //         ->whereHas('users', function ($q) use ($receiverId) {
+    //             $q->where('user_id', $receiverId);
+    //         })
+    //         ->where('is_group', false)
+    //         ->first();
+
+    //     if (! $conversation) {
+    //         return response()->json([
+    //             'status' => 'success',
+    //             'data' => [],
+    //             'message' => 'No conversation found',
+    //         ]);
+    //     }
+
+    //     $messages = $conversation->messages()
+    //         ->with([
+    //             'attachments',
+    //             'sender:id,name,image',
+    //             'receiver:id,name,image'
+    //         ])
+    //         ->orderBy('created_at', 'asc')
+    //         ->get()
+    //         ->map(function ($msg) {
+
+    //             return [
+    //                 'id' => $msg->id,
+
+    //                 'sender' => [
+    //                     'id'    => $msg->sender?->id,
+    //                     'name'  => $msg->sender?->name,
+    //                     'image' => $msg->sender?->image,
+    //                 ],
+
+    //                 'receiver' => [
+    //                     'id'    => $msg->receiver?->id,
+    //                     'name'  => $msg->receiver?->name,
+    //                     'image' => $msg->receiver?->image,
+    //                 ],
+
+    //                 'message' => $msg->message,
+
+    //                 'attachments' => $msg->attachments,
+
+    //                 'created_at' => $msg->created_at->format('Y-m-d H:i:s'),
+    //             ];
+    //         });
+
+    //     return response()->json([
+    //         'status' => 'success',
+    //         'data' => $messages,
+    //     ]);
+    // }
+
+
+
+
+
 
     public function messageslist()
 {
@@ -144,6 +228,8 @@ class MessageController extends Controller
             }
 
             $conversation->touch();
+            
+            event(new \App\Events\MessageSent($message));
 
             broadcast(new MessageSent(
                 $message->load(['attachments', 'sender'])
