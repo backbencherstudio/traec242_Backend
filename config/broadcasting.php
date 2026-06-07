@@ -20,7 +20,11 @@ return [
             'client_options' => [
 
             ],
+
         ],
+        'auth' => [
+        'middleware' => ['api', 'auth:sanctum'],
+    ],
 
         'pusher' => [
             'driver' => 'pusher',
@@ -50,6 +54,10 @@ return [
             'driver' => 'null',
         ],
 
+    ],
+
+    'auth' => [
+        'middleware' => ['api', 'auth:sanctum'], 
     ],
 
 ];
