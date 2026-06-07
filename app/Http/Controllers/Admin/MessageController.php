@@ -162,18 +162,61 @@ class MessageController extends Controller
 
 
 
-    public function messageslist()
-{
-    $messanger = Message::where('sender_id', auth()->id())
-        ->orWhere('receiver_id', auth()->id())
-        ->with(['sender:id,name,image'])
-        ->get();
+    // public function messageslist()
+    // {
+    //     $messanger = Message::where('sender_id', auth()->id())
+    //         ->orWhere('receiver_id', auth()->id())
+    //         ->with(['sender:id,name,image'])
+    //         ->get();
 
-    return response()->json([
-        'status' => 'success',
-        'data' => $messanger,
-    ]);
-}
+    //     return response()->json([
+    //         'status' => 'success',
+    //         'data' => $messanger,
+    //     ]);
+    // }
+
+    public function messageslist()
+    {
+        $messages = Message::where('sender_id', auth()->id())
+            ->orWhere('receiver_id', auth()->id())
+            ->with([
+                'sender:id,name,image',
+                'attachments'
+            ])
+            ->get()
+            ->map(function ($msg) {
+                return [
+                    'id' => $msg->id,
+                    'message' => $msg->message,
+                    'sender_id' => $msg->sender_id,
+                    'receiver_id' => $msg->receiver_id,
+                    'created_at' => $msg->created_at,
+
+                    'sender' => [
+                        'id' => $msg->sender?->id,
+                        'name' => $msg->sender?->name,
+                        'image' => $msg->sender?->image,
+                    ],
+
+                    'attachments' => $msg->attachments->map(function ($file) {
+                        return [
+                            'id'        => $file->id,
+                            'file_name' => $file->file_name,
+                            'file_type' => $file->file_type,
+                            'file_size' => $file->file_size,
+                            'file_url'  => $file->file_path
+                                ? asset('storage/' . $file->file_path)
+                                : null,
+                        ];
+                    }),
+                ];
+            });
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $messages,
+        ]);
+    }
 
 
     public function sendMessage(Request $request)
