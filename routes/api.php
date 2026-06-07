@@ -186,7 +186,9 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     });
     // notification
     Route::prefix('notification')->group(function () {
-        Route::post('/send-notification', [NotificationController::class, 'sendNotification'])->name('notification.store');
+        Route::get('/unread-count', [NotificationController::class, 'getTotalUnreadCount']);
+        Route::get('/chat-unread-count', [NotificationController::class, 'getChatListWithUnreadCount']);
+        Route::post('/read', [NotificationController::class, 'markChatAsRead']);
     });
 
     // mail
