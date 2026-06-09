@@ -162,18 +162,7 @@ class MessageController extends Controller
 
 
 
-    // public function messageslist()
-    // {
-    //     $messanger = Message::where('sender_id', auth()->id())
-    //         ->orWhere('receiver_id', auth()->id())
-    //         ->with(['sender:id,name,image'])
-    //         ->get();
-
-    //     return response()->json([
-    //         'status' => 'success',
-    //         'data' => $messanger,
-    //     ]);
-    // }
+    
 
     public function messageslist()
     {
