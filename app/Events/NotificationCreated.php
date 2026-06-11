@@ -27,4 +27,9 @@ class NotificationCreated implements ShouldBroadcast
     {
         return 'notification.created';
     }
+
+    // public function broadcastAs(): string
+    // {
+    //     return 'notification.created';
+    // }
 }
