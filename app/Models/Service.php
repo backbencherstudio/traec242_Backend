@@ -16,7 +16,7 @@ class Service extends Model
         'description',
         'image',
         'feature_service',
-        'status'
+        'status',
     ];
 
     protected $casts = [
@@ -25,12 +25,10 @@ class Service extends Model
         'status' => 'boolean',
     ];
 
-
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
-
 
     public function category(): BelongsTo
     {
@@ -44,6 +42,11 @@ class Service extends Model
 
     public function getImageUrlAttribute()
     {
-        return collect($this->image)->map(fn($img) => asset('storage/' . $img));
+        return collect($this->image)->map(fn ($img) => asset('storage/'.$img));
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
     }
 }
