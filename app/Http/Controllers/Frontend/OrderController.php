@@ -27,8 +27,21 @@ class OrderController extends Controller
 
     public function index()
     {
-        $orders = Order::with(['service', 'pricing', 'payment', 'user'])
-            ->get()
+        $user = auth()->user();
+
+        $query = Order::with(['service', 'pricing', 'providerPayments', 'user']);
+
+        if ($user->type == 0) {
+            $query->where('user_id', $user->id);
+        }
+
+        if ($user->type == 2) {
+            $query->whereHas('service', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            });
+        }
+
+        $orders = $query->get()
             ->map(function ($order) {
 
                 $dueIn = Carbon::parse($order->event_end_date)->diff(Carbon::now());
@@ -37,10 +50,11 @@ class OrderController extends Controller
                 $minutes = $dueIn->i;
 
                 return [
+                    'order_id' => $order->id,
                     'service_image' => $order->service->image,
                     'event_name' => $order->event_name,
                     'order_by' => "{$order->user->name} {$order->user->last_name}",
-                    'price' => "$" . number_format($order->payment->amount),
+                    'price' => "$" . number_format($order->providerPayments->amount),
                     'due_in' => "{$days}d {$hours}h {$minutes}m",
                     'status' => $order->status,
                 ];
