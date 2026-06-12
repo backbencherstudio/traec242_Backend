@@ -73,7 +73,7 @@ class OrderController extends Controller
      */
     public function show($id)
     {
-        $order = Order::with(['service', 'pricing', 'payment', 'user'])
+        $order = Order::with(['service', 'pricing', 'providerPayments', 'user'])
             ->find($id);
 
         if (!$order) {
@@ -130,7 +130,7 @@ class OrderController extends Controller
                 'status' => $order->status,
                 'order_number' => '#ORD' . str_pad($order->id, 5, '0', STR_PAD_LEFT),
                 'end_date' => Carbon::parse($order->event_end_date)->format('d M, Y'),
-                'amount_paid' =>  "$" . number_format($order->payment->amount),
+                'amount_paid' =>  "$" . number_format($order->providerPayments->amount),
             ],
         ];
 
