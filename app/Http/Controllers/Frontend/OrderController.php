@@ -27,8 +27,21 @@ class OrderController extends Controller
 
     public function index()
     {
-        $orders = Order::with(['service', 'pricing', 'payment', 'user'])
-            ->get()
+        $user = auth()->user();
+
+        $query = Order::with(['service', 'pricing', 'providerPayments', 'user']);
+
+        if ($user->type == 0) {
+            $query->where('user_id', $user->id);
+        }
+
+        if ($user->type == 2) {
+            $query->whereHas('service', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            });
+        }
+
+        $orders = $query->get()
             ->map(function ($order) {
 
                 $dueIn = Carbon::parse($order->event_end_date)->diff(Carbon::now());
@@ -37,10 +50,11 @@ class OrderController extends Controller
                 $minutes = $dueIn->i;
 
                 return [
+                    'order_id' => $order->id,
                     'service_image' => $order->service->image,
                     'event_name' => $order->event_name,
                     'order_by' => "{$order->user->name} {$order->user->last_name}",
-                    'price' => "$" . number_format($order->payment->amount),
+                    'price' => "$" . number_format($order->providerPayments->amount),
                     'due_in' => "{$days}d {$hours}h {$minutes}m",
                     'status' => $order->status,
                 ];
@@ -59,7 +73,7 @@ class OrderController extends Controller
      */
     public function show($id)
     {
-        $order = Order::with(['service', 'pricing', 'payment', 'user'])
+        $order = Order::with(['service', 'pricing', 'providerPayments', 'user'])
             ->find($id);
 
         if (!$order) {
@@ -116,7 +130,7 @@ class OrderController extends Controller
                 'status' => $order->status,
                 'order_number' => '#ORD' . str_pad($order->id, 5, '0', STR_PAD_LEFT),
                 'end_date' => Carbon::parse($order->event_end_date)->format('d M, Y'),
-                'amount_paid' =>  "$" . number_format($order->payment->amount),
+                'amount_paid' =>  "$" . number_format($order->providerPayments->amount),
             ],
         ];
 
