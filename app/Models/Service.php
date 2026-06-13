@@ -49,8 +49,5 @@ class Service extends Model
     {
         return $this->hasMany(Review::class);
     }
-    // public function reviews()
-    // {
-    //     return $this->hasMany(Review::class);
-    // }
+
 }
