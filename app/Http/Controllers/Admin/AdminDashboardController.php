@@ -60,7 +60,7 @@ class AdminDashboardController extends Controller
             $thisPeriod = [];
             $lastPeriod = [];
 
-            for ($i = 1; $i <= 4; $i++) {
+            for ($i = 1; $i <= 5; $i++) {
                 $thisPeriod[] = (float) ($thisMonthSales[$i] ?? 0);
                 $lastPeriod[] = (float) ($lastMonthSales[$i] ?? 0);
             }
