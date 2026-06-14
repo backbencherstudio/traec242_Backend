@@ -121,6 +121,83 @@ class UserManagementController extends Controller
         ]);
     }
 
+    public function showDetails($id, Request $request)
+    {
+        $period = $request->period;
+
+        $user = User::whereIn('type', [0, 2])
+            ->where('id', $id)
+            ->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found.',
+            ], 404);
+        }
+
+        $ordersQuery = Order::where('user_id', $user->id);
+
+        if ($period == 'monthly') {
+            $ordersQuery->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year);
+        } elseif ($period == 'weekly') {
+            $ordersQuery->whereBetween('created_at', [
+                now()->startOfWeek(),
+                now()->endOfWeek()
+            ]);
+        } elseif ($period == 'yearly') {
+            $ordersQuery->whereYear('created_at', now()->year);
+        }
+
+        $totalOrders = $ordersQuery->count();
+
+        $spentQuery = ProviderPayment::join('orders', 'provider_payments.order_id', '=', 'orders.id')
+            ->where('provider_payments.user_id', $user->id)
+            ->where('orders.status', 'completed')
+            ->where('provider_payments.status', 'successful');
+
+        if ($period == 'monthly') {
+            $spentQuery->whereMonth('provider_payments.created_at', now()->month)
+                ->whereYear('provider_payments.created_at', now()->year);
+        } elseif ($period == 'weekly') {
+            $spentQuery->whereBetween('provider_payments.created_at', [
+                now()->startOfWeek(),
+                now()->endOfWeek()
+            ]);
+        } elseif ($period == 'yearly') {
+            $spentQuery->whereYear('provider_payments.created_at', now()->year);
+        }
+
+        $totalSpent = $spentQuery->sum('provider_payments.amount');
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $user->id,
+                'name' => trim(($user->name ?? '') . ' ' . ($user->last_name ?? '')),
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'image' => $user->image,
+                'address' => trim(
+                    ($user->address ?? '') . ', ' .
+                        ($user->city ?? '') . ', ' .
+                        ($user->state ?? '') . ' ' .
+                        ($user->zip_code ?? '')
+                ),
+                'status' => $user->status ? 'Active' : 'Inactive',
+                'is_verified' => (bool) $user->is_verified,
+                'joined' => $user->created_at->format('m/d/Y'),
+
+                'stats' => [
+                    'total_orders' => $totalOrders,
+                    'total_spent' => '$' . number_format($totalSpent, 2),
+                ],
+
+            ]
+        ]);
+    }
+
     public function sellers(Request $request)
     {
         $search = $request->search;
