@@ -95,7 +95,7 @@ class UserManagementController extends Controller
 
             return [
                 'id' => $user->id,
-                'image' => $user->image,
+                'image_url' => $user->image ? asset($user->image) : null,
                 'name' => trim(($user->name ?? '') . ' ' . ($user->last_name ?? '')),
                 'email' => $user->email,
                 'orders' => $totalOrders,
@@ -282,7 +282,7 @@ class UserManagementController extends Controller
 
             return [
                 'id' => $user->id,
-                'image' => $user->image,
+                'image_url' => $user->image ? asset($user->image) : null,
                 'name' => trim(($user->name ?? '') . ' ' . ($user->last_name ?? '')),
                 'email' => $user->email,
                 'products' => $products,

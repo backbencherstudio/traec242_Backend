@@ -102,7 +102,7 @@ class OrderManagementController extends Controller
             return [
                 'customer_info' => [
                     'id' => $user->id,
-                    'image' => $user->image,
+                    'image_url' => $user->image ? asset($user->image) : null,
                     'name' => trim(($user->name ?? '') . ' ' . ($user->last_name ?? '')),
                     'email' => $user->email,
                     'total_order' => $user->total_order,
