@@ -7,6 +7,7 @@ use App\Models\IncludeOrder;
 use App\Models\Order;
 use App\Models\ProviderPayment;
 use App\Models\ProviderStripe;
+use App\Models\Service;
 use App\Models\ServicePricing;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -221,7 +222,12 @@ class OrderController extends Controller
             $servicePrice = $pricing->price;
             $finalAmount = $servicePrice + $includeOrderTotal;
 
-            $providerStripe = ProviderStripe::where('user_id', auth()->id())->first();
+            $service = Service::findOrFail($request->service_id);
+
+            $providerStripe = ProviderStripe::where(
+                'user_id',
+                $service->user_id
+            )->first();
 
             if (!$providerStripe) {
                 DB::rollBack();
@@ -309,7 +315,12 @@ class OrderController extends Controller
             ], 200);
         }
 
-        $providerStripe = ProviderStripe::where('user_id', $order->user_id)->first();
+        $service = Service::findOrFail($order->service_id);
+
+        $providerStripe = ProviderStripe::where(
+            'user_id',
+            $service->user_id
+        )->first();
 
         if (!$providerStripe) {
             return response()->json([
