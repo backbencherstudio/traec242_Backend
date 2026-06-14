@@ -248,6 +248,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     // Order Management
     Route::prefix('admin-order')->group(function () {
         Route::get('index', [OrderManagementController::class, 'index']);
+        Route::get('show-details/{id}', [OrderManagementController::class, 'showOrderDetails']);
     });
 
 // user-dashboard

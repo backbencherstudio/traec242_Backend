@@ -55,7 +55,7 @@ class AdminDashboardController extends Controller
                 ->groupBy('week')
                 ->pluck('total', 'week');
 
-            $labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+            $labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'week 5'];
 
             $thisPeriod = [];
             $lastPeriod = [];
