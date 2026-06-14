@@ -146,7 +146,11 @@ class OrderController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
-    {
+
+
+     {
+
+    
         $request->validate([
             'service_id' => 'required|exists:services,id',
             'service_pricing_id' => 'required|exists:service_pricings,id',
