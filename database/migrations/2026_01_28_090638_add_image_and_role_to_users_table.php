@@ -52,7 +52,7 @@ return new class extends Migration
                 'languages',
                 'category_id',
                 'status',
-                'provider_status'
+                'provider_status',
             ]);
         });
     }

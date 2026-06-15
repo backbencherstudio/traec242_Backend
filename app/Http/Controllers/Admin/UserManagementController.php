@@ -27,7 +27,7 @@ class UserManagementController extends Controller
             });
         }
 
-        if (!is_null($status)) {
+        if (! is_null($status)) {
             $query->where('status', $status);
         }
 
@@ -39,7 +39,7 @@ class UserManagementController extends Controller
 
             $query->whereBetween('created_at', [
                 now()->startOfWeek(),
-                now()->endOfWeek()
+                now()->endOfWeek(),
             ]);
         } elseif ($period == 'yearly') {
 
@@ -62,7 +62,7 @@ class UserManagementController extends Controller
 
                 $totalOrdersQuery->whereBetween('created_at', [
                     now()->startOfWeek(),
-                    now()->endOfWeek()
+                    now()->endOfWeek(),
                 ]);
             } elseif ($period == 'yearly') {
 
@@ -84,7 +84,7 @@ class UserManagementController extends Controller
 
                 $totalSpentQuery->whereBetween('provider_payments.created_at', [
                     now()->startOfWeek(),
-                    now()->endOfWeek()
+                    now()->endOfWeek(),
                 ]);
             } elseif ($period == 'yearly') {
 
@@ -96,10 +96,10 @@ class UserManagementController extends Controller
             return [
                 'id' => $user->id,
                 'image_url' => $user->image ? asset($user->image) : null,
-                'name' => trim(($user->name ?? '') . ' ' . ($user->last_name ?? '')),
+                'name' => trim(($user->name ?? '').' '.($user->last_name ?? '')),
                 'email' => $user->email,
                 'orders' => $totalOrders,
-                'total_spent' => '$' . number_format($totalSpent, 2),
+                'total_spent' => '$'.number_format($totalSpent, 2),
                 'joined' => $user->created_at->format('m/d/Y'),
                 'status' => $user->status ? 'Active' : 'Inactive',
             ];
@@ -117,7 +117,7 @@ class UserManagementController extends Controller
                 'total' => $users->total(),
                 'next_page_url' => $users->nextPageUrl(),
                 'prev_page_url' => $users->previousPageUrl(),
-            ]
+            ],
         ]);
     }
 
@@ -129,7 +129,7 @@ class UserManagementController extends Controller
             ->where('id', $id)
             ->first();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
                 'message' => 'User not found.',
@@ -144,7 +144,7 @@ class UserManagementController extends Controller
         } elseif ($period == 'weekly') {
             $ordersQuery->whereBetween('created_at', [
                 now()->startOfWeek(),
-                now()->endOfWeek()
+                now()->endOfWeek(),
             ]);
         } elseif ($period == 'yearly') {
             $ordersQuery->whereYear('created_at', now()->year);
@@ -163,7 +163,7 @@ class UserManagementController extends Controller
         } elseif ($period == 'weekly') {
             $spentQuery->whereBetween('provider_payments.created_at', [
                 now()->startOfWeek(),
-                now()->endOfWeek()
+                now()->endOfWeek(),
             ]);
         } elseif ($period == 'yearly') {
             $spentQuery->whereYear('provider_payments.created_at', now()->year);
@@ -175,14 +175,14 @@ class UserManagementController extends Controller
             'success' => true,
             'data' => [
                 'id' => $user->id,
-                'name' => trim(($user->name ?? '') . ' ' . ($user->last_name ?? '')),
+                'name' => trim(($user->name ?? '').' '.($user->last_name ?? '')),
                 'email' => $user->email,
                 'phone' => $user->phone,
                 'image' => $user->image,
                 'address' => trim(
-                    ($user->address ?? '') . ', ' .
-                        ($user->city ?? '') . ', ' .
-                        ($user->state ?? '') . ' ' .
+                    ($user->address ?? '').', '.
+                        ($user->city ?? '').', '.
+                        ($user->state ?? '').' '.
                         ($user->zip_code ?? '')
                 ),
                 'status' => $user->status ? 'Active' : 'Inactive',
@@ -191,10 +191,10 @@ class UserManagementController extends Controller
 
                 'stats' => [
                     'total_orders' => $totalOrders,
-                    'total_spent' => '$' . number_format($totalSpent, 2),
+                    'total_spent' => '$'.number_format($totalSpent, 2),
                 ],
 
-            ]
+            ],
         ]);
     }
 
@@ -214,7 +214,7 @@ class UserManagementController extends Controller
             });
         }
 
-        if (!is_null($status)) {
+        if (! is_null($status)) {
             $query->where('status', $status);
         }
 
@@ -226,7 +226,7 @@ class UserManagementController extends Controller
 
             $query->whereBetween('created_at', [
                 now()->startOfWeek(),
-                now()->endOfWeek()
+                now()->endOfWeek(),
             ]);
         } elseif ($period == 'yearly') {
 
@@ -249,7 +249,7 @@ class UserManagementController extends Controller
 
                 $productsQuery->whereBetween('created_at', [
                     now()->startOfWeek(),
-                    now()->endOfWeek()
+                    now()->endOfWeek(),
                 ]);
             } elseif ($period == 'yearly') {
 
@@ -271,7 +271,7 @@ class UserManagementController extends Controller
 
                 $totalSalesQuery->whereBetween('provider_payments.created_at', [
                     now()->startOfWeek(),
-                    now()->endOfWeek()
+                    now()->endOfWeek(),
                 ]);
             } elseif ($period == 'yearly') {
 
@@ -283,10 +283,10 @@ class UserManagementController extends Controller
             return [
                 'id' => $user->id,
                 'image_url' => $user->image ? asset($user->image) : null,
-                'name' => trim(($user->name ?? '') . ' ' . ($user->last_name ?? '')),
+                'name' => trim(($user->name ?? '').' '.($user->last_name ?? '')),
                 'email' => $user->email,
                 'products' => $products,
-                'total_sales' => '$' . number_format($totalSales, 2),
+                'total_sales' => '$'.number_format($totalSales, 2),
                 'joined' => $user->created_at->format('m/d/Y'),
                 'status' => $user->status ? 'Active' : 'Inactive',
             ];
@@ -304,7 +304,7 @@ class UserManagementController extends Controller
                 'total' => $users->total(),
                 'next_page_url' => $users->nextPageUrl(),
                 'prev_page_url' => $users->previousPageUrl(),
-            ]
+            ],
         ]);
     }
 
@@ -317,15 +317,15 @@ class UserManagementController extends Controller
             ], 403);
         }
         $request->validate([
-            'status' => 'required|in:0,1'
+            'status' => 'required|in:0,1',
         ]);
 
         $user = User::find($id);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
-                'message' => 'User not found'
+                'message' => 'User not found',
             ], 404);
         }
 
@@ -337,8 +337,8 @@ class UserManagementController extends Controller
             'message' => 'Status updated successfully',
             'data' => [
                 'id' => $user->id,
-                'status' => $user->status
-            ]
+                'status' => $user->status,
+            ],
         ]);
     }
 
@@ -353,17 +353,17 @@ class UserManagementController extends Controller
 
         $user = User::withTrashed()->find($id);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
-                'message' => 'User not found'
+                'message' => 'User not found',
             ], 404);
         }
 
         if ($user->trashed()) {
             return response()->json([
                 'success' => false,
-                'message' => 'User is already deleted'
+                'message' => 'User is already deleted',
             ], 400);
         }
 
@@ -375,7 +375,7 @@ class UserManagementController extends Controller
             'data' => [
                 'id' => $user->id,
                 'deleted_at' => $user->deleted_at,
-            ]
+            ],
         ]);
     }
 }

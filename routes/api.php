@@ -28,8 +28,8 @@ use App\Http\Controllers\Api\VerifyRegistrationOtpController;
 use App\Http\Controllers\Frontend\OrderController;
 use App\Http\Controllers\Frontend\SubscriberController;
 use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Provider\ProviderStripeController;
+use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 // Admin Public Routes
@@ -251,7 +251,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('show-details/{id}', [OrderManagementController::class, 'showOrderDetails']);
     });
 
-// user-dashboard
+    // user-dashboard
     Route::prefix('user-dashboard')->group(function () {
         Route::get('summary', [UserDashboardController::class, 'summary']);
         Route::get('recent-orders', [UserDashboardController::class, 'recentOrders']);
@@ -270,7 +270,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('public-review/{id}', [ReviewController::class, 'review']);
 
     });
-
 
 });
 

@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class ServiceResource extends JsonResource
@@ -19,7 +18,7 @@ class ServiceResource extends JsonResource
             'title' => $this->title,
             'location' => $this->location,
             'description' => $this->description,
-            'images' => collect($this->image)->map(fn($img) => asset('storage/' . $img)),
+            'images' => collect($this->image)->map(fn ($img) => asset('storage/'.$img)),
             'category' => $this->category->name ?? null,
             'pricings' => ServicePricingResource::collection($this->whenLoaded('pricings')),
             'created_at' => $this->created_at->format('Y-m-d'),

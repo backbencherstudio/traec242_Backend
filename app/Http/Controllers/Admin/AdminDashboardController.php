@@ -100,7 +100,7 @@ class AdminDashboardController extends Controller
                 'Sep',
                 'Oct',
                 'Nov',
-                'Dec'
+                'Dec',
             ];
 
             $thisPeriod = [];
@@ -111,12 +111,13 @@ class AdminDashboardController extends Controller
                 $lastPeriod[] = (float) ($lastYearSales[$i] ?? 0);
             }
         }
+
         return response()->json([
             'success' => true,
             'message' => 'Dashboard data fetched successfully',
             'overview' => [
                 'total_users' => $totalUser,
-                'total_revenue' => '$' . number_format($totalRevenue),
+                'total_revenue' => '$'.number_format($totalRevenue),
                 'active_orders' => $activeOrder,
             ],
             'sales_details' => [
@@ -124,7 +125,7 @@ class AdminDashboardController extends Controller
                 'labels' => $labels,
                 'last' => $lastPeriod,
                 'this' => $thisPeriod,
-            ]
+            ],
         ]);
     }
 }

@@ -15,8 +15,4 @@ class Promotion extends Model
         'status',
 
     ];
-    
-
-
-
 }
