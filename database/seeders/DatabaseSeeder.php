@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             PlanSeeder::class,
             StripeSeeder::class,
+            ServiceSeeder::class,
             MonthlyOrderSeeder::class,
         ]);
     }

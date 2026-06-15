@@ -24,7 +24,7 @@ class FaqStoreRequest extends FormRequest
     {
         return [
             'question' => 'required|string',
-            'answer' =>  'required|string'
+            'answer' => 'required|string',
         ];
     }
 }

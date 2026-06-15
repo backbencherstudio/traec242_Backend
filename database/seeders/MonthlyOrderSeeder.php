@@ -2,24 +2,32 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Order;
 use App\Models\ProviderPayment;
+use App\Models\Service;
+use App\Models\ServicePricing;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class MonthlyOrderSeeder extends Seeder
 {
     public function run(): void
     {
+        $service = Service::firstOrFail();
+        $pricing = ServicePricing::where('service_id', $service->id)->firstOrFail();
+        $customer = User::where('email', 'customer@example.com')->firstOrFail();
+        $provider = User::where('email', 'admin@gmail.com')->firstOrFail();
+
         for ($i = 11; $i >= 0; $i--) {
 
             $date = Carbon::now()->subMonths($i);
 
             // Create Order
             $order = Order::create([
-                'service_id' => 1,
-                'service_pricing_id' => 1,
-                'user_id' => 4, // customer id
+                'service_id' => $service->id,
+                'service_pricing_id' => $pricing->id,
+                'user_id' => $customer->id,
 
                 'first_name' => 'John',
                 'last_name' => 'Doe',
@@ -31,7 +39,7 @@ class MonthlyOrderSeeder extends Seeder
                 'state' => 'Dhaka',
                 'zip_code' => '1207',
 
-                'event_name' => $date->format('F Y') . ' Event',
+                'event_name' => $date->format('F Y').' Event',
                 'event_description' => 'Monthly dummy event data',
 
                 'guest_count' => rand(50, 200),
@@ -66,9 +74,9 @@ class MonthlyOrderSeeder extends Seeder
             // Provider Payment create
             ProviderPayment::create([
                 'order_id' => $order->id,
-                'user_id' => 2, // provider id
+                'user_id' => $provider->id,
 
-                'transaction_id' => 'txn_' . uniqid(),
+                'transaction_id' => 'txn_'.uniqid(),
 
                 'amount' => $amount,
                 'admin_commission_amount' => $amount * 0.20,

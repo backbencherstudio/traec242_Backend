@@ -78,24 +78,24 @@ class UserDashboardController extends Controller
 
         foreach ($completedOrders as $order) {
             $activities[] = [
-                'title' => "Completed order #" . $order->id,
+                'title' => 'Completed order #'.$order->id,
                 'time' => Carbon::parse($order->updated_at)->diffForHumans(),
             ];
         }
 
         $activities[] = [
-            'title' => "Received 5-star review",
+            'title' => 'Received 5-star review',
             'time' => 'response static',
         ];
 
         $activities[] = [
-            'title' => "Earned Party Pro",
+            'title' => 'Earned Party Pro',
             'time' => 'response static',
         ];
 
         return response()->json([
             'success' => true,
-            'recent_activity' => $activities
+            'recent_activity' => $activities,
         ]);
     }
 
@@ -128,7 +128,7 @@ class UserDashboardController extends Controller
         });
 
         return response()->json([
-            'recent_messages' => $data
+            'recent_messages' => $data,
         ]);
     }
 
@@ -146,8 +146,8 @@ class UserDashboardController extends Controller
 
         $messages = Message::with(['sender', 'receiver'])
             ->whereIn('id', $latestMessages->pluck('last_id'))
-            ->when($search, function ($query) use ($search, $userId) {
-                $query->where(function ($q) use ($search, $userId) {
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->where('message', 'like', "%{$search}%")
                         ->orWhereHas('sender', function ($q2) use ($search) {
                             $q2->where('name', 'like', "%{$search}%")
@@ -177,7 +177,7 @@ class UserDashboardController extends Controller
             return [
                 'conversation_id' => $message->conversation_id,
                 'image' => $otherUser->image,
-                'name' => trim(($otherUser->name ?? '') . ' ' . ($otherUser->last_name ?? '')) ?: 'Unknown',
+                'name' => trim(($otherUser->name ?? '').' '.($otherUser->last_name ?? '')) ?: 'Unknown',
                 'time' => $message->created_at->format('h:i A'),
                 'last_message' => Str::limit($message->message, 50),
                 'unread_count' => $unreadCounts[$message->conversation_id] ?? 0,
@@ -187,7 +187,7 @@ class UserDashboardController extends Controller
 
         return response()->json([
             'success' => true,
-            'conversations' => $conversations->values()
+            'conversations' => $conversations->values(),
         ]);
     }
 }
