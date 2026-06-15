@@ -17,7 +17,7 @@ class FaqController extends Controller
 
         return response()->json([
             'status' => true,
-             'message' => 'Faq fetched Successfull!',
+            'message' => 'Faq fetched Successfull!',
             'data' => $faqs,
 
         ]);

@@ -23,8 +23,8 @@ return [
 
         ],
         'auth' => [
-        'middleware' => ['api', 'auth:sanctum'],
-    ],
+            'middleware' => ['api', 'auth:sanctum'],
+        ],
 
         'pusher' => [
             'driver' => 'pusher',
@@ -57,7 +57,7 @@ return [
     ],
 
     'auth' => [
-        'middleware' => ['api', 'auth:sanctum'], 
+        'middleware' => ['api', 'auth:sanctum'],
     ],
 
 ];

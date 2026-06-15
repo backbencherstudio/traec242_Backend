@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\Subscriber;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Mail;
 use App\Mail\SubscriberMail;
+use App\Models\Subscriber;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 
 class SubscriberController extends Controller
 {
@@ -24,7 +24,6 @@ class SubscriberController extends Controller
             'data' => $subscribers,
         ]);
     }
-
 
     /*
         * Store a newly created resource in storage.
