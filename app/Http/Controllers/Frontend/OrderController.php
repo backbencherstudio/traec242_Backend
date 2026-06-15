@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Stripe\Checkout\Session;
+use Stripe\Exception\CardException;
 use Stripe\PaymentIntent;
 use Stripe\Stripe;
 
@@ -176,6 +177,7 @@ class OrderController extends Controller
             'include_order_ids.*' => 'integer|exists:include_orders,id',
             'agree_terms' => 'required|boolean',
             'payment_method' => 'required|string',
+            'payment_method_id' => 'required|string',
         ]);
 
         DB::beginTransaction();
@@ -213,13 +215,9 @@ class OrderController extends Controller
                 'status' => 'pending',
             ]);
 
-            $includeOrderIds = $request->include_order_ids ?? [];
-            $includeOrders = IncludeOrder::whereIn('id', $includeOrderIds)->get();
-            $includeOrderTotal = $includeOrders->sum('price');
-
+            $includeOrderTotal = IncludeOrder::whereIn('id', $request->include_order_ids ?? [])->sum('price');
             $pricing = ServicePricing::findOrFail($request->service_pricing_id);
-            $servicePrice = $pricing->price;
-            $finalAmount = $servicePrice + $includeOrderTotal;
+            $finalAmount = (float) $pricing->price + (float) $includeOrderTotal;
 
             $service = Service::findOrFail($request->service_id);
 
@@ -237,31 +235,10 @@ class OrderController extends Controller
                 ], 404);
             }
 
-            Stripe::setApiKey($providerStripe->stripe_secret_key);
-
-            $checkoutSession = Session::create([
-                'payment_method_types' => ['card'],
-                'line_items' => [
-                    [
-                        'price_data' => [
-                            'currency' => 'usd',
-                            'product_data' => [
-                                'name' => $request->event_name,
-                            ],
-                            'unit_amount' => (int) round($finalAmount * 100),
-                        ],
-                        'quantity' => 1,
-                    ],
-                ],
-                'mode' => 'payment',
-                'success_url' => route('order.success', ['orderId' => $order->id]).'?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => route('order.cancel', ['orderId' => $order->id]),
-            ]);
-
             $adminCommission = $finalAmount * 0.20;
             $providerAmount = $finalAmount - $adminCommission;
 
-            ProviderPayment::create([
+            $payment = ProviderPayment::create([
                 'order_id' => $order->id,
                 'user_id' => auth()->id(),
                 'transaction_id' => null,
@@ -269,17 +246,79 @@ class OrderController extends Controller
                 'admin_commission_amount' => $adminCommission,
                 'provider_amount' => $providerAmount,
                 'currency' => 'USD',
-                'payment_method' => 'stripe_checkout',
+                'payment_method' => 'stripe',
                 'status' => 'pending',
             ]);
+
+            Stripe::setApiKey($providerStripe->stripe_secret_key);
+
+            $paymentIntent = PaymentIntent::create([
+                'amount' => (int) round($finalAmount * 100),
+                'currency' => 'usd',
+                'payment_method' => $request->payment_method_id,
+                'payment_method_types' => ['card'],
+                'confirm' => true,
+                'description' => $request->event_name,
+                'metadata' => [
+                    'order_id' => (string) $order->id,
+                    'user_id' => (string) auth()->id(),
+                ],
+            ]);
+
+            $payment->transaction_id = $paymentIntent->id;
+            $payment->save();
+
+            if ($paymentIntent->status === 'succeeded') {
+                $order->status = 'confirmed';
+                $order->save();
+
+                $payment->status = 'successful';
+                $payment->save();
+
+                DB::commit();
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Payment successful',
+                    'order_id' => $order->id,
+                    'payment_status' => $paymentIntent->status,
+                ], 201);
+            }
+
+            if (in_array($paymentIntent->status, ['requires_action', 'requires_confirmation'], true)) {
+                DB::commit();
+
+                return response()->json([
+                    'status' => true,
+                    'requires_action' => true,
+                    'message' => 'Additional authentication required to complete the payment',
+                    'order_id' => $order->id,
+                    'payment_intent_client_secret' => $paymentIntent->client_secret,
+                    'payment_status' => $paymentIntent->status,
+                ], 200);
+            }
+
+            $order->status = 'cancelled';
+            $order->save();
+
+            $payment->status = 'failed';
+            $payment->save();
 
             DB::commit();
 
             return response()->json([
-                'status' => true,
-                'message' => 'Order created successfully',
-                'checkout_url' => $checkoutSession->url,
-            ], 201);
+                'status' => false,
+                'message' => 'Payment could not be processed',
+                'order_id' => $order->id,
+                'payment_status' => $paymentIntent->status,
+            ], 402);
+        } catch (CardException $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => false,
+                'error' => $e->getMessage(),
+            ], 402);
         } catch (\Exception $e) {
             DB::rollBack();
 
