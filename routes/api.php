@@ -235,6 +235,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     // Admin Dashboard
     Route::prefix('client')->group(function () {
         Route::get('index', [UserManagementController::class, 'clients']);
+        Route::get('show-details/{id}', [UserManagementController::class, 'showDetails']);
         Route::get('seller-index', [UserManagementController::class, 'sellers']);
         Route::patch('change-status/{id}', [UserManagementController::class, 'changeStatus']);
         Route::delete('delete-user/{id}', [UserManagementController::class, 'deleteUser']);
@@ -247,6 +248,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     // Order Management
     Route::prefix('admin-order')->group(function () {
         Route::get('index', [OrderManagementController::class, 'index']);
+        Route::get('show-details/{id}', [OrderManagementController::class, 'showOrderDetails']);
     });
 
 // user-dashboard
