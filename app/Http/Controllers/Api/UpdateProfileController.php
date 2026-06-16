@@ -13,8 +13,8 @@ class UpdateProfileController extends Controller
     {
 
         $user = Auth::user();
-        // $user = Auth::user();
-      
+        
+
 
         $rules = [
             'name' => 'sometimes|string|max:255',
