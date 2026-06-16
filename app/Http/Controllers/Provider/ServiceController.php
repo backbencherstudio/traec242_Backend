@@ -16,7 +16,7 @@ class ServiceController extends Controller
 {
     public function index()
     {
-        $services = Service::where('user_id', auth()->id())->with(['category', 'pricings'])->latest()->get();
+        $services = Service::where('user_id', auth()->id())->with(['category', 'pricings', 'user'])->latest()->get();
 
         $data = [
             'services' => ServiceResource::collection($services),
