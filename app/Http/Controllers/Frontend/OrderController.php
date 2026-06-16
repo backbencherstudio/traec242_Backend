@@ -30,7 +30,7 @@ class OrderController extends Controller
     {
         $user = auth()->user();
 
-        $query = Order::with(['service', 'pricing', 'providerPayments', 'user']);
+        $query = Order::with(['service.user', 'pricing', 'providerPayments', 'user']);
 
         if ($user->type == 0) {
             $query->where('user_id', $user->id);
@@ -54,7 +54,7 @@ class OrderController extends Controller
                     'order_id' => $order->id,
                     'service_image' => $order->service->image,
                     'event_name' => $order->event_name,
-                    'order_by' => "{$order->user->name} {$order->user->last_name}",
+                    'provider_name' => "{$order->service->user->name} {$order->service->user->last_name}",
                     'price' => '$'.number_format($order->providerPayments->amount),
                     'due_in' => "{$days}d {$hours}h {$minutes}m",
                     'status' => $order->status,
