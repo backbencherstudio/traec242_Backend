@@ -44,7 +44,7 @@ return [
     ],
 
     'ui' => [
-        'title' => null,
+        'title' => env('APP_NAME', 'Traec').' API',
     ],
 
     'renderer' => 'scalar',
@@ -70,7 +70,7 @@ return [
             'view' => 'scramble::scalar',
             'cdn' => 'https://cdn.jsdelivr.net/npm/@scalar/api-reference',
             'theme' => 'laravel',
-            'proxyUrl' => 'https://proxy.scalar.com',
+            'proxyUrl' => env('SCRAMBLE_SCALAR_PROXY_URL', ''),
             'darkMode' => false,
             'showDeveloperTools' => 'never',
             'agent' => ['disabled' => true],
@@ -159,6 +159,11 @@ return [
      *     ],
      * ],
      */
-    // 'security_strategy' => \Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy::class,
-    'security_strategy' => null,
+    'security_strategy' => [
+        \Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy::class,
+        [
+            'middleware' => ['auth', 'auth:*'],
+            'scheme' => \Dedoc\Scramble\Support\Generator\SecurityScheme::http('bearer'),
+        ],
+    ],
 ];

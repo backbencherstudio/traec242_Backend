@@ -40,6 +40,11 @@ class Service extends Model
         return $this->hasMany(ServicePricing::class);
     }
 
+    public function faqs(): HasMany
+    {
+        return $this->hasMany(ServiceFaq::class);
+    }
+
     public function getImageUrlAttribute()
     {
         return collect($this->image)->map(fn ($img) => asset('storage/'.$img));

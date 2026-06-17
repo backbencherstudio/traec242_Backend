@@ -23,6 +23,7 @@ class ServiceResource extends JsonResource
             'images' => collect($this->image)->map(fn($img) => asset('storage/' . $img)),
             'category' => $this->category->name ?? null,
             'pricings' => ServicePricingResource::collection($this->whenLoaded('pricings')),
+            'faqs' => ServiceFaqResource::collection($this->whenLoaded('faqs')),
             'created_at' => $this->created_at->format('Y-m-d'),
         ];
     }

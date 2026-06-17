@@ -15,6 +15,7 @@ Route::get('home_response', [BasicContentController::class, 'home_response']);
 Route::get('faq', [BasicContentController::class, 'faq']);
 Route::get('privacy', [BasicContentController::class, 'privacy']);
 Route::get('services', [AllServiceController::class, 'index']);
+Route::get('services/{id}', [AllServiceController::class, 'show']);
 Route::get('plans', [PlanController::class, 'index']);
 Route::get('categories', [CategoryController::class, 'index']);
 
@@ -34,5 +35,6 @@ Route::prefix('admin')->group(function () {
 
 Route::middleware('auth:api')->group(function () {
     Route::get('provider/services', [ServiceController::class, 'index']);
+    Route::get('provider/services/{id}', [ServiceController::class, 'show']);
     Route::post('provider/services/store', [ServiceController::class, 'store']);
 });
