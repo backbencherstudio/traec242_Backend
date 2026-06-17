@@ -18,7 +18,7 @@ class AllServiceController extends Controller
     public function index(Request $request)
     {
         $services = Service::where('status', 1)
-            ->with(['category', 'pricings', 'user'])
+            ->with(['category', 'pricings', 'user', 'faqs'])
 
             ->when($request->query('search'), function ($query, $search) {
                 return $query->where('title', 'like', '%'.$search.'%');
@@ -53,5 +53,17 @@ class AllServiceController extends Controller
             ->withQueryString();
 
         return $this->sendResponse(ServiceResource::collection($services));
+    }
+
+    /**
+     * Display the specified service.
+     */
+    public function show($id)
+    {
+        $service = Service::where('status', 1)
+            ->with(['category', 'pricings', 'user', 'faqs'])
+            ->findOrFail($id);
+
+        return $this->sendResponse(ServiceResource::make($service));
     }
 }

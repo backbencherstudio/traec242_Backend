@@ -16,7 +16,7 @@ class ServiceController extends Controller
 {
     public function index()
     {
-        $services = Service::where('user_id', auth()->id())->with(['category', 'pricings'])->latest()->get();
+        $services = Service::where('user_id', auth()->id())->with(['category', 'pricings', 'faqs'])->latest()->get();
 
         $data = [
             'services' => ServiceResource::collection($services),
@@ -60,6 +60,10 @@ class ServiceController extends Controller
                     $service->pricings()->create($pricingData);
                 }
 
+                foreach ($request->faqs ?? [] as $faqData) {
+                    $service->faqs()->create($faqData);
+                }
+
                 Subscriber::chunk(50, function ($subscribers) use ($service) {
                     foreach ($subscribers as $subscriber) {
                         Mail::to($subscriber->email)
@@ -67,7 +71,7 @@ class ServiceController extends Controller
                     }
                 });
 
-                return $this->sendResponse(ServiceResource::make($service->load('pricings')), 'Service created successfully');
+                return $this->sendResponse(ServiceResource::make($service->load(['pricings', 'faqs'])), 'Service created successfully');
             });
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to create service'], 500);
@@ -76,8 +80,10 @@ class ServiceController extends Controller
 
     public function show($id)
     {
-        $service = Service::with(['category', 'pricings'])->findOrFail($id);
+        $service = Service::where('user_id', auth()->id())
+            ->with(['category', 'pricings', 'faqs'])
+            ->findOrFail($id);
 
-        return new ServiceResource($service);
+        return $this->sendResponse(ServiceResource::make($service));
     }
 }
