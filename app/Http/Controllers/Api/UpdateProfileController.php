@@ -13,7 +13,8 @@ class UpdateProfileController extends Controller
     {
 
         $user = Auth::user();
-        
+        // $user = Auth::user();
+
 
 
         $rules = [
