@@ -38,6 +38,18 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
         $credentials = $request->only('email', 'password');
 
         if (! $token = Auth::guard('api')->attempt($credentials)) {
@@ -187,9 +199,9 @@ class AuthController extends Controller
         $imagePath = null;
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $imageName = time().'_'.Str::random(10).'.'.$image->getClientOriginalExtension();
+            $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
             $image->move(public_path('user'), $imageName);
-            $imagePath = 'user/'.$imageName;
+            $imagePath = 'user/' . $imageName;
         }
 
         $user = User::create([
@@ -253,8 +265,8 @@ class AuthController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,'.$user->id,
-            'phone' => 'nullable|string|max:20|unique:users,phone,'.$user->id,
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:20|unique:users,phone,' . $user->id,
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'required|in:0,1',
             'role' => 'required|exists:roles,id',
@@ -273,9 +285,9 @@ class AuthController extends Controller
             }
 
             $image = $request->file('image');
-            $imageName = time().'_'.Str::random(10).'.'.$image->getClientOriginalExtension();
+            $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
             $image->move(public_path('user'), $imageName);
-            $user->image = 'user/'.$imageName;
+            $user->image = 'user/' . $imageName;
         }
 
         $user->name = $request->name;
@@ -421,7 +433,7 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $key = 'otp-'.$request->email;
+        $key = 'otp-' . $request->email;
 
         if (RateLimiter::tooManyAttempts($key, 1)) {
             $seconds = RateLimiter::availableIn($key);
