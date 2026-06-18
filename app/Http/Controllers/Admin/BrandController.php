@@ -48,7 +48,7 @@ class BrandController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'category' => $brand,
+            'brand' => $brand,
         ]);
     }
 
@@ -90,8 +90,8 @@ class BrandController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Category updated successfully!',
-            'category' => $brand,
+            'message' => 'Brand updated successfully!',
+            'brand' => $brand,
         ]);
     }
 
