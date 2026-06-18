@@ -33,9 +33,9 @@ class BrandController extends Controller
 
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $imageName = time().'_'.$image->getClientOriginalName();
+            $imageName = time() . '_' . $image->getClientOriginalName();
             $image->move(public_path('uploads/brand'), $imageName);
-            $imagePath = 'uploads/brand/'.$imageName;
+            $imagePath = 'uploads/brand/' . $imageName;
         }
 
         $brand = Brand::create([
@@ -76,22 +76,22 @@ class BrandController extends Controller
 
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $imageName = time().'_'.$image->getClientOriginalName();
-            $image->move(public_path('uploads/category'), $imageName);
-            $category->image = 'uploads/category/'.$imageName;
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            $image->move(public_path('uploads/brand'), $imageName);
+            $brand->image = 'uploads/brand/' . $imageName;
         }
 
-        $category->name = $request->name;
-        $category->description = $request->description;
-        $category->status = $request->status;
-        $category->slug = Str::slug($request->name, '-');
+        $brand->name = $request->name;
+        $brand->description = $request->description;
+        $brand->status = $request->status;
+        $brand->slug = Str::slug($request->name, '-');
 
-        $category->save();
+        $brand->save();
 
         return response()->json([
             'status' => 'success',
             'message' => 'Category updated successfully!',
-            'category' => $category,
+            'category' => $brand,
         ]);
     }
 
