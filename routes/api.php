@@ -213,6 +213,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::post('/create-order', [OrderController::class, 'store']);
         Route::get('index', [OrderController::class, 'index'])->name('order.index');
         Route::get('show/{id}', [OrderController::class, 'show'])->name('order.show');
+        Route::patch('update-status/{id}', [OrderController::class, 'updateStatus'])->name('order.updateStatus');
     });
 
     // Profile
