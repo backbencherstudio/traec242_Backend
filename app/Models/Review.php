@@ -10,6 +10,7 @@ class Review extends Model
     protected $fillable = [
         'user_id',
         'service_id',
+        'order_id',
         'rating',
         'review',
         'reply',
@@ -23,5 +24,10 @@ class Review extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
+    }
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
     }
 }

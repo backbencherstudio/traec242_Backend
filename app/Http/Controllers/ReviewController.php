@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\Review;
 use App\Models\Service;
 use Illuminate\Http\Request;
@@ -16,6 +17,34 @@ class ReviewController extends Controller
             ->where('user_id', $user->id)
             ->latest()
             ->get();
+
+        return $this->sendResponse($reviews);
+    }
+
+    public function providerReviews()
+    {
+        $providerId = auth()->id();
+
+        $reviews = Review::with(['user', 'service', 'order'])
+            ->whereHas('service', function ($query) use ($providerId) {
+                $query->where('user_id', $providerId);
+            })
+            ->latest()
+            ->get()
+            ->map(function ($review) {
+                return [
+                    'id' => $review->id,
+                    'order_id' => $review->order_id,
+                    'service_id' => $review->service_id,
+                    'service_title' => $review->service?->title,
+                    'reviewer_name' => trim("{$review->user?->name} {$review->user?->last_name}"),
+                    'rating' => $review->rating,
+                    'review' => $review->review,
+                    'reply' => $review->reply,
+                    'has_replied' => $review->reply !== null,
+                    'created_at' => $review->created_at,
+                ];
+            });
 
         return $this->sendResponse($reviews);
     }
@@ -49,25 +78,30 @@ class ReviewController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'service_id' => 'required|exists:services,id',
+            'order_id' => 'required|exists:orders,id',
             'review' => 'nullable|string',
             'rating' => 'required|integer|min:1|max:5',
         ]);
 
         $user = auth()->user();
-        $service = Service::findOrFail($validated['service_id']);
+        $order = Order::findOrFail($validated['order_id']);
 
-        if ((int) $service->user_id === (int) $user->id) {
-            return $this->sendError('You cannot review your own service.', [], 403);
+        if ((int) $order->user_id !== (int) $user->id) {
+            return $this->sendError('You can only review your own order.', [], 403);
         }
 
-        if (Review::where('user_id', $user->id)->where('service_id', $service->id)->exists()) {
-            return $this->sendError('You have already reviewed this service.', [], 409);
+        if ($order->status !== 'completed') {
+            return $this->sendError('You can only review an order after it is completed.', [], 403);
+        }
+
+        if (Review::where('order_id', $order->id)->exists()) {
+            return $this->sendError('You have already reviewed this order.', [], 409);
         }
 
         $review = Review::create([
             'user_id' => $user->id,
-            'service_id' => $service->id,
+            'order_id' => $order->id,
+            'service_id' => $order->service_id,
             'rating' => $validated['rating'],
             'review' => $validated['review'] ?? null,
         ]);
