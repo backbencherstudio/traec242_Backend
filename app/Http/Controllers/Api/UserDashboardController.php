@@ -81,27 +81,29 @@ class UserDashboardController extends Controller
 
         $completedOrders = Order::where('user_id', $userId)
             ->where('status', 'completed')
-            ->orderBy('event_start_date', 'desc')
-            ->get();
+            ->latest('updated_at')
+            ->first();
 
         $activities = [];
 
-        foreach ($completedOrders as $order) {
+        if ($completedOrders) {
             $activities[] = [
-                'title' => 'Completed order #' . $order->id,
-                'time' => Carbon::parse($order->updated_at)->diffForHumans(),
+                'title' => 'Completed order #' . $completedOrders->id,
+                'time'  => Carbon::parse($completedOrders->updated_at)->diffForHumans(),
             ];
         }
 
-        $activities[] = [
-            'title' => 'Received 5-star review',
-            'time' => 'response static',
-        ];
+        $review = Review::where('user_id', $userId)
+            ->where('rating', 5)
+            ->latest()
+            ->first();
 
-        $activities[] = [
-            'title' => 'Earned Party Pro',
-            'time' => 'response static',
-        ];
+        if ($review) {
+            $activities[] = [
+                'title' => 'Received 5-star review',
+                'time'  => Carbon::parse($review->created_at)->diffForHumans(),
+            ];
+        }
 
         return response()->json([
             'success' => true,
