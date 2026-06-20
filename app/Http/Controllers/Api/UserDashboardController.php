@@ -45,7 +45,8 @@ class UserDashboardController extends Controller
     {
         $userId = $request->user()->id;
 
-        $orders = Order::where('user_id', $userId)
+        $orders = Order::with(['service.user'])
+            ->where('user_id', $userId)
             ->orderBy('event_start_date', 'desc')
             ->take(4)
             ->get();
@@ -53,7 +54,10 @@ class UserDashboardController extends Controller
         $recentOrders = $orders->map(function ($order) {
             return [
                 'event_name' => $order->event_name,
-                'order_by' => "{$order->user->name} {$order->user->last_name}",
+                'order_by' => trim(
+                    ($order->service?->user?->name ?? '') . ' ' .
+                        ($order->service?->user?->last_name ?? '')
+                ),
                 'date' => Carbon::parse($order->event_start_date)->format('M d, Y'),
                 'status' => ucfirst($order->status),
             ];
@@ -78,7 +82,7 @@ class UserDashboardController extends Controller
 
         foreach ($completedOrders as $order) {
             $activities[] = [
-                'title' => 'Completed order #'.$order->id,
+                'title' => 'Completed order #' . $order->id,
                 'time' => Carbon::parse($order->updated_at)->diffForHumans(),
             ];
         }
@@ -177,7 +181,7 @@ class UserDashboardController extends Controller
             return [
                 'conversation_id' => $message->conversation_id,
                 'image' => $otherUser->image,
-                'name' => trim(($otherUser->name ?? '').' '.($otherUser->last_name ?? '')) ?: 'Unknown',
+                'name' => trim(($otherUser->name ?? '') . ' ' . ($otherUser->last_name ?? '')) ?: 'Unknown',
                 'time' => $message->created_at->format('h:i A'),
                 'last_message' => Str::limit($message->message, 50),
                 'unread_count' => $unreadCounts[$message->conversation_id] ?? 0,
