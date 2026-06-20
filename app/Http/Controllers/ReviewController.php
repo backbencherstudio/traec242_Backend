@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Review;
 use App\Models\Service;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class ReviewController extends Controller
 {
@@ -18,27 +17,16 @@ class ReviewController extends Controller
             ->latest()
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $reviews,
-        ]);
+        return $this->sendResponse($reviews);
     }
 
     public function review($id)
     {
-        $service = Service::with([
-            'reviews' => function ($query) {
-                $query->where('status', 'approved');
-            },
-            'reviews.user',
-        ])->findOrFail($id);
+        $service = Service::with(['reviews.user'])->findOrFail($id);
 
-        $reviews = $service->reviews;
-
-        return response()->json([
-            'success' => true,
+        return $this->sendResponse([
             'service_title' => $service->title,
-            'data' => $reviews,
+            'reviews' => $service->reviews,
         ]);
     }
 
@@ -52,16 +40,10 @@ class ReviewController extends Controller
             ->first();
 
         if (! $review) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Review not found.',
-            ], 404);
+            return $this->sendError('Review not found.');
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $review
-        ]);
+        return $this->sendResponse($review);
     }
 
     public function store(Request $request)
@@ -73,38 +55,42 @@ class ReviewController extends Controller
         ]);
 
         $user = auth()->user();
+        $service = Service::findOrFail($validated['service_id']);
+
+        if ((int) $service->user_id === (int) $user->id) {
+            return $this->sendError('You cannot review your own service.', [], 403);
+        }
+
+        if (Review::where('user_id', $user->id)->where('service_id', $service->id)->exists()) {
+            return $this->sendError('You have already reviewed this service.', [], 409);
+        }
 
         $review = Review::create([
             'user_id' => $user->id,
-            'service_id' => $validated['service_id'],
+            'service_id' => $service->id,
             'rating' => $validated['rating'],
-            'review' => $validated['review'],
+            'review' => $validated['review'] ?? null,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Review submitted successfully.',
-            'data' => $review,
-        ], 201);
+        return $this->sendResponse($review, 'Review submitted successfully.', 201);
     }
-
 
     public function reply(Request $request, $id)
     {
         $validated = $request->validate([
-            'reply' => 'nullable|string',
+            'reply' => 'required|string',
         ]);
 
-        $review = Review::findOrFail($id);
+        $review = Review::with('service')->findOrFail($id);
 
-        $review = $review->update([
+        if ((int) $review->service->user_id !== (int) auth()->id()) {
+            return $this->sendError('You are not authorized to reply to this review.', [], 403);
+        }
+
+        $review->update([
             'reply' => $validated['reply'],
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Review replied successfully.',
-            'data' => $review,
-        ], 201);
+        return $this->sendResponse($review, 'Review replied successfully.');
     }
 }
