@@ -263,6 +263,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     // Review
     Route::prefix('review')->group(function () {
         Route::get('index', [ReviewController::class, 'index']);
+        Route::get('received', [ReviewController::class, 'providerReviews']);
         Route::get('show/{id}', [ReviewController::class, 'show']);
         Route::post('store', [ReviewController::class, 'store']);
         Route::patch('reply/{id}', [ReviewController::class, 'reply']);
@@ -273,4 +274,4 @@ Route::get('/order/success/{orderId}', [OrderController::class, 'success'])->nam
 Route::get('/order/cancel/{orderId}', [OrderController::class, 'cancel'])->name('order.cancel');
 Route::get('/order/invoice/{orderId}', [OrderController::class, 'generateInvoice'])->name('order.invoice');
 
-require __DIR__ . '/mahmudul.php';
+require __DIR__.'/mahmudul.php';
