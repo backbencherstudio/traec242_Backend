@@ -20,15 +20,9 @@ return new class extends Migration
             $table->foreignId('service_id')
                 ->constrained()
                 ->onDelete('cascade');
-
-            $table->integer('rating');
+            $table->float('rating', 2)->default(0);
             $table->text('review')->nullable();
-
-            $table->enum('status', [
-                'pending',
-                'approved',
-                'rejected',
-            ])->default('pending');
+            $table->text('reply')->nullable();
             $table->timestamps();
         });
     }

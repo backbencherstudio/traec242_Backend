@@ -13,28 +13,10 @@ class ReviewController extends Controller
     {
         $user = auth()->user();
 
-        if (! $user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated.',
-            ], 401);
-        }
-
         $reviews = Review::with(['user', 'service'])
             ->where('user_id', $user->id)
             ->latest()
-            ->get()
-            ->map(function ($review) {
-                return [
-                    'id' => $review->id,
-                    'user_name' => $review->user->name ?? null,
-                    'service_title' => $review->service->title ?? null,
-                    'rating' => $review->rating,
-                    'review' => $review->review,
-                    'status' => $review->status,
-                    'created_at' => $review->created_at,
-                ];
-            });
+            ->get();
 
         return response()->json([
             'success' => true,
@@ -51,15 +33,7 @@ class ReviewController extends Controller
             'reviews.user',
         ])->findOrFail($id);
 
-        $reviews = $service->reviews->map(function ($review) {
-            return [
-                'id' => $review->id,
-                'user_name' => $review->user->name ?? null,
-                'rating' => $review->rating,
-                'review' => $review->review,
-                'created_at' => $review->created_at,
-            ];
-        });
+        $reviews = $service->reviews;
 
         return response()->json([
             'success' => true,
@@ -71,13 +45,6 @@ class ReviewController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-
-        if (! $user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated.',
-            ], 401);
-        }
 
         $review = Review::with(['user', 'service'])
             ->where('user_id', $user->id)
@@ -93,55 +60,25 @@ class ReviewController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => [
-                'id' => $review->id,
-                'user_name' => $review->user->name ?? null,
-                'service_title' => $review->service->title ?? null,
-                'rating' => $review->rating,
-                'review' => $review->review,
-                'status' => $review->status,
-                'created_at' => $review->created_at,
-            ],
+            'data' => $review
         ]);
     }
 
     public function store(Request $request)
     {
-        $validator = Validator::make(
-            $request->all(),
-            [
-                'service_id' => 'required|exists:services,id',
-                'review' => 'nullable|string',
-            ],
-            [
-                'service_id.required' => 'Service ID is required.',
-                'service_id.exists' => 'Service not found.',
-            ]
-        );
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => $validator->errors()->first(),
-                'errors' => $validator->errors(),
-            ], 422);
-        }
+        $validated = $request->validate([
+            'service_id' => 'required|exists:services,id',
+            'review' => 'nullable|string',
+            'rating' => 'required|integer|min:1|max:5',
+        ]);
 
         $user = auth()->user();
 
-        if (! $user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated.',
-            ], 401);
-        }
-
         $review = Review::create([
             'user_id' => $user->id,
-            'service_id' => $request->service_id,
-            'rating' => 5,
-            'review' => $request->review,
-            'status' => 'pending',
+            'service_id' => $validated['service_id'],
+            'rating' => $validated['rating'],
+            'review' => $validated['review'],
         ]);
 
         return response()->json([
@@ -151,85 +88,23 @@ class ReviewController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, $id)
+
+    public function reply(Request $request, $id)
     {
-        $validator = Validator::make(
-            $request->all(),
-            [
-                'service_id' => 'required|exists:services,id',
-                'review' => 'nullable|string',
-                'rating' => 'nullable|integer|min:1|max:5',
-            ],
-            [
-                'service_id.required' => 'Service ID is required.',
-                'service_id.exists' => 'Service not found.',
-            ]
-        );
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => $validator->errors()->first(),
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $user = auth()->user();
-
-        if (! $user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated.',
-            ], 401);
-        }
-
-        $review = Review::where('id', $id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if (! $review) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Review not found.',
-            ], 404);
-        }
-
-        $review->update([
-            'service_id' => $request->service_id,
-            'review' => $request->review,
-            'rating' => $request->rating ?? $review->rating,
+        $validated = $request->validate([
+            'reply' => 'nullable|string',
         ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Review updated successfully.',
-            'data' => $review,
-        ], 200);
-    }
-
-    public function changeStatus(Request $request, $id)
-    {
-        $allowedStatus = ['approved', 'rejected'];
-
-        $status = $request->status;
-
-        if (! in_array($status, $allowedStatus)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid status.',
-            ], 400);
-        }
 
         $review = Review::findOrFail($id);
 
-        $review->update([
-            'status' => $status,
+        $review = $review->update([
+            'reply' => $validated['reply'],
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => "Review {$status} successfully",
+            'message' => 'Review replied successfully.',
             'data' => $review,
-        ]);
+        ], 201);
     }
 }
