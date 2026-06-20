@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\Order;
+use App\Models\Review;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -21,18 +22,23 @@ class UserDashboardController extends Controller
             ->where('event_start_date', '>=', now()->toDateString())
             ->count();
 
-        $pastOrders = Order::where('event_start_date', '<', now()->toDateString())
+        $pastOrders = Order::where('user_id', $userId)
+            ->where('event_start_date', '<', now()->toDateString())
             ->count();
 
         $unreadMessage = Message::where('receiver_id', $userId)
             ->whereNull('read_at')
             ->count();
 
-        $rating = 'Not set';
+        $rating = Review::where('user_id', $userId)
+            ->avg('rating');
+
+        $rating = $rating ? round($rating, 2) : null;
+
 
         return response()->json([
             'success' => true,
-            'date' => [
+            'data' => [
                 'upcoming_events' => $upComingEvents,
                 'past_orders' => $pastOrders,
                 'unread_messages' => $unreadMessage,
