@@ -215,6 +215,18 @@ class ReviewControllerTest extends TestCase
             ->assertJsonPath('data.0.review_id', null);
     }
 
+    public function test_order_show_includes_review_eligibility(): void
+    {
+        [$service] = $this->createService();
+        $customer = User::factory()->create(['type' => 0]);
+        $order = $this->createCompletedOrder($customer, $service);
+
+        $this->actingAs($customer, 'api')->getJson('/api/admin/order/show/'.$order->id)
+            ->assertOk()
+            ->assertJsonPath('data.order_details.can_review', true)
+            ->assertJsonPath('data.order_details.review_id', null);
+    }
+
     public function test_order_index_marks_reviewed_order_as_not_reviewable(): void
     {
         [$service] = $this->createService();

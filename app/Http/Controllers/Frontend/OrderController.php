@@ -55,7 +55,7 @@ class OrderController extends Controller
                     'service_image' => $order->service->image,
                     'event_name' => $order->event_name,
                     'provider_name' => "{$order->service->user->name} {$order->service->user->last_name}",
-                    'price' => '$' . number_format($order->providerPayments->amount),
+                    'price' => '$'.number_format($order->providerPayments->amount),
                     'due_in' => "{$days}d {$hours}h {$minutes}m",
                     'status' => $order->status,
                     'can_review' => $order->canBeReviewedBy($user),
@@ -76,7 +76,7 @@ class OrderController extends Controller
      */
     public function show($id)
     {
-        $order = Order::with(['service', 'pricing', 'providerPayments', 'user'])
+        $order = Order::with(['service', 'pricing', 'providerPayments', 'user', 'review'])
             ->find($id);
 
         if (! $order) {
@@ -85,6 +85,8 @@ class OrderController extends Controller
                 'message' => 'Order not found',
             ], 404);
         }
+
+        $user = auth()->user();
 
         $dueIn = Carbon::parse($order->event_end_date)->diff(Carbon::now());
         $days = $dueIn->d;
@@ -99,7 +101,7 @@ class OrderController extends Controller
             ],
 
             'location & contact' => [
-                'full_name' => $order->first_name . ' ' . $order->last_name,
+                'full_name' => $order->first_name.' '.$order->last_name,
                 'email' => $order->email,
                 'phone' => $order->phone,
                 'address' => implode(', ', array_filter([
@@ -131,9 +133,11 @@ class OrderController extends Controller
                 'event_name' => $order->event_name,
                 'order_by' => "{$order->user->name} {$order->user->last_name}",
                 'status' => $order->status,
-                'order_number' => '#ORD' . str_pad($order->id, 5, '0', STR_PAD_LEFT),
+                'can_review' => $order->canBeReviewedBy($user),
+                'review_id' => $order->review?->id,
+                'order_number' => '#ORD'.str_pad($order->id, 5, '0', STR_PAD_LEFT),
                 'end_date' => Carbon::parse($order->event_end_date)->format('d M, Y'),
-                'amount_paid' => '$' . number_format($order->providerPayments->amount),
+                'amount_paid' => '$'.number_format($order->providerPayments->amount),
             ],
         ];
 
@@ -463,7 +467,7 @@ class OrderController extends Controller
 
                     return response()->json([
                         'status' => false,
-                        'message' => 'Unexpected payment status: ' . $payment_intent->status,
+                        'message' => 'Unexpected payment status: '.$payment_intent->status,
                     ], 500);
             }
         } catch (\Exception $e) {
@@ -471,7 +475,7 @@ class OrderController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => 'Payment processing failed: ' . $e->getMessage(),
+                'message' => 'Payment processing failed: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -504,7 +508,7 @@ class OrderController extends Controller
         $pdf = Pdf::loadView('invoices.order_invoice', $data)
             ->setPaper('a4', 'portrait');
 
-        return $pdf->download('invoice_' . $orderId . '.pdf');
+        return $pdf->download('invoice_'.$orderId.'.pdf');
     }
 
     public function updateStatus(Request $request, $id)
@@ -512,24 +516,24 @@ class OrderController extends Controller
         if (auth()->user()->type != 2) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized'
+                'message' => 'Unauthorized',
             ], 403);
         }
 
         $request->validate([
-            'status' => 'required|in:pending,confirmed,completed,cancelled'
+            'status' => 'required|in:pending,confirmed,completed,cancelled',
         ]);
 
         $order = Order::findOrFail($id);
 
         $order->update([
-            'status' => $request->status
+            'status' => $request->status,
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Order status updated successfully',
-            'data' => $order
+            'data' => $order,
         ]);
     }
 }
