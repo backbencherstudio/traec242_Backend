@@ -78,6 +78,70 @@ class ServiceController extends Controller
         }
     }
 
+
+    public function update(UpdateServiceRequest $request, Service $service)
+    {
+        try {
+            return DB::transaction(function () use ($request, $service) {
+
+                $imagePaths = $service->image ?? [];
+
+                if ($request->hasFile('images')) {
+
+                    if (!empty($service->image)) {
+                        foreach ($service->image as $image) {
+                            Storage::disk('public')->delete($image);
+                        }
+                    }
+
+                    $imagePaths = [];
+
+                    foreach ($request->file('images') as $file) {
+                        $imagePaths[] = Storage::disk('public')->put('services', $file);
+                    }
+                }
+
+                $service->update([
+                    'title'       => $request->title,
+                    'category_id' => $request->category_id,
+                    'location'    => $request->location,
+                    'description' => $request->description,
+                    'image'       => $imagePaths,
+                ]);
+
+                if ($request->has('pricings')) {
+                    $service->pricings()->delete();
+
+                    foreach ($request->pricings as $pricingData) {
+                        $service->pricings()->create($pricingData);
+                    }
+                }
+
+                if ($request->has('faqs')) {
+                    $service->faqs()->delete();
+
+                    foreach ($request->faqs as $faqData) {
+                        $service->faqs()->create($faqData);
+                    }
+                }
+
+                return $this->sendResponse(
+                    ServiceResource::make(
+                        $service->load(['pricings', 'faqs'])
+                    ),
+                    'Service updated successfully'
+                );
+            });
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update service',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function show($id)
     {
         $service = Service::where('user_id', auth()->id())
