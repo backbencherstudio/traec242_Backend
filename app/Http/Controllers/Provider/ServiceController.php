@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Provider;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreServiceRequest;
+use App\Http\Requests\UpdateServiceRequest;
 use App\Http\Resources\ServiceResource;
 use App\Mail\NewServiceMail;
 use App\Models\Service;
+use App\Models\ServicePricing;
 use App\Models\Subscriber;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -75,6 +77,75 @@ class ServiceController extends Controller
             });
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to create service'], 500);
+        }
+    }
+
+    public function update(UpdateServiceRequest $request, Service $service)
+    {
+
+        try {
+            return DB::transaction(function () use ($request, $service) {
+
+                $data = $request->only([
+                    'title',
+                    'category_id',
+                    'location',
+                    'description'
+                ]);
+
+                if ($request->hasFile('images')) {
+
+                    if (!empty($service->image)) {
+                        foreach ($service->image as $image) {
+                            Storage::disk('public')->delete($image);
+                        }
+                    }
+
+                    $imagePaths = [];
+
+                    foreach ($request->file('images') as $file) {
+                        $imagePaths[] = Storage::disk('public')->put('services', $file);
+                    }
+
+                    $data['image'] = $imagePaths;
+                }
+
+                $service->update($data);
+
+                if ($request->has('pricings')) {
+
+                    $service->pricings()->delete();
+
+                    foreach ($request->pricings as $pricing) {
+                        $service->pricings()->create([
+                            'service_type' => $pricing['service_type'],
+                            'duration'     => $pricing['duration'] ?? null,
+                            'price'        => $pricing['price'],
+                            'description'  => $pricing['description'] ?? null,
+                            'features'     => $pricing['features'] ?? [],
+                        ]);
+                    }
+                }
+
+                if ($request->has('faqs')) {
+                    $service->faqs()->delete();
+
+                    foreach ($request->faqs as $faq) {
+                        $service->faqs()->create($faq);
+                    }
+                }
+
+                return $this->sendResponse(
+                    ServiceResource::make(
+                        $service->load(['pricings', 'faqs'])
+                    ),
+                    'Service updated successfully'
+                );
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 

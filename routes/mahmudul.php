@@ -37,4 +37,5 @@ Route::middleware('auth:api')->group(function () {
     Route::get('provider/services', [ServiceController::class, 'index']);
     Route::get('provider/services/{id}', [ServiceController::class, 'show']);
     Route::post('provider/services/store', [ServiceController::class, 'store']);
+    Route::put('provider/services/update/{service}', [ServiceController::class, 'update']);
 });
