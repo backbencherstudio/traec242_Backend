@@ -275,4 +275,7 @@ Route::get('/order/success/{orderId}', [OrderController::class, 'success'])->nam
 Route::get('/order/cancel/{orderId}', [OrderController::class, 'cancel'])->name('order.cancel');
 Route::get('/order/invoice/{orderId}', [OrderController::class, 'generateInvoice'])->name('order.invoice');
 
-require __DIR__.'/mahmudul.php';
+//Stripe Public_key
+Route::get('stripe/p-k/{service}', [ProviderStripeController::class, 'getPublicKey'])->name('p-stripe.getPublicKey');
+
+require __DIR__ . '/mahmudul.php';
