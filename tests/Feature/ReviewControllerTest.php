@@ -203,6 +203,58 @@ class ReviewControllerTest extends TestCase
             ->assertJsonPath('data.0.reply', 'Thank you!');
     }
 
+    public function test_review_author_can_show_their_own_review(): void
+    {
+        [$service] = $this->createService();
+        $customer = User::factory()->create();
+
+        $review = Review::create([
+            'user_id' => $customer->id,
+            'service_id' => $service->id,
+            'rating' => 5,
+            'review' => 'Loved it',
+        ]);
+
+        $this->actingAs($customer, 'api')->getJson('/api/admin/review/show/'.$review->id)
+            ->assertOk()
+            ->assertJsonPath('data.id', $review->id)
+            ->assertJsonPath('data.rating', 5);
+    }
+
+    public function test_service_owner_can_show_a_review_on_their_service(): void
+    {
+        [$service, $owner] = $this->createService();
+        $customer = User::factory()->create();
+
+        $review = Review::create([
+            'user_id' => $customer->id,
+            'service_id' => $service->id,
+            'rating' => 4,
+            'review' => 'Nice',
+        ]);
+
+        $this->actingAs($owner, 'api')->getJson('/api/admin/review/show/'.$review->id)
+            ->assertOk()
+            ->assertJsonPath('data.id', $review->id);
+    }
+
+    public function test_stranger_cannot_show_a_review_they_do_not_own(): void
+    {
+        [$service] = $this->createService();
+        $customer = User::factory()->create();
+        $stranger = User::factory()->create();
+
+        $review = Review::create([
+            'user_id' => $customer->id,
+            'service_id' => $service->id,
+            'rating' => 5,
+        ]);
+
+        $this->actingAs($stranger, 'api')->getJson('/api/admin/review/show/'.$review->id)
+            ->assertNotFound()
+            ->assertJsonPath('success', false);
+    }
+
     public function test_order_index_marks_completed_unreviewed_order_as_reviewable(): void
     {
         [$service] = $this->createService();

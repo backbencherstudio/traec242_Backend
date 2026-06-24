@@ -61,11 +61,16 @@ class ReviewController extends Controller
 
     public function show($id)
     {
-        $user = auth()->user();
+        $userId = auth()->id();
 
         $review = Review::with(['user', 'service'])
-            ->where('user_id', $user->id)
             ->where('id', $id)
+            ->where(function ($query) use ($userId) {
+                $query->where('user_id', $userId)
+                    ->orWhereHas('service', function ($serviceQuery) use ($userId) {
+                        $serviceQuery->where('user_id', $userId);
+                    });
+            })
             ->first();
 
         if (! $review) {
