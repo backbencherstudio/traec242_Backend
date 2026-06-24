@@ -279,6 +279,63 @@ class ReviewControllerTest extends TestCase
             ->assertJsonPath('data.order_details.review_id', null);
     }
 
+    public function test_order_index_returns_null_review_when_not_yet_reviewed(): void
+    {
+        [$service] = $this->createService();
+        $customer = User::factory()->create(['type' => 0]);
+        $this->createCompletedOrder($customer, $service);
+
+        $this->actingAs($customer, 'api')->getJson('/api/admin/order/index')
+            ->assertOk()
+            ->assertJsonPath('data.0.review', null);
+    }
+
+    public function test_order_index_includes_review_object_with_provider_reply(): void
+    {
+        [$service, $owner] = $this->createService();
+        $customer = User::factory()->create(['type' => 0]);
+        $order = $this->createCompletedOrder($customer, $service);
+
+        $review = Review::create([
+            'user_id' => $customer->id,
+            'order_id' => $order->id,
+            'service_id' => $service->id,
+            'rating' => 5,
+            'review' => 'Loved it',
+            'reply' => 'Thank you!',
+        ]);
+
+        $this->actingAs($customer, 'api')->getJson('/api/admin/order/index')
+            ->assertOk()
+            ->assertJsonPath('data.0.review.id', $review->id)
+            ->assertJsonPath('data.0.review.rating', 5)
+            ->assertJsonPath('data.0.review.review', 'Loved it')
+            ->assertJsonPath('data.0.review.reply', 'Thank you!')
+            ->assertJsonPath('data.0.review.has_replied', true);
+    }
+
+    public function test_order_show_includes_review_object_when_reviewed(): void
+    {
+        [$service] = $this->createService();
+        $customer = User::factory()->create(['type' => 0]);
+        $order = $this->createCompletedOrder($customer, $service);
+
+        $review = Review::create([
+            'user_id' => $customer->id,
+            'order_id' => $order->id,
+            'service_id' => $service->id,
+            'rating' => 4,
+            'review' => 'Nice work',
+        ]);
+
+        $this->actingAs($customer, 'api')->getJson('/api/admin/order/show/'.$order->id)
+            ->assertOk()
+            ->assertJsonPath('data.order_details.review.id', $review->id)
+            ->assertJsonPath('data.order_details.review.rating', 4)
+            ->assertJsonPath('data.order_details.review.has_replied', false)
+            ->assertJsonPath('data.order_details.review.reply', null);
+    }
+
     public function test_order_index_marks_reviewed_order_as_not_reviewable(): void
     {
         [$service] = $this->createService();

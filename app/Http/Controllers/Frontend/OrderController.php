@@ -22,6 +22,27 @@ use Stripe\Stripe;
 class OrderController extends Controller
 {
     /**
+     * Format an order's review (and the provider's reply, if any) for the response.
+     *
+     * @return array{id: int, rating: int, review: ?string, reply: ?string, has_replied: bool, reviewed_at: ?string}|null
+     */
+    private function formatOrderReview(Order $order): ?array
+    {
+        if ($order->review === null) {
+            return null;
+        }
+
+        return [
+            'id' => $order->review->id,
+            'rating' => $order->review->rating,
+            'review' => $order->review->review,
+            'reply' => $order->review->reply,
+            'has_replied' => $order->review->reply !== null,
+            'reviewed_at' => $order->review->created_at,
+        ];
+    }
+
+    /**
      * Display a listing of the resource.
      *
      * @return Response
@@ -60,6 +81,7 @@ class OrderController extends Controller
                     'status' => $order->status,
                     'can_review' => $order->canBeReviewedBy($user),
                     'review_id' => $order->review?->id,
+                    'review' => $this->formatOrderReview($order),
                 ];
             });
 
@@ -135,6 +157,7 @@ class OrderController extends Controller
                 'status' => $order->status,
                 'can_review' => $order->canBeReviewedBy($user),
                 'review_id' => $order->review?->id,
+                'review' => $this->formatOrderReview($order),
                 'order_number' => '#ORD'.str_pad($order->id, 5, '0', STR_PAD_LEFT),
                 'end_date' => Carbon::parse($order->event_end_date)->format('d M, Y'),
                 'amount_paid' => '$'.number_format($order->providerPayments->amount),
