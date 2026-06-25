@@ -61,7 +61,7 @@ class AllServiceController extends Controller
     public function show($id)
     {
         $service = Service::where('status', 1)
-            ->with(['category', 'pricings', 'user', 'faqs'])
+            ->with(['category', 'pricings', 'user', 'faqs', 'reviews.user'])
             ->findOrFail($id);
 
         return $this->sendResponse(ServiceResource::make($service));
