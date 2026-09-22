@@ -1,15 +1,19 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api\User;
 
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Review\ReplyReviewRequest;
+use App\Http\Requests\Review\StoreReviewRequest;
+use App\Http\Resources\ReviewResource;
 use App\Models\Order;
 use App\Models\Review;
 use App\Models\Service;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class ReviewController extends Controller
 {
-    public function index()
+    public function index(): JsonResponse
     {
         $user = auth()->user();
 
@@ -18,10 +22,10 @@ class ReviewController extends Controller
             ->latest()
             ->get();
 
-        return $this->sendResponse($reviews);
+        return $this->sendResponse(ReviewResource::collection($reviews));
     }
 
-    public function providerReviews()
+    public function providerReviews(): JsonResponse
     {
         $providerId = auth()->id();
 
@@ -30,36 +34,22 @@ class ReviewController extends Controller
                 $query->where('user_id', $providerId);
             })
             ->latest()
-            ->get()
-            ->map(function ($review) {
-                return [
-                    'id' => $review->id,
-                    'order_id' => $review->order_id,
-                    'service_id' => $review->service_id,
-                    'service_title' => $review->service?->title,
-                    'reviewer_name' => trim("{$review->user?->name} {$review->user?->last_name}"),
-                    'rating' => $review->rating,
-                    'review' => $review->review,
-                    'reply' => $review->reply,
-                    'has_replied' => $review->reply !== null,
-                    'created_at' => $review->created_at,
-                ];
-            });
+            ->get();
 
-        return $this->sendResponse($reviews);
+        return $this->sendResponse(ReviewResource::collection($reviews));
     }
 
-    public function review($id)
+    public function review($id): JsonResponse
     {
         $service = Service::with(['reviews.user'])->findOrFail($id);
 
         return $this->sendResponse([
             'service_title' => $service->title,
-            'reviews' => $service->reviews,
+            'reviews' => ReviewResource::collection($service->reviews),
         ]);
     }
 
-    public function show($id)
+    public function show($id): JsonResponse
     {
         $userId = auth()->id();
 
@@ -77,17 +67,12 @@ class ReviewController extends Controller
             return $this->sendError('Review not found.');
         }
 
-        return $this->sendResponse($review);
+        return $this->sendResponse(new ReviewResource($review));
     }
 
-    public function store(Request $request)
+    public function store(StoreReviewRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'order_id' => 'required|exists:orders,id',
-            'review' => 'nullable|string',
-            'rating' => 'required|integer|min:1|max:5',
-        ]);
-
+        $validated = $request->validated();
         $user = auth()->user();
         $order = Order::findOrFail($validated['order_id']);
 
@@ -111,15 +96,11 @@ class ReviewController extends Controller
             'review' => $validated['review'] ?? null,
         ]);
 
-        return $this->sendResponse($review, 'Review submitted successfully.', 201);
+        return $this->sendResponse(new ReviewResource($review), 'Review submitted successfully.', 201);
     }
 
-    public function reply(Request $request, $id)
+    public function reply(ReplyReviewRequest $request, $id): JsonResponse
     {
-        $validated = $request->validate([
-            'reply' => 'required|string',
-        ]);
-
         $review = Review::with('service')->findOrFail($id);
 
         if ((int) $review->service->user_id !== (int) auth()->id()) {
@@ -127,9 +108,9 @@ class ReviewController extends Controller
         }
 
         $review->update([
-            'reply' => $validated['reply'],
+            'reply' => $request->reply,
         ]);
 
-        return $this->sendResponse($review, 'Review replied successfully.');
+        return $this->sendResponse(new ReviewResource($review), 'Review replied successfully.');
     }
 }

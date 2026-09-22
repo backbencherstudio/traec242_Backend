@@ -1,19 +1,21 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Provider;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Profile\UpdateProviderProfileRequest;
+use App\Http\Resources\UserResource;
 use App\Models\Order;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
-class ProfileController extends Controller
+class ProviderProfileController extends Controller
 {
-    public function providerProfile()
+    public function providerProfile(): JsonResponse
     {
         $user = auth()->user();
 
-        $completedOrders = Order::where('user_id', $user->id)
+        $completedOrders = Order::whereHas('service', fn ($q) => $q->where('user_id', $user->id))
             ->where('status', 'completed')
             ->count();
 
@@ -29,31 +31,20 @@ class ProfileController extends Controller
                 'about_me' => $user->bio,
                 'completed_orders' => $completedOrders,
                 'languages' => $user->languages ?? [],
-                'joined' => 'Joined '.$user->created_at->format('M Y'),
+                'joined' => 'Joined '.$user->created_at?->format('M Y'),
                 'email' => $user->email,
             ],
         ]);
     }
 
-    public function updateProviderProfile(Request $request)
+    public function updateProviderProfile(UpdateProviderProfileRequest $request): JsonResponse
     {
         $user = Auth::user();
-
-        $data = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'last_name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,'.$user->id,
-            'phone' => 'sometimes|string|max:20',
-            'bio' => 'sometimes|string',
-            'languages' => 'sometimes|array',
-            'languages.*' => 'string',
-        ]);
-
-        $user->update($data);
+        $user->update($request->validated());
 
         return response()->json([
             'message' => 'Profile updated successfully',
-            'user' => $user,
+            'user' => new UserResource($user),
         ]);
     }
 }

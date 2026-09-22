@@ -1,45 +1,42 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\FaqStoreRequest;
 use App\Models\Content;
 use App\Models\Faq;
 use App\Models\PrivacyPolicy;
+use App\Models\Review;
 use App\Models\User;
+use App\Services\FileUploadService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class ContentController extends Controller
 {
-    /**
-     * Return content and other data
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function home_index()
+    public function __construct(
+        protected FileUploadService $fileUploadService
+    ) {}
+
+    public function home_index(): JsonResponse
     {
         $content = Content::pluck('value', 'key');
+        $avgRating = Review::avg('rating');
 
         $data = [
             'content' => $content,
             'other_data' => [
                 'total_user' => User::where('type', 0)->count(),
                 'total_provider' => User::where('type', 2)->count(),
-                'avg_rating' => 3.3,
+                'avg_rating' => $avgRating ? round((float) $avgRating, 1) : 5.0,
             ],
         ];
 
         return $this->sendResponse($data);
     }
 
-    /**
-     * Update content values
-     *
-     * @return JsonResponse
-     */
-    public function home_update(Request $request)
+    public function home_update(Request $request): JsonResponse
     {
         $allowedKeys = [
             'image_1',
@@ -54,13 +51,11 @@ class ContentController extends Controller
         foreach ($allowedKeys as $key) {
             if ($request->hasFile($key)) {
                 $record = Content::where('key', $key)->first();
-
                 if ($record && $record->value) {
-                    Storage::disk('public')->delete($record->value);
+                    $this->fileUploadService->delete($record->value);
                 }
 
-                $path = $request->file($key)->store('uploads', 'public');
-
+                $path = $this->fileUploadService->upload($request->file($key), 'uploads');
                 Content::updateOrCreate(['key' => $key], ['value' => $path]);
             } elseif ($request->has($key)) {
                 Content::updateOrCreate(
@@ -75,24 +70,14 @@ class ContentController extends Controller
         return $this->sendResponse($updatedContent, 'Content updated successfully.');
     }
 
-    /**
-     * Fetch all faqs from the database.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function faq_index()
+    public function faq_index(): JsonResponse
     {
-        $content = Faq::get();
+        $content = Faq::all();
 
         return $this->sendResponse($content);
     }
 
-    /**
-     * Store a newly created faq in storage.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function faq_store(FaqStoreRequest $request)
+    public function faq_store(FaqStoreRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
@@ -104,27 +89,21 @@ class ContentController extends Controller
         return $this->sendResponse($content);
     }
 
-    /**
-     * Delete a faq from the database.
-     *
-     * @param  FaqStoreRequest  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function faq_delete(Faq $faq)
+    public function faq_delete(Faq $faq): JsonResponse
     {
         $faq->delete();
 
         return $this->sendResponse([], 'Faq deleted successfully.');
     }
 
-    public function privacy_index()
+    public function privacy_index(): JsonResponse
     {
         $privacy = PrivacyPolicy::first();
 
         return $this->sendResponse($privacy);
     }
 
-    public function privacy_update(Request $request)
+    public function privacy_update(Request $request): JsonResponse
     {
         $request->validate([
             'title' => 'required|string|max:255',
@@ -132,7 +111,6 @@ class ContentController extends Controller
         ]);
 
         $privacy = PrivacyPolicy::first() ?? new PrivacyPolicy;
-
         $privacy->title = $request->title;
         $privacy->description = $request->description;
         $privacy->save();

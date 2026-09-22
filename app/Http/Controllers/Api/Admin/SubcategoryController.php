@@ -1,45 +1,40 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreSubcategoryRequest;
+use App\Http\Requests\Admin\UpdateSubcategoryRequest;
+use App\Http\Resources\SubcategoryResource;
 use App\Models\Subcategory;
-use Illuminate\Http\Request;
+use App\Services\FileUploadService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 
 class SubcategoryController extends Controller
 {
-    public function index()
+    public function __construct(
+        protected FileUploadService $fileUploadService
+    ) {}
+
+    public function index(): JsonResponse
     {
-        $subcategories = Subcategory::with('category')->get();
+        $subcategories = Subcategory::with('category')->latest()->get();
 
         return response()->json([
             'status' => 'success',
-            'data' => $subcategories,
+            'data' => SubcategoryResource::collection($subcategories),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreSubcategoryRequest $request): JsonResponse
     {
-        $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'name' => 'required|string|max:255',
-            'description' => 'required',
-            'status' => 'required|in:0,1',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-        ]);
-
         $imagePath = null;
-
         if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time().'_'.$image->getClientOriginalName();
-            $image->move(public_path('uploads/subcategory'), $imageName);
-            $imagePath = 'uploads/subcategory/'.$imageName;
+            $imagePath = $this->fileUploadService->upload($request->file('image'), 'uploads/subcategory');
         }
 
         $subcategory = Subcategory::create([
-
             'category_id' => $request->category_id,
             'name' => $request->name,
             'slug' => Str::slug($request->name),
@@ -50,41 +45,25 @@ class SubcategoryController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'data' => $subcategory,
+            'data' => new SubcategoryResource($subcategory->load('category')),
         ], 201);
     }
 
-    public function edit($id)
+    public function edit($id): JsonResponse
     {
-        return response()->json(
-            Subcategory::with('category')->findOrFail($id)
-        );
+        $subcategory = Subcategory::with('category')->findOrFail($id);
+
+        return response()->json(new SubcategoryResource($subcategory));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateSubcategoryRequest $request, $id): JsonResponse
     {
-        $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'name' => 'required|string|max:255',
-            'description' => 'required',
-            'status' => 'required|in:0,1',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-        ]);
-
         $subcategory = Subcategory::findOrFail($id);
 
         $imagePath = $subcategory->image;
-
         if ($request->hasFile('image')) {
-
-            if ($subcategory->image && file_exists(public_path($subcategory->image))) {
-                unlink(public_path($subcategory->image));
-            }
-
-            $image = $request->file('image');
-            $imageName = time().'_'.$image->getClientOriginalName();
-            $image->move(public_path('uploads/subcategory'), $imageName);
-            $imagePath = 'uploads/subcategory/'.$imageName;
+            $this->fileUploadService->delete($subcategory->image);
+            $imagePath = $this->fileUploadService->upload($request->file('image'), 'uploads/subcategory');
         }
 
         $subcategory->update([
@@ -98,13 +77,14 @@ class SubcategoryController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'data' => $subcategory,
+            'data' => new SubcategoryResource($subcategory->fresh('category')),
         ]);
     }
 
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         $subcategory = Subcategory::findOrFail($id);
+        $this->fileUploadService->delete($subcategory->image);
         $subcategory->delete();
 
         return response()->json([

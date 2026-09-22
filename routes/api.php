@@ -1,35 +1,35 @@
 <?php
 
-use App\Http\Controllers\Admin\AdminDashboardController;
-use App\Http\Controllers\Admin\BrandController;
-use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\FaqCategoryController;
-use App\Http\Controllers\Admin\FaqController;
-use App\Http\Controllers\Admin\MessageController;
-use App\Http\Controllers\Admin\OrderManagementController;
-use App\Http\Controllers\Admin\PermissionController;
-use App\Http\Controllers\Admin\PlanController;
-use App\Http\Controllers\Admin\PromotionController;
-use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\SettingController;
-use App\Http\Controllers\Admin\SliderController;
-use App\Http\Controllers\Admin\StripeController;
-use App\Http\Controllers\Admin\SubcategoryController;
-use App\Http\Controllers\Admin\SubscriptionManagementController;
-use App\Http\Controllers\Admin\UserManagementController;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\EmailController;
-use App\Http\Controllers\Api\GoogleAuthController;
-use App\Http\Controllers\Api\ProfileController;
-use App\Http\Controllers\Api\ProviderController;
-use App\Http\Controllers\Api\UpdateProfileController;
-use App\Http\Controllers\Api\UserDashboardController;
-use App\Http\Controllers\Api\VerifyRegistrationOtpController;
-use App\Http\Controllers\Frontend\OrderController;
-use App\Http\Controllers\Frontend\SubscriberController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\Provider\ProviderStripeController;
-use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\Api\Admin\AdminDashboardController;
+use App\Http\Controllers\Api\Admin\BrandController;
+use App\Http\Controllers\Api\Admin\CategoryController;
+use App\Http\Controllers\Api\Admin\EmailController;
+use App\Http\Controllers\Api\Admin\FaqCategoryController;
+use App\Http\Controllers\Api\Admin\FaqController;
+use App\Http\Controllers\Api\Admin\OrderManagementController;
+use App\Http\Controllers\Api\Admin\PermissionController;
+use App\Http\Controllers\Api\Admin\PlanController;
+use App\Http\Controllers\Api\Admin\PromotionController;
+use App\Http\Controllers\Api\Admin\RoleController;
+use App\Http\Controllers\Api\Admin\SettingController;
+use App\Http\Controllers\Api\Admin\SliderController;
+use App\Http\Controllers\Api\Admin\StripeController;
+use App\Http\Controllers\Api\Admin\SubcategoryController;
+use App\Http\Controllers\Api\Admin\SubscriptionManagementController;
+use App\Http\Controllers\Api\Admin\UserManagementController;
+use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\Auth\GoogleAuthController;
+use App\Http\Controllers\Api\Auth\VerifyRegistrationOtpController;
+use App\Http\Controllers\Api\Provider\ProviderProfileController;
+use App\Http\Controllers\Api\Provider\ProviderStripeController;
+use App\Http\Controllers\Api\Public\ProviderDirectoryController;
+use App\Http\Controllers\Api\Public\SubscriberController;
+use App\Http\Controllers\Api\User\MessageController;
+use App\Http\Controllers\Api\User\NotificationController;
+use App\Http\Controllers\Api\User\OrderController;
+use App\Http\Controllers\Api\User\ReviewController;
+use App\Http\Controllers\Api\User\UserDashboardController;
+use App\Http\Controllers\Api\User\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
 // Admin Public Routes
@@ -48,8 +48,8 @@ Route::post('/subscriber', [SubscriberController::class, 'store'])->name('subscr
 // Route::middleware('auth:api')->post('/user/logout', [UserController::class, 'logout']);
 
 // Public provider listing and details
-Route::get('/providers', [ProviderController::class, 'index']);
-Route::get('/providers/{id}', [ProviderController::class, 'show']);
+Route::get('/providers', [ProviderDirectoryController::class, 'index']);
+Route::get('/providers/{id}', [ProviderDirectoryController::class, 'show']);
 
 // Route::post('/admin/register', [AuthController::class, 'adminregister']);
 
@@ -61,7 +61,7 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleC
 Route::middleware(['auth:api'])->group(function () {
     Route::get('/me', [AuthController::class, 'me'])->name('me');
     Route::prefix('profile')->group(function () {
-        Route::put('update', [UpdateProfileController::class, 'update']);
+        Route::put('update', [UserProfileController::class, 'update']);
         Route::post('passwordchange', [AuthController::class, 'passwordchange']);
     });
 });
@@ -163,13 +163,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::post('update/{id}', [PromotionController::class, 'update'])->name('promotions.update');
         Route::delete('delete/{id}', [PromotionController::class, 'destroy'])->name('promotions.destroy');
     });
-    Route::prefix('faq-categories')->group(function () {
-        Route::get('index', [FaqCategoryController::class, 'index'])->name('faq-categories.index');
-        Route::post('store', [FaqCategoryController::class, 'store'])->name('faq-categories.store');
-        Route::get('edit/{id}', [FaqCategoryController::class, 'edit'])->name('faq-categories.edit');
-        Route::post('update/{id}', [FaqCategoryController::class, 'update'])->name('faq-categories.update');
-        Route::delete('delete/{id}', [FaqCategoryController::class, 'destroy'])->name('faq-categories.destroy');
-    });
 
     // faq
     Route::prefix('faq')->group(function () {
@@ -218,8 +211,8 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
 
     // Profile
     Route::prefix('profile')->group(function () {
-        Route::get('provider-profile', [ProfileController::class, 'providerProfile']);
-        Route::put('update-provider-profile', [ProfileController::class, 'updateProviderProfile']);
+        Route::get('provider-profile', [ProviderProfileController::class, 'providerProfile']);
+        Route::put('update-provider-profile', [ProviderProfileController::class, 'updateProviderProfile']);
     });
 
     // Subscription Management
@@ -275,7 +268,7 @@ Route::get('/order/success/{orderId}', [OrderController::class, 'success'])->nam
 Route::get('/order/cancel/{orderId}', [OrderController::class, 'cancel'])->name('order.cancel');
 Route::get('/order/invoice/{orderId}', [OrderController::class, 'generateInvoice'])->name('order.invoice');
 
-//Stripe Public_key
+// Stripe Public_key
 Route::get('stripe/p-k/{service}', [ProviderStripeController::class, 'getPublicKey'])->name('p-stripe.getPublicKey');
 
-require __DIR__ . '/mahmudul.php';
+require __DIR__.'/mahmudul.php';

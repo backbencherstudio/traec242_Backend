@@ -1,68 +1,44 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Message;
-use App\Models\Order;
-use App\Models\Review;
-use App\Models\User;
+use App\Services\DashboardService;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class UserDashboardController extends Controller
 {
-    public function summary(Request $request)
+    public function __construct(
+        protected DashboardService $dashboardService
+    ) {}
+
+    public function summary(Request $request): JsonResponse
     {
-        $userId = $request->user()->id;
-
-        $upComingEvents = Order::where('user_id', $userId)
-            ->where('event_start_date', '>=', now()->toDateString())
-            ->count();
-
-        $pastOrders = Order::where('user_id', $userId)
-            ->where('event_start_date', '<', now()->toDateString())
-            ->count();
-
-        $unreadMessage = Message::where('receiver_id', $userId)
-            ->whereNull('read_at')
-            ->count();
-
-        $rating = Review::where('user_id', $userId)
-            ->avg('rating');
-
-        $rating = $rating ? round($rating, 2) : null;
-
+        $userId = (int) $request->user()->id;
+        $summary = $this->dashboardService->getUserSummary($userId);
 
         return response()->json([
             'success' => true,
-            'data' => [
-                'upcoming_events' => $upComingEvents,
-                'past_orders' => $pastOrders,
-                'unread_messages' => $unreadMessage,
-                'avg_rating_score' => $rating,
-            ],
+            'data' => $summary,
         ]);
     }
 
-    public function recentOrders(Request $request)
+    public function recentOrders(Request $request): JsonResponse
     {
-        $userId = $request->user()->id;
-
-        $orders = Order::with(['service.user'])
-            ->where('user_id', $userId)
-            ->orderBy('event_start_date', 'desc')
-            ->take(4)
-            ->get();
+        $userId = (int) $request->user()->id;
+        $orders = $this->dashboardService->getUserRecentOrders($userId);
 
         $recentOrders = $orders->map(function ($order) {
             return [
                 'event_name' => $order->event_name,
                 'order_by' => trim(
-                    ($order->service?->user?->name ?? '') . ' ' .
-                        ($order->service?->user?->last_name ?? '')
+                    ($order->service?->user?->name ?? '').' '.
+                    ($order->service?->user?->last_name ?? '')
                 ),
                 'date' => Carbon::parse($order->event_start_date)->format('M d, Y'),
                 'status' => ucfirst($order->status),
@@ -75,35 +51,10 @@ class UserDashboardController extends Controller
         ]);
     }
 
-    public function recentActivity(Request $request)
+    public function recentActivity(Request $request): JsonResponse
     {
-        $userId = $request->user()->id;
-
-        $completedOrders = Order::where('user_id', $userId)
-            ->where('status', 'completed')
-            ->latest('updated_at')
-            ->first();
-
-        $activities = [];
-
-        if ($completedOrders) {
-            $activities[] = [
-                'title' => 'Completed order #' . $completedOrders->id,
-                'time'  => Carbon::parse($completedOrders->updated_at)->diffForHumans(),
-            ];
-        }
-
-        $review = Review::where('user_id', $userId)
-            ->where('rating', 5)
-            ->latest()
-            ->first();
-
-        if ($review) {
-            $activities[] = [
-                'title' => 'Received 5-star review',
-                'time'  => Carbon::parse($review->created_at)->diffForHumans(),
-            ];
-        }
+        $userId = (int) $request->user()->id;
+        $activities = $this->dashboardService->getUserRecentActivity($userId);
 
         return response()->json([
             'success' => true,
@@ -111,30 +62,28 @@ class UserDashboardController extends Controller
         ]);
     }
 
-    public function recentMessages(Request $request)
+    public function recentMessages(Request $request): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = (int) $request->user()->id;
 
         $messages = Message::where(function ($query) use ($userId) {
             $query->where('sender_id', $userId)
                 ->orWhere('receiver_id', $userId);
         })
+            ->with(['sender', 'receiver'])
             ->latest()
             ->get()
             ->unique('conversation_id')
             ->take(4);
 
         $data = $messages->map(function ($message) use ($userId) {
-
-            $otherUserId = $message->sender_id == $userId
-                ? $message->receiver_id
-                : $message->sender_id;
-
-            $user = User::find($otherUserId);
+            $otherUser = (int) $message->sender_id === $userId
+                ? $message->receiver
+                : $message->sender;
 
             return [
-                'image' => $user->image,
-                'name' => "{$user->name} {$user->last_name}" ?? 'Unknown',
+                'image' => $otherUser?->image,
+                'name' => $otherUser ? trim("{$otherUser->name} {$otherUser->last_name}") : 'Unknown',
                 'message' => $message->message,
             ];
         });
@@ -144,9 +93,9 @@ class UserDashboardController extends Controller
         ]);
     }
 
-    public function chat(Request $request)
+    public function chat(Request $request): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = (int) $request->user()->id;
         $search = $request->input('search');
 
         $latestMessages = Message::select('conversation_id', DB::raw('MAX(id) as last_id'))
@@ -181,19 +130,17 @@ class UserDashboardController extends Controller
             ->pluck('total', 'conversation_id');
 
         $conversations = $messages->map(function ($message) use ($userId, $unreadCounts) {
-
-            $otherUser = $message->sender_id == $userId
+            $otherUser = (int) $message->sender_id === $userId
                 ? $message->receiver
                 : $message->sender;
 
             return [
                 'conversation_id' => $message->conversation_id,
-                'image' => $otherUser->image,
-                'name' => trim(($otherUser->name ?? '') . ' ' . ($otherUser->last_name ?? '')) ?: 'Unknown',
+                'image' => $otherUser?->image,
+                'name' => $otherUser ? trim(($otherUser->name ?? '').' '.($otherUser->last_name ?? '')) : 'Unknown',
                 'time' => $message->created_at->format('h:i A'),
                 'last_message' => Str::limit($message->message, 50),
                 'unread_count' => $unreadCounts[$message->conversation_id] ?? 0,
-                // 'is_online' => $otherUser->is_online ?? false,
             ];
         });
 

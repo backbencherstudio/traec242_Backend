@@ -1,45 +1,36 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreCategoryRequest;
+use App\Http\Requests\Admin\UpdateCategoryRequest;
+use App\Http\Resources\CategoryResource;
 use App\Models\Category;
-use Illuminate\Http\Request;
+use App\Services\FileUploadService;
+use Illuminate\Http\JsonResponse;
 
 class CategoryController extends Controller
 {
-    public function index()
+    public function __construct(
+        protected FileUploadService $fileUploadService
+    ) {}
+
+    public function index(): JsonResponse
     {
-        $categories = Category::latest()->get();
+        $categories = Category::with('subcategories')->latest()->get();
 
         return response()->json([
             'status' => true,
-            'data' => $categories,
+            'data' => CategoryResource::collection($categories),
         ], 200);
     }
 
-    public function store(Request $request)
+    public function store(StoreCategoryRequest $request): JsonResponse
     {
-        if (auth()->user()->type !== 1) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'You are not authorized to create a category.',
-            ], 403);
-        }
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required',
-            'status' => 'required',
-
-        ]);
-
         $imagePath = null;
-
         if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time().'_'.$image->getClientOriginalName();
-            $image->move(public_path('uploads/category'), $imageName);
-            $imagePath = 'uploads/category/'.$imageName;
+            $imagePath = $this->fileUploadService->upload($request->file('image'), 'uploads/category');
         }
 
         $category = Category::create([
@@ -51,76 +42,56 @@ class CategoryController extends Controller
 
         return response()->json([
             'status' => true,
-            'category' => $category,
-        ]);
+            'category' => new CategoryResource($category),
+        ], 201);
     }
 
-    public function edit($id)
+    public function edit($id): JsonResponse
     {
         $category = Category::find($id);
         if (! $category) {
             return response()->json(['message' => 'Category not found'], 404);
         }
 
-        return response()->json($category);
+        return response()->json(new CategoryResource($category));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateCategoryRequest $request, $id): JsonResponse
     {
-        if (auth()->user()->type !== 1) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'You are not authorized to update this category.',
-            ], 403);
-        }
-
         $category = Category::findOrFail($id);
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'status' => 'required|in:0,1',
-
-        ]);
-
         if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time().'_'.$image->getClientOriginalName();
-            $image->move(public_path('uploads/category'), $imageName);
-            $category->image = 'uploads/category/'.$imageName;
+            $this->fileUploadService->delete($category->image);
+            $category->image = $this->fileUploadService->upload($request->file('image'), 'uploads/category');
         }
 
         $category->name = $request->name;
         $category->description = $request->description;
         $category->status = $request->status;
-
         $category->save();
 
         return response()->json([
             'status' => true,
             'message' => 'Category updated successfully!',
-            'category' => $category,
+            'category' => new CategoryResource($category),
         ]);
     }
 
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
-        if (auth()->user()->type !== 1) {
+        if ((int) auth()->user()->type !== 1) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'You are not authorized to delete this category.',
             ], 403);
         }
-        $category = Category::find($id);
 
+        $category = Category::find($id);
         if (! $category) {
             return response()->json(['message' => 'Category not found'], 404);
         }
 
-        if ($category->image && file_exists(public_path($category->image))) {
-            unlink(public_path($category->image));
-        }
-
+        $this->fileUploadService->delete($category->image);
         $category->delete();
 
         return response()->json(['message' => 'Category deleted successfully']);

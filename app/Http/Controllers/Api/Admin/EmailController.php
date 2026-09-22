@@ -1,18 +1,23 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\TestMail;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
 class EmailController extends Controller
 {
-    public function sendMail(Request $request)
+    public function sendEmail(Request $request): JsonResponse
     {
-        dd($request->all());
-        Mail::to($request->email)->send(new TestEmail);
+        $request->validate([
+            'email' => 'required|email',
+        ]);
 
-        return response()->json(['message' => 'Mail sent successfully!']);
+        Mail::to($request->email)->send(new TestMail($request->all()));
+
+        return $this->sendResponse([], 'Mail sent successfully!');
     }
 }

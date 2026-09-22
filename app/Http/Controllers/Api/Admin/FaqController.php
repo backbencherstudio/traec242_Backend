@@ -1,16 +1,18 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreFaqRequest;
+use App\Http\Requests\Admin\UpdateFaqRequest;
+use App\Http\Resources\FaqResource;
 use App\Models\Faq;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class FaqController extends Controller
 {
-    public function index()
+    public function index(): JsonResponse
     {
-
         $faqs = Faq::with('faq_category')
             ->orderBy('order_number', 'asc')
             ->get();
@@ -18,21 +20,12 @@ class FaqController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Faq fetched Successfull!',
-            'data' => $faqs,
-
+            'data' => FaqResource::collection($faqs),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreFaqRequest $request): JsonResponse
     {
-        $request->validate([
-            'faq_category_id' => 'required|exists:faq_categories,id',
-            'question' => 'required|string|max:255',
-            'answer' => 'required|string',
-            'status' => 'nullable|boolean',
-            'order_number' => 'nullable|integer',
-        ]);
-
         $faq = Faq::create([
             'faq_category_id' => $request->faq_category_id,
             'question' => $request->question,
@@ -44,31 +37,23 @@ class FaqController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'FAQ created successfully',
-            'data' => $faq,
+            'data' => new FaqResource($faq->load('faq_category')),
         ], 201);
     }
 
-    public function edit($id)
+    public function edit($id): JsonResponse
     {
-        $faq = Faq::findOrFail($id);
+        $faq = Faq::with('faq_category')->findOrFail($id);
 
         return response()->json([
             'status' => true,
-            'data' => $faq,
+            'data' => new FaqResource($faq),
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateFaqRequest $request, $id): JsonResponse
     {
         $faq = Faq::findOrFail($id);
-
-        $request->validate([
-            'faq_category_id' => 'required|exists:faq_categories,id',
-            'question' => 'required|string|max:255',
-            'answer' => 'required|string',
-            'status' => 'nullable|boolean',
-            'order_number' => 'nullable|integer',
-        ]);
 
         $faq->update([
             'faq_category_id' => $request->faq_category_id,
@@ -81,11 +66,11 @@ class FaqController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'FAQ updated successfully',
-            'data' => $faq,
+            'data' => new FaqResource($faq->fresh('faq_category')),
         ]);
     }
 
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         $faq = Faq::findOrFail($id);
         $faq->delete();

@@ -1,55 +1,44 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StorePromotionRequest;
+use App\Http\Requests\Admin\UpdatePromotionRequest;
+use App\Http\Resources\PromotionResource;
 use App\Models\Promotion;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class PromotionController extends Controller
 {
-    public function index()
+    public function index(): JsonResponse
     {
         $promotions = Promotion::latest()->get();
 
         return response()->json([
             'success' => true,
             'message' => 'Promotion list',
-            'data' => $promotions,
+            'data' => PromotionResource::collection($promotions),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StorePromotionRequest $request): JsonResponse
     {
-        $request->validate([
-            'name' => 'nullable|string|max:255',
-            'discount' => 'required|numeric|min:0',
-            'type' => 'required|in:percentage,fixed',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'status' => 'nullable|boolean',
-        ]);
+        $data = $request->validated();
+        $data['status'] = $data['status'] ?? 1;
 
-        $promotion = Promotion::create([
-            'name' => $request->name,
-            'discount' => $request->discount,
-            'type' => $request->type,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'status' => $request->status ?? 1,
-        ]);
+        $promotion = Promotion::create($data);
 
         return response()->json([
             'success' => true,
             'message' => 'Promotion created successfully',
-            'data' => $promotion,
+            'data' => new PromotionResource($promotion),
         ], 201);
     }
 
-    public function edit($id)
+    public function edit($id): JsonResponse
     {
         $promotion = Promotion::find($id);
-
         if (! $promotion) {
             return response()->json([
                 'success' => false,
@@ -59,14 +48,13 @@ class PromotionController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $promotion,
+            'data' => new PromotionResource($promotion),
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdatePromotionRequest $request, $id): JsonResponse
     {
         $promotion = Promotion::find($id);
-
         if (! $promotion) {
             return response()->json([
                 'success' => false,
@@ -74,35 +62,18 @@ class PromotionController extends Controller
             ], 404);
         }
 
-        $request->validate([
-            'name' => 'nullable|string|max:255',
-            'discount' => 'required|numeric|min:0',
-            'type' => 'required|in:percentage,fixed',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'status' => 'nullable|boolean',
-        ]);
-
-        $promotion->update([
-            'name' => $request->name,
-            'discount' => $request->discount,
-            'type' => $request->type,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'status' => $request->status,
-        ]);
+        $promotion->update($request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'Promotion updated successfully',
-            'data' => $promotion,
+            'data' => new PromotionResource($promotion),
         ]);
     }
 
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         $promotion = Promotion::find($id);
-
         if (! $promotion) {
             return response()->json([
                 'success' => false,
@@ -118,7 +89,7 @@ class PromotionController extends Controller
         ]);
     }
 
-    public function activePromotions()
+    public function activePromotions(): JsonResponse
     {
         $today = now()->toDateString();
 
@@ -136,7 +107,7 @@ class PromotionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Active promotions',
-            'data' => $promotions,
+            'data' => PromotionResource::collection($promotions),
         ]);
     }
 }

@@ -1,132 +1,82 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrderManagementCustomerDetailResource;
+use App\Http\Resources\OrderManagementCustomerResource;
 use App\Models\Order;
 use App\Models\ProviderPayment;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class OrderManagementController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        $search = $request->search;
-        $status = $request->status;
-        $period = $request->period;
+        $search = $request->query('search');
+        $status = $request->query('status');
+        $period = $request->query('period');
+        $perPage = (int) $request->query('per_page', 10);
 
-        $query = User::where('type', '0');
+        $query = User::where('type', 0);
 
         self::applyPeriodFilter($query, $period);
 
-        $query = $query->withCount([
-
-            'orders as total_order' => function ($q) use ($period) {
-
+        $query->withCount([
+            'orders as total_order' => function (Builder $q) use ($period) {
                 self::applyPeriodFilter($q, $period);
             },
-
-            'orders as complete_order' => function ($q) use ($period) {
-
+            'orders as complete_order' => function (Builder $q) use ($period) {
                 $q->where('status', 'completed');
-
                 self::applyPeriodFilter($q, $period);
             },
-
-            'orders as pending_order' => function ($q) use ($period) {
-
+            'orders as pending_order' => function (Builder $q) use ($period) {
                 $q->whereIn('status', ['pending', 'confirmed']);
-
                 self::applyPeriodFilter($q, $period);
             },
         ]);
 
+        $query->withSum([
+            'providerPayments as total_spent' => function (Builder $q) use ($period) {
+                $q->where('provider_payments.status', 'successful')
+                    ->whereHas('order', fn (Builder $oq) => $oq->where('status', 'completed'));
+                self::applyPeriodFilter($q, $period, 'provider_payments.created_at');
+            },
+        ], 'amount');
+
         if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%$search%")
-                    ->orWhere('last_name', 'like', "%$search%")
-                    ->orWhere('email', 'like', "%$search%");
+            $query->where(function (Builder $q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
-        if (! is_null($status)) {
+        if (! is_null($status) && $status !== '') {
             $query->where('status', $status);
         }
-
-        $perPage = $request->per_page ?? 10;
 
         $users = $query->paginate($perPage);
 
         $orderQuery = Order::query();
-
         self::applyPeriodFilter($orderQuery, $period);
 
-        $summary = (clone $orderQuery)->count();
-
-        $processing = (clone $orderQuery)
-            ->whereIn('status', ['pending', 'confirmed'])
-            ->count();
-
-        $delivered = (clone $orderQuery)
-            ->where('status', 'completed')
-            ->count();
-
-        $activeOrder = (clone $orderQuery)
-            ->where('status', 'confirmed')
-            ->whereHas('providerPayments', function ($q) {
-                $q->where('status', 'successful');
-            })
-            ->count();
-
-        $data = $users->getCollection()->map(function ($user) use ($period) {
-
-            $totalSpentQuery = ProviderPayment::join(
-                'orders',
-                'provider_payments.order_id',
-                '=',
-                'orders.id'
-            )
-                ->where('provider_payments.user_id', $user->id)
-                ->where('orders.status', 'completed')
-                ->where('provider_payments.status', 'successful');
-
-            self::applyPeriodFilter(
-                $totalSpentQuery,
-                $period,
-                'provider_payments.created_at'
-            );
-
-            $totalSpent = $totalSpentQuery->sum('provider_payments.amount');
-
-            return [
-                'customer_info' => [
-                    'id' => $user->id,
-                    'image_url' => $user->image ? asset($user->image) : null,
-                    'name' => trim(($user->name ?? '').' '.($user->last_name ?? '')),
-                    'email' => $user->email,
-                    'total_order' => $user->total_order,
-                    'complete_order' => $user->complete_order,
-                    'pending_order' => $user->pending_order,
-                    'total_spent' => '$'.number_format($totalSpent, 2),
-                ],
-            ];
-        });
-
-        $users->setCollection($data);
+        $summary = [
+            'total_orders' => (clone $orderQuery)->count(),
+            'processing' => (clone $orderQuery)->whereIn('status', ['pending', 'confirmed'])->count(),
+            'active_orders' => (clone $orderQuery)->where('status', 'confirmed')
+                ->whereHas('providerPayments', fn (Builder $q) => $q->where('status', 'successful'))
+                ->count(),
+            'delivered' => (clone $orderQuery)->where('status', 'completed')->count(),
+        ];
 
         return response()->json([
             'success' => true,
-
-            'summary' => [
-                'total_orders' => $summary,
-                'processing' => $processing,
-                'active_orders' => $activeOrder,
-                'delivered' => $delivered,
-            ],
-
-            'data' => $users->items(),
-
+            'summary' => $summary,
+            'data' => OrderManagementCustomerResource::collection($users)->response()->getData(true)['data'],
             'meta' => [
                 'current_page' => $users->currentPage(),
                 'last_page' => $users->lastPage(),
@@ -138,92 +88,44 @@ class OrderManagementController extends Controller
         ]);
     }
 
-    public function showOrderDetails($id, Request $request)
+    public function showOrderDetails($id, Request $request): JsonResponse
     {
-        $period = $request->period;
+        $period = $request->query('period');
 
-        $user = User::where('type', '0')->find($id);
+        $user = User::where('type', 0)->find($id);
 
         if (! $user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Customer not found or not available.',
-            ], 404);
+            return $this->sendError('Customer not found or not available.', [], 404);
         }
 
         $ordersQuery = Order::where('user_id', $user->id);
-
         self::applyPeriodFilter($ordersQuery, $period);
 
-        $totalOrders = (clone $ordersQuery)->count();
+        $user->total_orders = (clone $ordersQuery)->count();
+        $user->completed_orders = (clone $ordersQuery)->where('status', 'completed')->count();
+        $user->pending_orders = (clone $ordersQuery)->whereIn('status', ['pending', 'confirmed'])->count();
 
-        $completedOrders = (clone $ordersQuery)
-            ->where('status', 'completed')
-            ->count();
+        $paymentQuery = ProviderPayment::where('user_id', $user->id)
+            ->where('status', 'successful')
+            ->whereHas('order', fn (Builder $q) => $q->where('status', 'completed'));
+        self::applyPeriodFilter($paymentQuery, $period, 'created_at');
 
-        $pendingOrders = (clone $ordersQuery)
-            ->whereIn('status', ['pending', 'confirmed'])
-            ->count();
+        $user->total_spent = (clone $paymentQuery)->sum('amount');
 
-        $paymentQuery = ProviderPayment::join('orders', 'provider_payments.order_id', '=', 'orders.id')
-            ->where('provider_payments.user_id', $user->id)
-            ->where('provider_payments.status', 'successful')
-            ->where('orders.status', 'completed');
-
-        self::applyPeriodFilter($paymentQuery, $period, 'provider_payments.created_at');
-
-        $totalSpent = (clone $paymentQuery)->sum('provider_payments.amount');
-
-        return response()->json([
-            'success' => true,
-
-            'data' => [
-                'customer' => [
-                    'id' => $user->id,
-                    'name' => trim(($user->name ?? '').' '.($user->last_name ?? '')),
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'image_url' => $user->image ? asset($user->image) : null,
-
-                    'address' => trim(
-                        ($user->address ?? '').', '.
-                            ($user->city ?? '').', '.
-                            ($user->state ?? '').' '.
-                            ($user->zip_code ?? '')
-                    ),
-
-                    'status' => $user->status ? 'Active' : 'Inactive',
-                    'is_verified' => (bool) $user->is_verified,
-                    'joined' => $user->created_at->format('m/d/Y'),
-                ],
-
-                'orders' => [
-                    'total_orders' => $totalOrders,
-                    'completed_orders' => $completedOrders,
-                    'pending_orders' => $pendingOrders,
-                ],
-
-                'payments' => [
-                    'total_spent' => '$'.number_format($totalSpent, 2),
-                ],
-            ],
-        ]);
+        return $this->sendResponse(OrderManagementCustomerDetailResource::make($user));
     }
 
-    private static function applyPeriodFilter($query, $period, $column = 'created_at')
+    private static function applyPeriodFilter(Builder $query, ?string $period, string $column = 'created_at'): Builder
     {
-        if ($period == 'monthly') {
-
+        if ($period === 'monthly') {
             $query->whereMonth($column, now()->month)
                 ->whereYear($column, now()->year);
-        } elseif ($period == 'weekly') {
-
+        } elseif ($period === 'weekly') {
             $query->whereBetween($column, [
                 now()->startOfWeek(),
                 now()->endOfWeek(),
             ]);
-        } elseif ($period == 'yearly') {
-
+        } elseif ($period === 'yearly') {
             $query->whereYear($column, now()->year);
         }
 

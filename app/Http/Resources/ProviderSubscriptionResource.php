@@ -21,6 +21,8 @@ class ProviderSubscriptionResource extends JsonResource
             'plan_package' => $this->plan?->package,
             'subscription_status' => $this->resolveStatus($subscription),
             'stripe_id' => $this->stripe_id,
+            'stripe_subscription_id' => $subscription?->stripe_id,
+            'stripe_status' => $subscription?->stripe_status,
             'starts_at' => $subscription?->created_at?->format('m/d/Y'),
             'ends_at' => $subscription?->ends_at?->format('m/d/Y'),
             'trial_ends_at' => $this->trial_ends_at?->format('m/d/Y'),
@@ -28,6 +30,10 @@ class ProviderSubscriptionResource extends JsonResource
             'is_paused' => $subscription ? $this->isPaused($subscription) : false,
             'is_canceled' => $subscription?->canceled() ?? false,
             'subscription_history' => $this->subscriptions
+                ->sortByDesc('created_at')
+                ->values()
+                ->map(fn (Subscription $s) => $this->formatSubscription($s)),
+            'all_subscriptions' => $this->subscriptions
                 ->sortByDesc('created_at')
                 ->values()
                 ->map(fn (Subscription $s) => $this->formatSubscription($s)),

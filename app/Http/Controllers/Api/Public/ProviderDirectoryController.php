@@ -1,25 +1,30 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Public;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\CategoryResource;
+use App\Http\Resources\ServiceResource;
+use App\Http\Resources\UserResource;
 use App\Models\Category;
 use App\Models\Service;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class ProviderController extends Controller
+class ProviderDirectoryController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $perPage = (int) $request->get('per_page', 10);
 
-        $query = User::where('type', 2);
+        $query = User::where('type', 2)->with(['subscriptions', 'plan']);
 
         if ($request->filled('search')) {
             $search = $request->get('search');
-            $query->where(function ($qBuilder) use ($search) {
+            $query->where(function (Builder $qBuilder) use ($search) {
                 $qBuilder->where('name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%");
             });
@@ -28,7 +33,7 @@ class ProviderController extends Controller
         if ($request->filled('category')) {
             $category = $request->get('category');
 
-            $query->where(function ($qb) use ($category) {
+            $query->where(function (Builder $qb) use ($category) {
                 $qb->whereJsonContains('category_id', $category)
                     ->orWhereExists(function ($sub) use ($category) {
                         $sub->select(DB::raw(1))
@@ -39,31 +44,24 @@ class ProviderController extends Controller
             });
         }
 
-        $providers = $query->paginate($perPage);
+        $providers = $query->latest()->paginate($perPage);
 
-        // Attach category details for each provider (category_id is stored as JSON array)
-        $providers->getCollection()->transform(function ($provider) {
-            if (! empty($provider->category_id) && is_array($provider->category_id)) {
-                $provider->categories = Category::whereIn('id', $provider->category_id)->get();
-            } else {
-                $provider->categories = collect();
-            }
-
-            return $provider;
-        });
-
-        return $this->sendResponse($providers);
+        return $this->sendResponse(UserResource::collection($providers));
     }
 
-    public function show($id)
+    public function show($id): JsonResponse
     {
-        $provider = User::where('type', 2)->find($id);
+        $provider = User::where('type', 2)
+            ->with(['subscriptions', 'plan'])
+            ->find($id);
 
         if (! $provider) {
             return $this->sendError('Provider not found', [], 404);
         }
 
-        $services = Service::where('user_id', $provider->id)->get();
+        $services = Service::where('user_id', $provider->id)
+            ->with(['category', 'pricings'])
+            ->get();
 
         $categories = collect();
         if (! empty($provider->category_id) && is_array($provider->category_id)) {
@@ -71,9 +69,9 @@ class ProviderController extends Controller
         }
 
         return $this->sendResponse([
-            'provider' => $provider,
-            'categories' => $categories,
-            'services' => $services,
+            'provider' => UserResource::make($provider),
+            'categories' => CategoryResource::collection($categories),
+            'services' => ServiceResource::collection($services),
         ]);
     }
 }

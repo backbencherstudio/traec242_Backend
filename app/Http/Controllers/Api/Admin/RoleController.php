@@ -1,16 +1,18 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\Admin\StoreRoleRequest;
+use App\Http\Requests\Admin\UpdateRoleRequest;
+use Illuminate\Http\JsonResponse;
 use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
-    public function index()
+    public function index(): JsonResponse
     {
-        $roles = Role::all();
+        $roles = Role::with('permissions')->get();
 
         return response()->json([
             'status' => true,
@@ -19,23 +21,15 @@ class RoleController extends Controller
         ], 200);
     }
 
-    public function store(Request $request)
+    public function store(StoreRoleRequest $request): JsonResponse
     {
-
-        $request->validate([
-            'name' => 'required|string|max:225',
-            'permissions' => 'array',
-            'permissions.*' => 'integer|exists:permissions,id',
-        ]);
-
         $role = Role::create([
             'name' => $request->name,
-            'guard_name' => 'admin',
+            'guard_name' => 'api',
         ]);
 
         if ($request->has('permissions')) {
             $role->syncPermissions($request->permissions);
-
         }
 
         return response()->json([
@@ -45,10 +39,9 @@ class RoleController extends Controller
         ], 201);
     }
 
-    public function edit($id)
+    public function edit($id): JsonResponse
     {
-        $role = Role::find($id);
-
+        $role = Role::with('permissions')->find($id);
         if (! $role) {
             return response()->json([
                 'status' => false,
@@ -63,15 +56,9 @@ class RoleController extends Controller
         ], 200);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateRoleRequest $request, $id): JsonResponse
     {
-
-        $request->validate([
-            'name' => 'required|string|max:225',
-        ]);
-
         $role = Role::find($id);
-
         if (! $role) {
             return response()->json([
                 'status' => false,

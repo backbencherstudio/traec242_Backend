@@ -52,8 +52,8 @@ class PlanSeeder extends Seeder
                     'Priority provider visibility',
                     'Monthly subscription billing',
                 ],
-                'stripe_product_id' => 'prod_UO73aUBZiJYUco',
-                'stripe_price_id' => 'price_1TPKpIALLuOtlOzLhMGQqsBY',
+                'stripe_product_id' => config('services.stripe.provider_product_id') ?: env('STRIPE_PROVIDER_PRODUCT_ID', 'prod_test_provider'),
+                'stripe_price_id' => config('services.stripe.provider_price_id') ?: env('STRIPE_PROVIDER_PRICE_ID', 'price_test_provider_monthly'),
                 'status' => true,
             ],
         ];

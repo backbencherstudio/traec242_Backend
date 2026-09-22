@@ -1,14 +1,21 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api\User;
 
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Chat\MarkChatAsReadRequest;
 use App\Models\Message;
-use DB;
-use Illuminate\Http\Request;
+use App\Services\ChatService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class NotificationController extends Controller
 {
-    public function getTotalUnreadCount()
+    public function __construct(
+        protected ChatService $chatService
+    ) {}
+
+    public function getTotalUnreadCount(): JsonResponse
     {
         $userId = auth()->id();
 
@@ -22,7 +29,7 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function getChatListWithUnreadCount()
+    public function getChatListWithUnreadCount(): JsonResponse
     {
         $userId = auth()->id();
 
@@ -38,20 +45,12 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function markChatAsRead(Request $request)
+    public function markChatAsRead(MarkChatAsReadRequest $request): JsonResponse
     {
-        $request->validate([
-            'sender_id' => 'required|exists:users,id',
-        ]);
+        $authUserId = (int) auth()->id();
+        $senderId = (int) $request->sender_id;
 
-        $authUserId = auth()->id();
-
-        $updatedRows = Message::where('sender_id', $request->sender_id)
-            ->where('receiver_id', $authUserId)
-            ->whereNull('read_at')
-            ->update([
-                'read_at' => now(),
-            ]);
+        $updatedRows = $this->chatService->markAsRead($authUserId, $senderId);
 
         return response()->json([
             'status' => 'success',

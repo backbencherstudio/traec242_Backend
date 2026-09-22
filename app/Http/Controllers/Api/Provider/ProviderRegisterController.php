@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Provider;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProviderRegisterRequest;
+use App\Http\Resources\PlanResource;
 use App\Http\Resources\UserResource;
 use App\Models\Plan;
 use App\Models\User;
@@ -117,11 +118,11 @@ class ProviderRegisterController extends Controller
             ->where('status', true)
             ->where('package', 'monthly')
             ->whereNotNull('stripe_price_id')
-            ->get(['id', 'name', 'title', 'price', 'currency', 'package', 'features']);
+            ->get();
 
         return $this->sendResponse([
             'stripe_public_key' => config('services.stripe.key'),
-            'plans' => $plans,
+            'plans' => PlanResource::collection($plans),
         ]);
     }
 

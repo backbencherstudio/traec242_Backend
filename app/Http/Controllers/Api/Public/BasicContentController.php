@@ -1,55 +1,42 @@
 <?php
 
-namespace App\Http\Controllers\Frontend;
+namespace App\Http\Controllers\Api\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\Content;
 use App\Models\Faq;
 use App\Models\PrivacyPolicy;
+use App\Models\Review;
 use App\Models\User;
-use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
 
 class BasicContentController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return Response
-     */
-    public function home_response()
+    public function home_response(): JsonResponse
     {
         $content = Content::pluck('value', 'key');
+        $avgRating = Review::avg('rating');
 
         $data = [
             'content' => $content,
             'other_data' => [
                 'total_user' => User::where('type', 0)->count(),
                 'total_provider' => User::where('type', 2)->count(),
-                'avg_rating' => 3.3,
+                'avg_rating' => $avgRating ? round((float) $avgRating, 1) : 5.0,
             ],
         ];
 
         return $this->sendResponse($data);
     }
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return Response
-     */
-    public function faq()
+    public function faq(): JsonResponse
     {
         $content = Faq::all();
 
         return $this->sendResponse($content);
     }
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return Response
-     */
-    public function privacy()
+    public function privacy(): JsonResponse
     {
         $content = PrivacyPolicy::first();
 

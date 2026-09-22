@@ -22,7 +22,6 @@ class ProviderRegistrationTest extends TestCase
 
         $categoryId = DB::table('categories')->insertGetId([
             'name' => 'Photography',
-            'slug' => 'photography',
             'status' => 1,
             'created_at' => now(),
             'updated_at' => now(),
@@ -122,7 +121,6 @@ class ProviderRegistrationTest extends TestCase
 
         $categoryId = DB::table('categories')->insertGetId([
             'name' => 'Photography',
-            'slug' => 'photography',
             'status' => 1,
             'created_at' => now(),
             'updated_at' => now(),
@@ -182,7 +180,6 @@ class ProviderRegistrationTest extends TestCase
     {
         $categoryId = DB::table('categories')->insertGetId([
             'name' => 'Photography',
-            'slug' => 'photography',
             'status' => 1,
             'created_at' => now(),
             'updated_at' => now(),

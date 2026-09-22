@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProviderSubscriptionResource;
@@ -204,11 +204,11 @@ class SubscriptionManagementController extends Controller
     private function applyStatusFilter(Builder $query, string $status): void
     {
         match ($status) {
-            'none' => $query->whereDoesntHave('subscriptions', fn ($q) => $q->where('name', 'provider')),
-            'paused' => $query->whereHas('subscriptions', fn ($q) => $q->where('name', 'provider')->where('stripe_status', 'paused')),
-            'active' => $query->whereHas('subscriptions', fn ($q) => $q->where('name', 'provider')->where('stripe_status', 'active')),
-            'grace_period' => $query->whereHas('subscriptions', fn ($q) => $q->where('name', 'provider')->where('stripe_status', 'canceled')->where('ends_at', '>', now())),
-            'canceled' => $query->whereHas('subscriptions', fn ($q) => $q->where('name', 'provider')->where('stripe_status', 'canceled')->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '<=', now()))),
+            'none' => $query->whereDoesntHave('subscriptions', fn ($q) => $q->where('type', 'provider')),
+            'paused' => $query->whereHas('subscriptions', fn ($q) => $q->where('type', 'provider')->where('stripe_status', 'paused')),
+            'active' => $query->whereHas('subscriptions', fn ($q) => $q->where('type', 'provider')->where('stripe_status', 'active')),
+            'grace_period' => $query->whereHas('subscriptions', fn ($q) => $q->where('type', 'provider')->where('stripe_status', 'canceled')->where('ends_at', '>', now())),
+            'canceled' => $query->whereHas('subscriptions', fn ($q) => $q->where('type', 'provider')->where('stripe_status', 'canceled')->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '<=', now()))),
             default => null,
         };
     }

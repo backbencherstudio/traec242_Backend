@@ -1,41 +1,37 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreBrandRequest;
+use App\Http\Requests\Admin\UpdateBrandRequest;
+use App\Http\Resources\BrandResource;
 use App\Models\Brand;
-use Illuminate\Http\Request;
+use App\Services\FileUploadService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 
 class BrandController extends Controller
 {
-    public function index()
+    public function __construct(
+        protected FileUploadService $fileUploadService
+    ) {}
+
+    public function index(): JsonResponse
     {
         $brands = Brand::latest()->get();
 
         return response()->json([
             'status' => true,
-            'data' => $brands,
+            'data' => BrandResource::collection($brands),
         ], 200);
     }
 
-    public function store(Request $request)
+    public function store(StoreBrandRequest $request): JsonResponse
     {
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required',
-            'status' => 'required',
-
-        ]);
-
         $imagePath = null;
-
         if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time() . '_' . $image->getClientOriginalName();
-            $image->move(public_path('uploads/brand'), $imageName);
-            $imagePath = 'uploads/brand/' . $imageName;
+            $imagePath = $this->fileUploadService->upload($request->file('image'), 'uploads/brand');
         }
 
         $brand = Brand::create([
@@ -48,64 +44,50 @@ class BrandController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'brand' => $brand,
-        ]);
+            'brand' => new BrandResource($brand),
+        ], 201);
     }
 
-    public function edit($id)
+    public function edit($id): JsonResponse
     {
         $brand = Brand::find($id);
         if (! $brand) {
             return response()->json(['message' => 'Brand not found'], 404);
         }
 
-        return response()->json($brand);
+        return response()->json(new BrandResource($brand));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateBrandRequest $request, $id): JsonResponse
     {
-
         $brand = Brand::findOrFail($id);
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'status' => 'required|in:0,1',
-
-        ]);
-
         if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time() . '_' . $image->getClientOriginalName();
-            $image->move(public_path('uploads/brand'), $imageName);
-            $brand->image = 'uploads/brand/' . $imageName;
+            $this->fileUploadService->delete($brand->image);
+            $brand->image = $this->fileUploadService->upload($request->file('image'), 'uploads/brand');
         }
 
         $brand->name = $request->name;
         $brand->description = $request->description;
         $brand->status = $request->status;
         $brand->slug = Str::slug($request->name, '-');
-
         $brand->save();
 
         return response()->json([
             'status' => 'success',
             'message' => 'Brand updated successfully!',
-            'brand' => $brand,
+            'brand' => new BrandResource($brand),
         ]);
     }
 
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         $brand = Brand::find($id);
-
         if (! $brand) {
             return response()->json(['message' => 'Brand not found'], 404);
         }
 
-        if ($brand->image && file_exists(public_path($brand->image))) {
-            unlink(public_path($brand->image));
-        }
+        $this->fileUploadService->delete($brand->image);
         $brand->delete();
 
         return response()->json(['message' => 'Brand deleted successfully']);

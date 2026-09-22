@@ -1,12 +1,12 @@
 <?php
 
-use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\ContentController;
-use App\Http\Controllers\Admin\PlanController;
-use App\Http\Controllers\Api\ProviderRegisterController;
-use App\Http\Controllers\Frontend\AllServiceController;
-use App\Http\Controllers\Frontend\BasicContentController;
-use App\Http\Controllers\Provider\ServiceController;
+use App\Http\Controllers\Api\Admin\CategoryController;
+use App\Http\Controllers\Api\Admin\ContentController;
+use App\Http\Controllers\Api\Admin\PlanController;
+use App\Http\Controllers\Api\Provider\ProviderRegisterController;
+use App\Http\Controllers\Api\Provider\ServiceController;
+use App\Http\Controllers\Api\Public\AllServiceController;
+use App\Http\Controllers\Api\Public\BasicContentController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('register_provider', [ProviderRegisterController::class, 'store']);

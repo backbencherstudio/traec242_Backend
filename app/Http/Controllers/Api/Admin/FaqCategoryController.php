@@ -1,15 +1,18 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreFaqCategoryRequest;
+use App\Http\Requests\Admin\UpdateFaqCategoryRequest;
+use App\Http\Resources\FaqCategoryResource;
 use App\Models\FaqCategory;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 
 class FaqCategoryController extends Controller
 {
-    public function index()
+    public function index(): JsonResponse
     {
         $categories = FaqCategory::where('status', true)
             ->orderBy('order_number', 'asc')
@@ -18,18 +21,12 @@ class FaqCategoryController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Faq_Category fetched Successfull!',
-            'data' => $categories,
-
+            'data' => FaqCategoryResource::collection($categories),
         ], 200);
     }
 
-    public function store(Request $request)
+    public function store(StoreFaqCategoryRequest $request): JsonResponse
     {
-        $request->validate([
-            'name' => 'required|string|unique:faq_categories,name',
-            'order_number' => 'nullable|integer',
-        ]);
-
         $category = FaqCategory::create([
             'name' => $request->name,
             'slug' => Str::slug($request->name),
@@ -40,25 +37,23 @@ class FaqCategoryController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Faq_Category Created Successfull!',
-            'data' => $category,
+            'data' => new FaqCategoryResource($category),
         ], 201);
     }
 
-    public function edit($id)
+    public function edit($id): JsonResponse
     {
         $category = FaqCategory::find($id);
-
         if (! $category) {
             return response()->json(['message' => 'Not Found'], 404);
         }
 
-        return response()->json(['success' => true, 'data' => $category], 200);
+        return response()->json(['success' => true, 'data' => new FaqCategoryResource($category)], 200);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateFaqCategoryRequest $request, $id): JsonResponse
     {
         $category = FaqCategory::find($id);
-
         if (! $category) {
             return response()->json(['message' => 'Not Found'], 404);
         }
@@ -70,13 +65,16 @@ class FaqCategoryController extends Controller
             'status' => $request->status ?? $category->status,
         ]);
 
-        return response()->json(['success' => true, 'message' => 'Faq_Category Updated Successfull!', 'data' => $category]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Faq_Category Updated Successfull!',
+            'data' => new FaqCategoryResource($category),
+        ]);
     }
 
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         $category = FaqCategory::find($id);
-
         if (! $category) {
             return response()->json(['message' => 'Not Found'], 404);
         }

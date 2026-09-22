@@ -1,107 +1,93 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreSliderRequest;
+use App\Http\Requests\Admin\UpdateSliderRequest;
+use App\Http\Resources\SliderResource;
 use App\Models\Slider;
-use Illuminate\Http\Request;
+use App\Services\FileUploadService;
+use Illuminate\Http\JsonResponse;
 
 class SliderController extends Controller
 {
-    public function index()
-    {
-        $sliders = Slider::all();
+    public function __construct(
+        protected FileUploadService $fileUploadService
+    ) {}
 
-        return response()->json($sliders);
+    public function index(): JsonResponse
+    {
+        $sliders = Slider::orderBy('order_number', 'asc')->get();
+
+        return response()->json([
+            'status' => true,
+            'data' => SliderResource::collection($sliders),
+        ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreSliderRequest $request): JsonResponse
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'status' => 'required|boolean',
-            'order_number' => 'required|integer',
-        ]);
-
-        $slider = new Slider;
-        $slider->title = $request->title;
-        $slider->description = $request->description;
-        $slider->status = $request->status;
-        $slider->order_number = $request->order_number;
-
+        $thumbnailPath = null;
         if ($request->hasFile('thumbnail')) {
-            $file = $request->file('thumbnail');
-            $filename = uniqid().'.'.$file->getClientOriginalName();
-            $file->move(public_path('uploads/sliders'), $filename);
-            $slider->thumbnail = 'uploads/sliders/'.$filename;
+            $thumbnailPath = $this->fileUploadService->upload($request->file('thumbnail'), 'uploads/sliders');
         }
 
-        $slider->save();
+        $slider = Slider::create([
+            'title' => $request->title,
+            'description' => $request->description,
+            'status' => $request->status,
+            'order_number' => $request->order_number,
+            'thumbnail' => $thumbnailPath,
+        ]);
 
         return response()->json([
             'status' => 'Created slider successfully!',
-            'data' => $slider,
+            'data' => new SliderResource($slider),
         ], 201);
     }
 
-    public function edit($id)
+    public function edit($id): JsonResponse
     {
         $slider = Slider::find($id);
         if (! $slider) {
             return response()->json(['message' => 'Slider not found'], 404);
         }
 
-        return response()->json($slider);
+        return response()->json(new SliderResource($slider));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateSliderRequest $request, $id): JsonResponse
     {
         $slider = Slider::findOrFail($id);
 
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'status' => 'nullable|boolean',
-            'order_number' => 'required|integer',
-        ]);
+        if ($request->hasFile('thumbnail')) {
+            $this->fileUploadService->delete($slider->thumbnail);
+            $slider->thumbnail = $this->fileUploadService->upload($request->file('thumbnail'), 'uploads/sliders');
+        }
 
         $slider->title = $request->title;
         $slider->description = $request->description;
-        $slider->status = $request->status;
-        $slider->order_number = $request->order_number;
-
-        if ($request->hasFile('thumbnail')) {
-            if ($slider->thumbnail && file_exists(public_path($slider->thumbnail))) {
-                unlink(public_path($slider->thumbnail));
-            }
-            $file = $request->file('thumbnail');
-            $filename = uniqid().'.'.$file->getClientOriginalName();
-            $file->move(public_path('uploads/sliders'), $filename);
-            $slider->thumbnail = 'uploads/sliders/'.$filename;
+        if ($request->has('status')) {
+            $slider->status = $request->status;
         }
+        $slider->order_number = $request->order_number;
         $slider->save();
 
         return response()->json([
             'status' => 'Slider updated successfully!',
-            'data' => $slider,
+            'data' => new SliderResource($slider),
         ]);
     }
 
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         $slider = Slider::find($id);
-
         if (! $slider) {
             return response()->json(['message' => 'slider not found'], 404);
         }
 
-        if ($slider->image && file_exists(public_path($slider->image))) {
-            unlink(public_path($slider->image));
-        }
-
+        $this->fileUploadService->delete($slider->thumbnail);
         $slider->delete();
 
         return response()->json(['message' => 'slider deleted successfully']);

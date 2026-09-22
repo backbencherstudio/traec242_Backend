@@ -1,123 +1,74 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\AdminRegisterRequest;
+use App\Http\Requests\Auth\AdminUpdateRequest;
+use App\Http\Requests\Auth\ApiLoginRequest;
+use App\Http\Requests\Auth\ForgotPasswordRequest;
+use App\Http\Requests\Auth\PasswordChangeRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Http\Requests\Auth\UserRegisterRequest;
+use App\Http\Requests\Auth\VerifyOtpRequest;
 use App\Http\Resources\UserResource;
-use App\Mail\ForgotPasswordOtpMail;
 use App\Models\User;
+use App\Services\AuthService;
 use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
     public function __construct(
+        protected AuthService $authService,
         protected OtpService $otpService
     ) {}
 
-    public function index()
+    /**
+     * List all administrator users.
+     */
+    public function index(): JsonResponse
     {
         $admins = User::where('type', 1)->get();
 
         return response()->json([
             'status' => 'success',
-            'admin' => $admins,
-
+            'admin' => UserResource::collection($admins),
         ]);
     }
 
-    public function login(Request $request)
+    /**
+     * Authenticate a user and issue JWT.
+     */
+    public function login(ApiLoginRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password' => 'required|string|min:6',
-        ]);
+        try {
+            $result = $this->authService->login($request->email, $request->password);
 
-        if ($validator->fails()) {
+            return response()->json([
+                'user' => UserResource::make($result['user']->loadMissing(['plan', 'subscriptions'])),
+                'message' => 'User login successfully',
+                'token' => $result['token'],
+            ]);
+        } catch (\DomainException $e) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $credentials = $request->only('email', 'password');
-
-        if (! $token = Auth::guard('api')->attempt($credentials)) {
+                'message' => $e->getMessage(),
+                'requires_verification' => true,
+                'email' => $request->email,
+            ], 403);
+        } catch (\Throwable $e) {
             return response()->json(['error' => 'Invalid credentials'], 401);
         }
-
-        $user = Auth::guard('api')->user();
-
-        if (! $user->is_verified) {
-            Auth::guard('api')->logout();
-
-            $message = 'Please verify your email.';
-            $secondsUntilNextAttempt = $this->otpService->getSecondsUntilNextAttempt($user->email);
-
-            if ($secondsUntilNextAttempt > 0) {
-                $message .= ' Use the OTP already sent to your email.';
-            } else {
-                $otpSent = $this->otpService->sendRegistrationOtp(
-                    $user->email,
-                    $user->id
-                );
-
-                $message .= $otpSent
-                    ? ' A new OTP has been sent to your email.'
-                    : ' We could not send a new OTP right now.';
-            }
-
-            return response()->json([
-                'success' => false,
-                'message' => $message,
-                'requires_verification' => true,
-                'email' => $user->email,
-            ], 403);
-        }
-
-        if ($user->jwt_token) {
-            try {
-                JWTAuth::setToken($user->jwt_token)->invalidate(true);
-            } catch (\Exception $e) {
-            }
-        }
-
-        $user->update(['jwt_token' => $token]);
-
-        return response()->json([
-            'user' => UserResource::make($user->loadMissing(['plan', 'subscriptions'])),
-            'message' => 'User login successfully',
-            'token' => $token,
-        ]);
     }
 
-    public function register(Request $request)
+    /**
+     * Register a regular user (with OTP verification).
+     */
+    public function register(UserRegisterRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'last_name' => 'nullable|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
-            'otp' => 'nullable|digits:4',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
         if (! $request->filled('otp')) {
             $secondsUntilNextAttempt = $this->otpService->getSecondsUntilNextAttempt($request->email);
             if ($secondsUntilNextAttempt > 0) {
@@ -128,7 +79,6 @@ class AuthController extends Controller
             }
 
             $otpSent = $this->otpService->sendRegistrationOtp($request->email);
-
             if (! $otpSent) {
                 return response()->json([
                     'success' => false,
@@ -153,203 +103,87 @@ class AuthController extends Controller
             ], 400);
         }
 
-        $user = User::create([
-            'name' => $request->name,
-            'last_name' => $request->last_name,
-            'email' => $request->email,
-            'type' => 0,
-            'password' => $request->password,
-            'is_verified' => true,
-        ]);
-
-        $token = Auth::guard('api')->login($user);
-        $user->update(['jwt_token' => $token]);
+        $result = $this->authService->register($request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'User registered successfully',
-            'user' => UserResource::make($user->loadMissing(['plan', 'subscriptions'])),
-            'token' => $token,
+            'user' => UserResource::make($result['user']->loadMissing(['plan', 'subscriptions'])),
+            'token' => $result['token'],
         ], 201);
     }
 
-    public function adminregister(Request $request)
+    /**
+     * Register a new admin user.
+     */
+    public function adminregister(AdminRegisterRequest $request): JsonResponse
     {
-
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
-            'phone' => 'nullable|string|max:20|unique:users,phone',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $role = Role::firstOrCreate([
-            'name' => 'Admin',
-            'guard_name' => 'api',
-        ]);
-
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('user'), $imageName);
-            $imagePath = 'user/' . $imageName;
-        }
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'type' => 1,
-            'status' => 1,
-            'role' => $request->role,
-            'image' => $imagePath,
-            'password' => Hash::make($request->password),
-        ]);
-
-        $user->assignRole($role->name);
-
-        $token = Auth::guard('api')->login($user);
-        $user->update(['jwt_token' => $token]);
+        $result = $this->authService->adminRegister($request->validated(), $request->file('image'));
 
         return response()->json([
             'success' => true,
             'message' => 'Admin registered successfully',
-            'user' => UserResource::make($user->loadMissing(['plan', 'subscriptions'])),
-            'token' => $token,
+            'user' => UserResource::make($result['user']->loadMissing(['plan', 'subscriptions'])),
+            'token' => $result['token'],
         ], 201);
     }
 
-    public function edit($id)
+    /**
+     * Retrieve admin details for editing.
+     */
+    public function edit($id): JsonResponse
     {
-
-        $user = User::find($id);
+        $user = User::where('id', $id)->where('type', 1)->first();
         if (! $user) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'User not found',
             ], 404);
-        }
-
-        if ($user->type != 1) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'User not found',
-            ], 403);
         }
 
         return response()->json([
             'status' => 'success',
-            'admin' => $user,
+            'admin' => new UserResource($user),
         ], 200);
     }
 
-    public function adminUpdate(Request $request, $id)
+    /**
+     * Update an admin user.
+     */
+    public function adminUpdate(AdminUpdateRequest $request, $id): JsonResponse
     {
         $user = User::where('id', $id)->where('type', 1)->first();
-
         if (! $user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Admin not found',
-            ], 404);
+            return $this->sendError('Admin not found', [], 404);
         }
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'phone' => 'nullable|string|max:20|unique:users,phone,' . $user->id,
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'status' => 'required|in:0,1',
-            'role' => 'required|exists:roles,id',
-        ]);
+        $updated = $this->authService->adminUpdate($user, $request->validated(), $request->file('image'));
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        if ($request->hasFile('image')) {
-            if ($user->image && file_exists(public_path($user->image))) {
-                unlink(public_path($user->image));
-            }
-
-            $image = $request->file('image');
-            $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('user'), $imageName);
-            $user->image = 'user/' . $imageName;
-        }
-
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->phone = $request->phone;
-        $user->status = $request->status;
-        $user->role = $request->role;
-
-        if ($request->filled('password')) {
-            $user->password = Hash::make($request->password);
-        }
-
-        $user->save();
-
-        $role = Role::where('id', $request->role)
-            ->where('guard_name', 'api')
-            ->first();
-
-        if (! $role) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Role not found for this guard',
-            ], 422);
-        }
-
-        $user->syncRoles([$role->name]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Admin updated successfully',
-            'user' => $user,
-        ], 200);
+        return $this->sendResponse(new UserResource($updated), 'Admin updated successfully');
     }
 
-    public function delete($id)
+    /**
+     * Delete an admin user.
+     */
+    public function delete($id): JsonResponse
     {
-
         $user = User::where('id', $id)->where('type', 1)->first();
-
         if (! $user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Admin not found',
-            ], 404);
-        }
-
-        if ($user->image && file_exists(public_path($user->image))) {
-            unlink(public_path($user->image));
+            return $this->sendError('Admin not found', [], 404);
         }
 
         $user->syncRoles([]);
-
         $user->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Admin deleted successfully',
-        ], 200);
+        return $this->sendResponse([], 'Admin deleted successfully');
     }
 
+    /**
+     * Get authenticated user profile.
+     */
     public function me(): JsonResponse
     {
+        /** @var User $user */
         $user = Auth::guard('api')->user();
 
         return response()->json([
@@ -358,157 +192,93 @@ class AuthController extends Controller
         ]);
     }
 
-    public function logout()
+    /**
+     * Log out current user and invalidate JWT token.
+     */
+    public function logout(): JsonResponse
     {
+        /** @var User|null $user */
         $user = Auth::guard('api')->user();
 
         if ($user && $user->jwt_token) {
-            JWTAuth::setToken($user->jwt_token)->invalidate();
+            try {
+                JWTAuth::setToken($user->jwt_token)->invalidate();
+            } catch (\Throwable $e) {
+            }
             $user->update(['jwt_token' => null]);
         }
 
         return response()->json(['message' => 'Logged out successfully']);
     }
 
-    public function password($id)
+    /**
+     * Get admin password view or details.
+     */
+    public function password($id): JsonResponse
     {
         $admin = User::where('type', 1)->find($id);
-
         if (! $admin) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Admin not found',
-            ], 404);
+            return $this->sendError('Admin not found', [], 404);
         }
 
-        return response()->json([
-            'status' => true,
-            'data' => $admin,
-        ], 200);
+        return $this->sendResponse(new UserResource($admin));
     }
 
-    public function passwordchange(Request $request)
+    /**
+     * Change authenticated user's password.
+     */
+    public function passwordchange(PasswordChangeRequest $request): JsonResponse
     {
-
-        $request->validate([
-            'current_password' => 'required',
-            'new_password' => 'required|string|min:6|confirmed',
-        ]);
-
+        /** @var User $user */
         $user = auth()->user();
 
-        if (! $user) {
-            return response()->json([
-                'status' => false,
-                'message' => 'User not found',
-            ], 404);
-        }
-
-        if (! Hash::check($request->current_password, $user->password)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Current password is incorrect',
-            ], 400);
-        }
-        $user->password = Hash::make($request->new_password);
-        $user->save();
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Password changed successfully',
-        ], 200);
-    }
-
-    public function sendOtp(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email|exists:users,email',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $key = 'otp-' . $request->email;
-
-        if (RateLimiter::tooManyAttempts($key, 1)) {
-            $seconds = RateLimiter::availableIn($key);
-
-            return response()->json([
-                'success' => false,
-                'message' => "Please wait {$seconds} seconds before requesting another OTP.",
-            ], 429);
-        }
-
-        $user = User::where('email', $request->email)->first();
-
-        if ($user->type == 1) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Admin cannot reset password via OTP. Please change password from dashboard.',
-            ], 403);
-        }
-
-        $otp = random_int(1000, 9999);
-
-        DB::table('password_resets')->updateOrInsert(
-            ['email' => $request->email],
-            [
-                'otp' => Hash::make($otp),
-                'expires_at' => now()->addMinutes(5),
-                'updated_at' => now(),
-            ]
+        $success = $this->authService->changePassword(
+            $user,
+            $request->current_password,
+            $request->new_password
         );
 
+        if (! $success) {
+            return $this->sendError('Current password is incorrect', [], 400);
+        }
+
+        return $this->sendResponse([], 'Password changed successfully');
+    }
+
+    /**
+     * Send OTP for forgot password.
+     */
+    public function sendOtp(ForgotPasswordRequest $request): JsonResponse
+    {
         try {
-            Mail::to($request->email)->send(new ForgotPasswordOtpMail($otp));
-            RateLimiter::hit($key, 30);
-        } catch (\Exception $e) {
+            $this->authService->sendForgotPasswordOtp($request->email);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'OTP sent to your email successfully',
+            ]);
+        } catch (\DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 429);
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to send OTP email',
             ], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'OTP sent to your email successfully',
-        ]);
     }
 
-    public function verifyOtp(Request $request)
+    /**
+     * Verify OTP for forgot password.
+     */
+    public function verifyOtp(VerifyOtpRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email|exists:password_resets,email',
-            'otp' => 'required',
-        ]);
+        $valid = $this->authService->verifyForgotPasswordOtp($request->email, $request->otp);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $record = DB::table('password_resets')
-            ->where('email', $request->email)
-            ->first();
-
-        if (! $record) {
-            return response()->json(['message' => 'OTP not found'], 404);
-        }
-
-        if (now()->gt($record->expires_at)) {
-            return response()->json(['message' => 'OTP expired'], 400);
-        }
-
-        if (! Hash::check($request->otp, $record->otp)) {
-            return response()->json(['message' => 'Invalid OTP'], 400);
+        if (! $valid) {
+            return response()->json(['message' => 'Invalid or expired OTP'], 400);
         }
 
         return response()->json([
@@ -517,30 +287,27 @@ class AuthController extends Controller
         ]);
     }
 
-    public function resetPasswordWithOtp(Request $request)
+    /**
+     * Reset password using OTP.
+     */
+    public function resetPasswordWithOtp(ResetPasswordRequest $request): JsonResponse
     {
-        // Validate input
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email|exists:users,email',
-            'password' => 'required|min:6|confirmed', // 'password_confirmation' must be sent
-        ]);
+        try {
+            $this->authService->resetPasswordWithOtp(
+                $request->email,
+                $request->otp,
+                $request->password
+            );
 
-        if ($validator->fails()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Password set successfully!',
+            ]);
+        } catch (\DomainException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
+                'message' => $e->getMessage(),
+            ], 400);
         }
-
-        $user = User::where('email', $request->email)->first();
-
-        $user->password = Hash::make($request->password);
-        $user->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Password set successfully!',
-        ]);
     }
 }

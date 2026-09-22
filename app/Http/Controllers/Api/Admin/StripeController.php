@@ -1,71 +1,41 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpsertStripeRequest;
+use App\Http\Resources\StripeSettingResource;
 use App\Models\Stripe;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class StripeController extends Controller
 {
-    public function upsert(Request $request)
+    public function upsert(UpsertStripeRequest $request): JsonResponse
     {
-
-        $user = auth()->user();
-        if ($user->type != 1) {
-            return response()->json([
-                'message' => 'Only Admin can update Stripe key.',
-            ], 403);
-        }
-
-        $request->validate([
-            'stripe_mode' => 'required|in:test,live',
-            'stripe_secret_key' => 'required|string',
-            'stripe_public_key' => 'required|string',
-            'stripe_webhook_secret' => 'nullable|string',
-        ]);
-
-        $stripe = Stripe::first();
-
-        if ($stripe) {
-            $stripe->update(
-                [
-                    'stripe_mode' => $request->stripe_mode,
-                    'stripe_secret_key' => $request->stripe_secret_key,
-                    'stripe_public_key' => $request->stripe_public_key,
-                    'stripe_webhook_secret' => $request->stripe_webhook_secret,
-                ]
-            );
-        } else {
-            $stripe = Stripe::create(
-                [
-                    'stripe_mode' => $request->stripe_mode,
-                    'stripe_secret_key' => $request->stripe_secret_key,
-                    'stripe_public_key' => $request->stripe_public_key,
-                    'stripe_webhook_secret' => $request->stripe_webhook_secret,
-                ]
-            );
-        }
+        $stripe = Stripe::updateOrCreate([], $request->validated());
 
         return response()->json([
             'message' => 'Stripe payment settings saved successfully.',
-            'data' => $stripe,
+            'data' => new StripeSettingResource($stripe),
         ]);
     }
 
-    public function show()
+    public function show(): JsonResponse
     {
-        $user = auth()->user();
-        if ($user->type != 1) {
+        if ((int) auth()->user()->type !== 1) {
             return response()->json([
                 'message' => 'Only Admin can view Stripe keys.',
             ], 403);
         }
-        $stripe = Stripe::firstOrFail();
+
+        $stripe = Stripe::first();
+        if (! $stripe) {
+            return $this->sendError('Stripe settings not found.', [], 404);
+        }
 
         return response()->json([
             'success' => true,
-            'data' => $stripe,
+            'data' => new StripeSettingResource($stripe),
         ]);
     }
 }

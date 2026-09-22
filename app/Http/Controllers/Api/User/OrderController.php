@@ -1,18 +1,20 @@
 <?php
 
-namespace App\Http\Controllers\Frontend;
+namespace App\Http\Controllers\Api\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\IncludeOrder;
+use App\Http\Requests\Order\StoreOrderRequest;
+use App\Http\Requests\Order\UpdateOrderStatusRequest;
+use App\Http\Resources\OrderDetailResource;
+use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\ProviderPayment;
 use App\Models\ProviderStripe;
 use App\Models\Service;
-use App\Models\ServicePricing;
+use App\Services\OrderService;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Stripe\Checkout\Session;
 use Stripe\Exception\CardException;
@@ -21,84 +23,41 @@ use Stripe\Stripe;
 
 class OrderController extends Controller
 {
-    /**
-     * Format an order's review (and the provider's reply, if any) for the response.
-     *
-     * @return array{id: int, rating: int, review: ?string, reply: ?string, has_replied: bool, reviewed_at: ?string}|null
-     */
-    private function formatOrderReview(Order $order): ?array
-    {
-        if ($order->review === null) {
-            return null;
-        }
-
-        return [
-            'id' => $order->review->id,
-            'rating' => $order->review->rating,
-            'review' => $order->review->review,
-            'reply' => $order->review->reply,
-            'has_replied' => $order->review->reply !== null,
-            'reviewed_at' => $order->review->created_at,
-        ];
-    }
+    public function __construct(
+        protected OrderService $orderService
+    ) {}
 
     /**
-     * Display a listing of the resource.
-     *
-     * @return Response
+     * Display a listing of orders for current customer or provider.
      */
-    public function index()
+    public function index(): JsonResponse
     {
         $user = auth()->user();
 
         $query = Order::with(['service.user', 'pricing', 'providerPayments', 'user', 'review']);
 
-        if ($user->type == 0) {
+        if ((int) $user->type === 0) {
             $query->where('user_id', $user->id);
-        }
-
-        if ($user->type == 2) {
+        } elseif ((int) $user->type === 2) {
             $query->whereHas('service', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             });
         }
 
-        $orders = $query->get()
-            ->map(function ($order) use ($user) {
-
-                $dueIn = Carbon::parse($order->event_end_date)->diff(Carbon::now());
-                $days = $dueIn->d;
-                $hours = $dueIn->h;
-                $minutes = $dueIn->i;
-
-                return [
-                    'order_id' => $order->id,
-                    'service_image' => $order->service->image,
-                    'event_name' => $order->event_name,
-                    'provider_name' => "{$order->service->user->name} {$order->service->user->last_name}",
-                    'price' => '$'.number_format($order->providerPayments->amount),
-                    'due_in' => "{$days}d {$hours}h {$minutes}m",
-                    'status' => $order->status,
-                    'can_review' => $order->canBeReviewedBy($user),
-                    'review_id' => $order->review?->id,
-                    'review' => $this->formatOrderReview($order),
-                ];
-            });
+        $orders = $query->latest()->get();
 
         return response()->json([
             'success' => true,
-            'data' => $orders,
+            'data' => OrderResource::collection($orders),
         ]);
     }
 
     /**
-     * Display a listing of the resource.
-     *
-     * @return Response
+     * Display the specified order details with ownership verification.
      */
-    public function show($id)
+    public function show($id): JsonResponse
     {
-        $order = Order::with(['service', 'pricing', 'providerPayments', 'user', 'review'])
+        $order = Order::with(['service.user', 'pricing', 'providerPayments', 'user', 'review'])
             ->find($id);
 
         if (! $order) {
@@ -109,252 +68,66 @@ class OrderController extends Controller
         }
 
         $user = auth()->user();
-
-        $dueIn = Carbon::parse($order->event_end_date)->diff(Carbon::now());
-        $days = $dueIn->d;
-        $hours = $dueIn->h;
-        $minutes = $dueIn->i;
-
-        $orderDetails = [
-            'id' => $order->id,
-            'order_started' => [
-                'order_by' => "{$order->user->name} {$order->user->last_name}",
-                'event_name' => $order->event_name,
-            ],
-
-            'location & contact' => [
-                'full_name' => $order->first_name.' '.$order->last_name,
-                'email' => $order->email,
-                'phone' => $order->phone,
-                'address' => implode(', ', array_filter([
-                    $order->address,
-                    $order->city,
-                    trim("{$order->state} {$order->zip_code}"),
-                ])),
-            ],
-
-            'event_details' => [
-                'event_type' => $order->service->title,
-                'event_name' => $order->event_name,
-                'duration' => $order->event_duration,
-                'guests' => $order->guest_count,
-                'description' => $order->event_description,
-            ],
-
-            'questionnaire' => [
-                'party_theme' => $order->question_one,
-                'music_preference' => $order->question_two,
-                'must_play_songs' => $order->question_three,
-                'dance_games' => $order->question_four,
-                'entrance_style' => $order->question_five,
-                'additional_notes' => $order->question_six,
-            ],
-
-            'order_details' => [
-                'service_image' => $order->service->image_url,
-                'event_name' => $order->event_name,
-                'order_by' => "{$order->user->name} {$order->user->last_name}",
-                'status' => $order->status,
-                'can_review' => $order->canBeReviewedBy($user),
-                'review_id' => $order->review?->id,
-                'review' => $this->formatOrderReview($order),
-                'order_number' => '#ORD'.str_pad($order->id, 5, '0', STR_PAD_LEFT),
-                'end_date' => Carbon::parse($order->event_end_date)->format('d M, Y'),
-                'amount_paid' => '$'.number_format($order->providerPayments->amount),
-            ],
-        ];
+        if (! $this->orderService->canAccessOrder($user, $order)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to this order',
+            ], 403);
+        }
 
         return response()->json([
             'success' => true,
-            'data' => $orderDetails,
+            'data' => new OrderDetailResource($order),
         ]);
     }
 
     /**
-     * Display a listing of the resource.
-     *
-     * @return Response
+     * Place a new order and create payment intent.
      */
-    public function store(Request $request)
-
-
-     {
-
-    
-        $request->validate([
-            'service_id' => 'required|exists:services,id',
-            'service_pricing_id' => 'required|exists:service_pricings,id',
-            'address' => 'nullable|string',
-            'city' => 'nullable|string',
-            'state' => 'nullable|string',
-            'zip_code' => 'nullable|string',
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-            'email' => 'required|email',
-            'phone' => 'required|string',
-            'event_name' => 'required|string',
-            'guest_count' => 'nullable|integer',
-            'event_duration' => 'nullable|string',
-            'event_description' => 'nullable|string',
-            'event_start_date' => 'required|date|after_or_equal:today',
-            'event_end_date' => 'required|date|after_or_equal:event_start_date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-            'question_one' => 'nullable|string',
-            'question_two' => 'nullable|string',
-            'question_three' => 'nullable|string',
-            'question_four' => 'nullable|string',
-            'question_five' => 'nullable|string',
-            'question_six' => 'nullable|string',
-            'include_order_ids' => 'nullable|array',
-            'include_order_ids.*' => 'integer|exists:include_orders,id',
-            'agree_terms' => 'required|boolean',
-            'payment_method' => 'required|string',
-            'payment_method_id' => 'required|string',
-        ]);
-
-        DB::beginTransaction();
+    public function store(StoreOrderRequest $request): JsonResponse
+    {
+        $user = auth()->user();
 
         try {
-            $order = Order::create([
-                'service_id' => $request->service_id,
-                'service_pricing_id' => $request->service_pricing_id,
-                'user_id' => auth()->id(),
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'address' => $request->address,
-                'city' => $request->city,
-                'state' => $request->state,
-                'zip_code' => $request->zip_code,
-                'event_name' => $request->event_name,
-                'guest_count' => $request->guest_count,
-                'event_duration' => $request->event_duration,
-                'event_description' => $request->event_description,
-                'event_start_date' => $request->event_start_date,
-                'event_end_date' => $request->event_end_date,
-                'start_time' => $request->start_time,
-                'end_time' => $request->end_time,
-                'question_one' => $request->question_one,
-                'question_two' => $request->question_two,
-                'question_three' => $request->question_three,
-                'question_four' => $request->question_four,
-                'question_five' => $request->question_five,
-                'question_six' => $request->question_six,
-                'include_order_ids' => json_encode($request->include_order_ids ?? []),
-                'agree_terms' => $request->agree_terms,
-                'payment_method' => $request->payment_method,
-                'status' => 'pending',
-            ]);
+            $result = $this->orderService->createOrder($user, $request->validated());
 
-            $includeOrderTotal = IncludeOrder::whereIn('id', $request->include_order_ids ?? [])->sum('price');
-            $pricing = ServicePricing::findOrFail($request->service_pricing_id);
-            $finalAmount = (float) $pricing->price + (float) $includeOrderTotal;
-
-            $service = Service::findOrFail($request->service_id);
-
-            $providerStripe = ProviderStripe::where(
-                'user_id',
-                $service->user_id
-            )->first();
-
-            if (! $providerStripe) {
-                DB::rollBack();
-
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Stripe key not found',
-                ], 404);
-            }
-
-            $adminCommission = $finalAmount * 0.20;
-            $providerAmount = $finalAmount - $adminCommission;
-
-            $payment = ProviderPayment::create([
-                'order_id' => $order->id,
-                'user_id' => auth()->id(),
-                'transaction_id' => null,
-                'amount' => $finalAmount,
-                'admin_commission_amount' => $adminCommission,
-                'provider_amount' => $providerAmount,
-                'currency' => 'USD',
-                'payment_method' => 'stripe',
-                'status' => 'pending',
-            ]);
-
-            Stripe::setApiKey($providerStripe->stripe_secret_key);
-
-            $paymentIntent = PaymentIntent::create([
-                'amount' => (int) round($finalAmount * 100),
-                'currency' => 'usd',
-                'payment_method' => $request->payment_method_id,
-                'payment_method_types' => ['card'],
-                'confirm' => true,
-                'description' => $request->event_name,
-                'metadata' => [
-                    'order_id' => (string) $order->id,
-                    'user_id' => (string) auth()->id(),
-                ],
-            ]);
-
-            $payment->transaction_id = $paymentIntent->id;
-            $payment->save();
-
-            if ($paymentIntent->status === 'succeeded') {
-                $order->status = 'confirmed';
-                $order->save();
-
-                $payment->status = 'successful';
-                $payment->save();
-
-                DB::commit();
-
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Payment successful',
-                    'order_id' => $order->id,
-                    'payment_status' => $paymentIntent->status,
-                ], 201);
-            }
-
-            if (in_array($paymentIntent->status, ['requires_action', 'requires_confirmation'], true)) {
-                DB::commit();
-
+            if (! empty($result['requires_action'])) {
                 return response()->json([
                     'status' => true,
                     'requires_action' => true,
                     'message' => 'Additional authentication required to complete the payment',
-                    'order_id' => $order->id,
-                    'payment_intent_client_secret' => $paymentIntent->client_secret,
-                    'payment_status' => $paymentIntent->status,
+                    'order_id' => $result['order']->id,
+                    'payment_intent_client_secret' => $result['client_secret'],
+                    'payment_status' => $result['payment_intent']->status,
                 ], 200);
             }
 
-            $order->status = 'cancelled';
-            $order->save();
-
-            $payment->status = 'failed';
-            $payment->save();
-
-            DB::commit();
+            if ($result['order']->status === 'confirmed') {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Payment successful',
+                    'order_id' => $result['order']->id,
+                    'payment_status' => $result['payment_intent']?->status,
+                ], 201);
+            }
 
             return response()->json([
                 'status' => false,
                 'message' => 'Payment could not be processed',
-                'order_id' => $order->id,
-                'payment_status' => $paymentIntent->status,
+                'order_id' => $result['order']->id,
+                'payment_status' => $result['payment_intent']?->status,
             ], 402);
+        } catch (\DomainException $e) {
+            return response()->json([
+                'status' => false,
+                'error' => 'Stripe key not found',
+            ], 404);
         } catch (CardException $e) {
-            DB::rollBack();
-
             return response()->json([
                 'status' => false,
                 'error' => $e->getMessage(),
             ], 402);
-        } catch (\Exception $e) {
-            DB::rollBack();
-
+        } catch (\Throwable $e) {
             return response()->json([
                 'status' => false,
                 'error' => $e->getMessage(),
@@ -363,17 +136,14 @@ class OrderController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
-     *
-     * @return Response
+     * Handle Stripe payment success callback.
      */
-    public function success(Request $request, $orderId)
+    public function success(Request $request, $orderId): JsonResponse
     {
         $order = Order::findOrFail($orderId);
+        $sessionId = $request->query('session_id');
 
-        $session_id = $request->query('session_id');
-
-        if (! $session_id) {
+        if (! $sessionId) {
             return response()->json([
                 'status' => false,
                 'message' => 'Session ID missing',
@@ -384,16 +154,12 @@ class OrderController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Order already confirmed',
-                'order' => $order,
+                'order' => new OrderResource($order),
             ], 200);
         }
 
         $service = Service::findOrFail($order->service_id);
-
-        $providerStripe = ProviderStripe::where(
-            'user_id',
-            $service->user_id
-        )->first();
+        $providerStripe = ProviderStripe::where('user_id', $service->user_id)->first();
 
         if (! $providerStripe) {
             return response()->json([
@@ -405,10 +171,8 @@ class OrderController extends Controller
         Stripe::setApiKey($providerStripe->stripe_secret_key);
 
         DB::beginTransaction();
-
         try {
-
-            $session = Session::retrieve($session_id);
+            $session = Session::retrieve($sessionId);
             if (! $session || ! $session->payment_intent) {
                 DB::rollBack();
 
@@ -417,9 +181,9 @@ class OrderController extends Controller
                     'message' => 'Invalid Stripe session',
                 ], 400);
             }
-            $payment_intent = PaymentIntent::retrieve($session->payment_intent);
 
-            if (! $payment_intent || ! isset($payment_intent->status)) {
+            $paymentIntent = PaymentIntent::retrieve($session->payment_intent);
+            if (! $paymentIntent || ! isset($paymentIntent->status)) {
                 DB::rollBack();
 
                 return response()->json([
@@ -429,7 +193,6 @@ class OrderController extends Controller
             }
 
             $payment = ProviderPayment::where('order_id', $order->id)->first();
-
             if (! $payment) {
                 DB::rollBack();
 
@@ -438,66 +201,35 @@ class OrderController extends Controller
                     'message' => 'Payment record not found',
                 ], 404);
             }
-            switch ($payment_intent->status) {
-                case 'succeeded':
-                    $order->status = 'confirmed';
-                    $order->save();
 
-                    $payment->transaction_id = $payment_intent->id;
-                    $payment->status = 'successful';
-                    $payment->save();
+            if ($paymentIntent->status === 'succeeded') {
+                $order->update(['status' => 'confirmed']);
+                $payment->update([
+                    'transaction_id' => $paymentIntent->id,
+                    'status' => 'successful',
+                ]);
+                DB::commit();
 
-                    DB::commit();
-
-                    return response()->json([
-                        'status' => true,
-                        'message' => 'Payment successful',
-                        'order' => $order,
-                        'payment' => $payment,
-                        'transaction_id' => $payment_intent->id,
-                    ], 200);
-
-                case 'failed':
-                    $order->status = 'cancelled';
-                    $order->save();
-
-                    $payment->status = 'failed';
-                    $payment->save();
-
-                    DB::commit();
-
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'Payment failed',
-                        'order' => $order,
-                        'payment' => $payment,
-                    ], 400);
-
-                case 'canceled':
-                    $order->status = 'cancelled';
-                    $order->save();
-
-                    $payment->status = 'failed';
-                    $payment->save();
-
-                    DB::commit();
-
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'Payment canceled',
-                        'order' => $order,
-                        'payment' => $payment,
-                    ], 400);
-
-                default:
-                    DB::rollBack();
-
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'Unexpected payment status: '.$payment_intent->status,
-                    ], 500);
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Payment successful',
+                    'order' => new OrderResource($order),
+                    'payment' => $payment,
+                    'transaction_id' => $paymentIntent->id,
+                ], 200);
             }
-        } catch (\Exception $e) {
+
+            $order->update(['status' => 'cancelled']);
+            $payment->update(['status' => 'failed']);
+            DB::commit();
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Payment failed',
+                'order' => new OrderResource($order),
+                'payment' => $payment,
+            ], 400);
+        } catch (\Throwable $e) {
             DB::rollBack();
 
             return response()->json([
@@ -507,12 +239,34 @@ class OrderController extends Controller
         }
     }
 
+    /**
+     * Handle Stripe cancel callback.
+     */
+    public function cancel(Request $request, $orderId): JsonResponse
+    {
+        $order = Order::findOrFail($orderId);
+        $order->update(['status' => 'cancelled']);
+
+        $payment = ProviderPayment::where('order_id', $order->id)->first();
+        if ($payment) {
+            $payment->update(['status' => 'failed']);
+        }
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Order was cancelled',
+            'order' => new OrderResource($order),
+        ]);
+    }
+
+    /**
+     * Download order invoice PDF.
+     */
     public function generateInvoice($orderId)
     {
+        $order = Order::with(['service', 'pricing', 'user'])->findOrFail($orderId);
 
-        $order = Order::with(['service', 'Pricing', 'user'])->findOrFail($orderId);
-
-        $pricing = $order->Pricing;
+        $pricing = $order->pricing;
         $payment = ProviderPayment::where('order_id', $order->id)->first();
 
         $data = [
@@ -521,10 +275,10 @@ class OrderController extends Controller
             'service' => $order->service,
             'pricing' => $pricing,
             'payment' => $payment,
-            'total_amount' => $payment->amount,
-            'transaction_id' => $payment->transaction_id,
-            'payment_method' => $payment->payment_method,
-            'payment_status' => $payment->status,
+            'total_amount' => $payment?->amount ?? 0,
+            'transaction_id' => $payment?->transaction_id,
+            'payment_method' => $payment?->payment_method ?? 'stripe',
+            'payment_status' => $payment?->status ?? 'pending',
             'date' => now()->format('Y-m-d'),
             'address' => $order->address,
             'city' => $order->city,
@@ -538,29 +292,26 @@ class OrderController extends Controller
         return $pdf->download('invoice_'.$orderId.'.pdf');
     }
 
-    public function updateStatus(Request $request, $id)
+    /**
+     * Update order status (with provider authorization).
+     */
+    public function updateStatus(UpdateOrderStatusRequest $request, $id): JsonResponse
     {
-        if (auth()->user()->type != 2) {
+        $user = auth()->user();
+
+        try {
+            $order = $this->orderService->updateOrderStatus($user, (int) $id, $request->status);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Order status updated successfully',
+                'data' => new OrderResource($order),
+            ]);
+        } catch (\DomainException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized',
+                'message' => $e->getMessage(),
             ], 403);
         }
-
-        $request->validate([
-            'status' => 'required|in:pending,confirmed,completed,cancelled',
-        ]);
-
-        $order = Order::findOrFail($id);
-
-        $order->update([
-            'status' => $request->status,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Order status updated successfully',
-            'data' => $order,
-        ]);
     }
 }

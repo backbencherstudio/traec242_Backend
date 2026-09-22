@@ -1,53 +1,41 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateSettingRequest;
+use App\Http\Resources\SettingResource;
 use App\Models\Setting;
-use Illuminate\Http\Request;
+use App\Services\FileUploadService;
+use Illuminate\Http\JsonResponse;
 
 class SettingController extends Controller
 {
-    public function index()
-    {
-        $setting = Setting::first();
+    public function __construct(
+        protected FileUploadService $fileUploadService
+    ) {}
 
-        if (! $setting) {
-            $setting = Setting::create([]);
-        }
+    public function index(): JsonResponse
+    {
+        $setting = Setting::firstOrCreate([], []);
 
         return response()->json([
             'success' => true,
-            'data' => $setting,
+            'data' => new SettingResource($setting),
         ]);
-
     }
 
-    public function update(Request $request)
+    public function update(UpdateSettingRequest $request): JsonResponse
     {
-        $setting = Setting::first();
+        $setting = Setting::firstOrCreate([], []);
 
-        if (! $setting) {
-            $setting = Setting::create([]);
-        }
         $imageFields = ['site_logo', 'admin_logo', 'favicon', 'seo_image'];
         $data = $request->only($setting->getFillable());
+
         foreach ($imageFields as $field) {
             if ($request->hasFile($field)) {
-                $image = $request->file($field);
-
-                $request->validate([
-                    $field => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-                ]);
-                $originalName = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
-                $extension = $image->getClientOriginalExtension();
-                $imageName = time().'_'.$originalName.'.'.$extension;
-                $folder = 'uploads/settings';
-                $image->move(public_path($folder), $imageName);
-                $data[$field] = $folder.'/'.$imageName;
-                if ($setting->$field && file_exists(public_path($setting->$field))) {
-                    @unlink(public_path($setting->$field));
-                }
+                $this->fileUploadService->delete($setting->$field);
+                $data[$field] = $this->fileUploadService->upload($request->file($field), 'uploads/settings');
             }
         }
 
@@ -56,7 +44,7 @@ class SettingController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Settings updated successfully',
-            'data' => $setting,
+            'data' => new SettingResource($setting),
         ]);
     }
 }

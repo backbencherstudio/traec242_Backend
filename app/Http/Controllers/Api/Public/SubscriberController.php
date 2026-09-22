@@ -1,51 +1,29 @@
 <?php
 
-namespace App\Http\Controllers\Frontend;
+namespace App\Http\Controllers\Api\Public;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Subscriber\StoreSubscriberRequest;
+use App\Http\Resources\SubscriberResource;
 use App\Mail\SubscriberMail;
 use App\Models\Subscriber;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Validator;
 
 class SubscriberController extends Controller
 {
-    /* Display a listing of the resource.
-        *
-        * @return \Illuminate\Http\Response
-        */
-    public function index()
+    public function index(): JsonResponse
     {
-        $subscribers = Subscriber::all();
+        $subscribers = Subscriber::latest()->get();
 
         return response()->json([
             'status' => true,
-            'data' => $subscribers,
+            'data' => SubscriberResource::collection($subscribers),
         ]);
     }
 
-    /*
-        * Store a newly created resource in storage.
-        *
-        * @param  \Illuminate\Http\Request  $request
-        * @return \Illuminate\Http\Response
-        */
-
-    public function store(Request $request)
+    public function store(StoreSubscriberRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email|unique:subscribers,email',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
         $subscriber = Subscriber::create([
             'email' => $request->email,
         ]);
@@ -55,7 +33,7 @@ class SubscriberController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Subscriber added successfully!',
-            'data' => $subscriber,
+            'data' => new SubscriberResource($subscriber),
         ], 201);
     }
 }

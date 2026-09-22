@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
@@ -49,7 +49,7 @@ class GoogleAuthController extends Controller
             return response()->json([
                 'token' => $jwtToken,
                 'token_type' => 'bearer',
-                'expires_in' => auth('api')->factory()->getTTL() * 12222600,
+                'expires_in' => auth('api')->factory()->getTTL() * 60,
                 'user' => $user,
             ]);
 
