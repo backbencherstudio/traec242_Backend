@@ -8,13 +8,11 @@ use App\Models\Content;
 use App\Models\Faq;
 use App\Models\PrivacyPolicy;
 use App\Models\User;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ContentController extends Controller
 {
-
-
     /**
      * Return content and other data
      *
@@ -29,19 +27,18 @@ class ContentController extends Controller
             'other_data' => [
                 'total_user' => User::where('type', 0)->count(),
                 'total_provider' => User::where('type', 2)->count(),
-                'avg_rating' => 3.3
-            ]
+                'avg_rating' => 3.3,
+            ],
         ];
+
         return $this->sendResponse($data);
     }
+
     /**
      * Update content values
      *
-     * @param Request $request
      * @return JsonResponse
      */
-
-
     public function home_update(Request $request)
     {
         $allowedKeys = [
@@ -51,7 +48,7 @@ class ContentController extends Controller
             'heading',
             'sub_heading',
             'input_placeholder',
-            'button_text'
+            'button_text',
         ];
 
         foreach ($allowedKeys as $key) {
@@ -74,18 +71,15 @@ class ContentController extends Controller
         }
 
         $updatedContent = Content::pluck('value', 'key');
+
         return $this->sendResponse($updatedContent, 'Content updated successfully.');
     }
-
-
-
 
     /**
      * Fetch all faqs from the database.
      *
      * @return \Illuminate\Http\JsonResponse
      */
-
     public function faq_index()
     {
         $content = Faq::get();
@@ -93,32 +87,27 @@ class ContentController extends Controller
         return $this->sendResponse($content);
     }
 
-
     /**
      * Store a newly created faq in storage.
      *
-     * @param  \App\Http\Requests\FaqStoreRequest  $request
      * @return \Illuminate\Http\JsonResponse
      */
-
     public function faq_store(FaqStoreRequest $request)
     {
         $validated = $request->validated();
 
         $content = Faq::create([
             'question' => $validated['question'],
-            'answer' =>  $validated['answer']
+            'answer' => $validated['answer'],
         ]);
 
         return $this->sendResponse($content);
     }
 
-
-
     /**
      * Delete a faq from the database.
      *
-     * @param  \App\Http\Requests\FaqStoreRequest  $request
+     * @param  FaqStoreRequest  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function faq_delete(Faq $faq)
@@ -127,8 +116,6 @@ class ContentController extends Controller
 
         return $this->sendResponse([], 'Faq deleted successfully.');
     }
-
-
 
     public function privacy_index()
     {
@@ -144,7 +131,7 @@ class ContentController extends Controller
             'description' => 'required|string',
         ]);
 
-        $privacy = PrivacyPolicy::first() ?? new PrivacyPolicy();
+        $privacy = PrivacyPolicy::first() ?? new PrivacyPolicy;
 
         $privacy->title = $request->title;
         $privacy->description = $request->description;

@@ -188,7 +188,7 @@ class SubscriptionManagementController extends Controller
         $status = $request->status;
 
         $query = Subscription::with('user.plan')
-            ->whereHas('user', fn($q) => $q->where('type', '2'));
+            ->whereHas('user', fn ($q) => $q->where('type', '2'));
 
         if ($status) {
             $query->where('stripe_status', $status);
@@ -196,7 +196,7 @@ class SubscriptionManagementController extends Controller
 
         $subscriptions = $query->latest()->get();
 
-        $data = $subscriptions->map(fn(Subscription $sub) => $this->formatSubscription($sub));
+        $data = $subscriptions->map(fn (Subscription $sub) => $this->formatSubscription($sub));
 
         return $this->sendResponse($data);
     }
@@ -204,11 +204,11 @@ class SubscriptionManagementController extends Controller
     private function applyStatusFilter(Builder $query, string $status): void
     {
         match ($status) {
-            'none' => $query->whereDoesntHave('subscriptions', fn($q) => $q->where('name', 'provider')),
-            'paused' => $query->whereHas('subscriptions', fn($q) => $q->where('name', 'provider')->where('stripe_status', 'paused')),
-            'active' => $query->whereHas('subscriptions', fn($q) => $q->where('name', 'provider')->where('stripe_status', 'active')),
-            'grace_period' => $query->whereHas('subscriptions', fn($q) => $q->where('name', 'provider')->where('stripe_status', 'canceled')->where('ends_at', '>', now())),
-            'canceled' => $query->whereHas('subscriptions', fn($q) => $q->where('name', 'provider')->where('stripe_status', 'canceled')->where(fn($q) => $q->whereNull('ends_at')->orWhere('ends_at', '<=', now()))),
+            'none' => $query->whereDoesntHave('subscriptions', fn ($q) => $q->where('name', 'provider')),
+            'paused' => $query->whereHas('subscriptions', fn ($q) => $q->where('name', 'provider')->where('stripe_status', 'paused')),
+            'active' => $query->whereHas('subscriptions', fn ($q) => $q->where('name', 'provider')->where('stripe_status', 'active')),
+            'grace_period' => $query->whereHas('subscriptions', fn ($q) => $q->where('name', 'provider')->where('stripe_status', 'canceled')->where('ends_at', '>', now())),
+            'canceled' => $query->whereHas('subscriptions', fn ($q) => $q->where('name', 'provider')->where('stripe_status', 'canceled')->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '<=', now()))),
             default => null,
         };
     }
@@ -238,7 +238,7 @@ class SubscriptionManagementController extends Controller
             'stripe_subscription_id' => $subscription->stripe_id,
             'stripe_status' => $subscription->stripe_status,
             'provider_id' => $provider?->id,
-            'provider_name' => $provider ? trim(($provider->name ?? '') . ' ' . ($provider->last_name ?? '')) : null,
+            'provider_name' => $provider ? trim(($provider->name ?? '').' '.($provider->last_name ?? '')) : null,
             'provider_email' => $provider?->email,
             'plan' => $provider?->plan?->title,
             'quantity' => $subscription->quantity,

@@ -7,13 +7,14 @@ use App\Models\Content;
 use App\Models\Faq;
 use App\Models\PrivacyPolicy;
 use App\Models\User;
+use Illuminate\Http\Response;
 
 class BasicContentController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function home_response()
     {
@@ -34,7 +35,7 @@ class BasicContentController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function faq()
     {
@@ -46,9 +47,8 @@ class BasicContentController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-
     public function privacy()
     {
         $content = PrivacyPolicy::first();

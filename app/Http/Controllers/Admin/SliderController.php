@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Slider;
+use Illuminate\Http\Request;
 
 class SliderController extends Controller
 {
-
     public function index()
     {
         $sliders = Slider::all();
+
         return response()->json($sliders);
     }
 
@@ -22,10 +22,10 @@ class SliderController extends Controller
             'description' => 'nullable|string',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'status' => 'required|boolean',
-            'order_number' => 'required|integer'
+            'order_number' => 'required|integer',
         ]);
 
-        $slider = new Slider();
+        $slider = new Slider;
         $slider->title = $request->title;
         $slider->description = $request->description;
         $slider->status = $request->status;
@@ -33,29 +33,28 @@ class SliderController extends Controller
 
         if ($request->hasFile('thumbnail')) {
             $file = $request->file('thumbnail');
-            $filename = uniqid() . '.' . $file->getClientOriginalName();
+            $filename = uniqid().'.'.$file->getClientOriginalName();
             $file->move(public_path('uploads/sliders'), $filename);
-            $slider->thumbnail = 'uploads/sliders/' . $filename;
+            $slider->thumbnail = 'uploads/sliders/'.$filename;
         }
 
         $slider->save();
 
         return response()->json([
             'status' => 'Created slider successfully!',
-            'data' => $slider
+            'data' => $slider,
         ], 201);
     }
-
 
     public function edit($id)
     {
         $slider = Slider::find($id);
-        if (!$slider) {
+        if (! $slider) {
             return response()->json(['message' => 'Slider not found'], 404);
         }
+
         return response()->json($slider);
     }
-
 
     public function update(Request $request, $id)
     {
@@ -66,7 +65,7 @@ class SliderController extends Controller
             'description' => 'nullable|string',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'status' => 'nullable|boolean',
-            'order_number' => 'required|integer'
+            'order_number' => 'required|integer',
         ]);
 
         $slider->title = $request->title;
@@ -79,15 +78,15 @@ class SliderController extends Controller
                 unlink(public_path($slider->thumbnail));
             }
             $file = $request->file('thumbnail');
-            $filename = uniqid() . '.' . $file->getClientOriginalName();
+            $filename = uniqid().'.'.$file->getClientOriginalName();
             $file->move(public_path('uploads/sliders'), $filename);
-            $slider->thumbnail = 'uploads/sliders/' . $filename;
+            $slider->thumbnail = 'uploads/sliders/'.$filename;
         }
         $slider->save();
 
         return response()->json([
             'status' => 'Slider updated successfully!',
-            'data' => $slider
+            'data' => $slider,
         ]);
     }
 

@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-
 class Attachment extends Model
 {
     protected $fillable = ['message_id', 'file_path', 'file_name', 'file_type', 'file_size'];
@@ -14,9 +13,8 @@ class Attachment extends Model
         return $this->belongsTo(Message::class);
     }
 
-
     public function getFileUrlAttribute()
     {
-        return asset('storage/' . $this->file_path);
+        return asset('storage/'.$this->file_path);
     }
 }

@@ -57,4 +57,20 @@ class Order extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    public function review()
+    {
+        return $this->hasOne(Review::class);
+    }
+
+    /**
+     * Whether the given user may leave a review for this order:
+     * they own it, it is completed, and it has not been reviewed yet.
+     */
+    public function canBeReviewedBy(User $user): bool
+    {
+        return (int) $this->user_id === (int) $user->id
+            && $this->status === 'completed'
+            && $this->review === null;
+    }
 }

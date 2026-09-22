@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Provider;
 
 use App\Http\Controllers\Controller;
 use App\Models\ProviderStripe;
+use App\Models\Service;
 use Illuminate\Http\Request;
 
 class ProviderStripeController extends Controller
@@ -19,7 +20,7 @@ class ProviderStripeController extends Controller
         $user = auth()->user();
         if ($user->type != 2) {
             return response()->json([
-                'message' => 'Only provider can update Stripe key.'
+                'message' => 'Only provider can update Stripe key.',
             ], 403);
         }
 
@@ -34,7 +35,7 @@ class ProviderStripeController extends Controller
 
         return response()->json([
             'message' => 'Stripe key saved successfully.',
-            'data' => $stripe
+            'data' => $stripe,
         ]);
     }
 
@@ -44,21 +45,47 @@ class ProviderStripeController extends Controller
 
         if ($user->type != 2) {
             return response()->json([
-                'message' => 'Only provider can view Stripe keys.'
+                'message' => 'Only provider can view Stripe keys.',
             ], 403);
         }
 
         $stripe = ProviderStripe::where('user_id', $user->id)->first();
 
-        if (!$stripe) {
+        if (! $stripe) {
             return response()->json([
-                'message' => 'Stripe key not found.'
+                'message' => 'Stripe key not found.',
             ], 404);
         }
 
         return response()->json([
             'message' => 'Stripe key retrieved successfully.',
-            'data' => $stripe
+            'data' => $stripe,
+        ]);
+    }
+
+    public function getPublicKey($serviceId)
+    {
+        $service = Service::find($serviceId);
+
+        if (!$service) {
+            return response()->json([
+                'message' => 'Service not found'
+            ], 404);
+        }
+
+        $stripe = ProviderStripe::where(
+            'user_id',
+            $service->user_id
+        )->first();
+
+        if (!$stripe) {
+            return response()->json([
+                'message' => 'Provider stripe account not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'public_key' => $stripe->stripe_public_key,
         ]);
     }
 }

@@ -18,7 +18,7 @@ class NotificationCreated implements ShouldBroadcast
     {
         return [
             new PrivateChannel(
-                'notifications.' . $this->notification['user_id']
+                'notifications.'.$this->notification['user_id']
             ),
         ];
     }
@@ -27,6 +27,4 @@ class NotificationCreated implements ShouldBroadcast
     {
         return 'notification.created';
     }
-
-   
 }

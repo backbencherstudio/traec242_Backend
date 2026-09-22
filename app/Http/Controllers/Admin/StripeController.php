@@ -14,7 +14,7 @@ class StripeController extends Controller
         $user = auth()->user();
         if ($user->type != 1) {
             return response()->json([
-                'message' => 'Only Admin can update Stripe key.'
+                'message' => 'Only Admin can update Stripe key.',
             ], 403);
         }
 
@@ -58,7 +58,7 @@ class StripeController extends Controller
         $user = auth()->user();
         if ($user->type != 1) {
             return response()->json([
-                'message' => 'Only Admin can view Stripe keys.'
+                'message' => 'Only Admin can view Stripe keys.',
             ], 403);
         }
         $stripe = Stripe::firstOrFail();

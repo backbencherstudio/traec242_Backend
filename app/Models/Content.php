@@ -8,6 +8,6 @@ class Content extends Model
 {
     protected $fillable = [
         'key',
-        'value'
+        'value',
     ];
 }

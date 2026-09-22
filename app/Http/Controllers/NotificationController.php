@@ -38,7 +38,6 @@ class NotificationController extends Controller
         ]);
     }
 
-
     public function markChatAsRead(Request $request)
     {
         $request->validate([

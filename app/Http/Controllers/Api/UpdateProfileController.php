@@ -11,7 +11,11 @@ class UpdateProfileController extends Controller
 {
     public function update(Request $request)
     {
+
         $user = Auth::user();
+        // $user = Auth::user();
+
+
 
         $rules = [
             'name' => 'sometimes|string|max:255',

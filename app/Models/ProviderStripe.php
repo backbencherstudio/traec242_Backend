@@ -10,6 +10,6 @@ class ProviderStripe extends Model
         'user_id',
         'stripe_mode',
         'stripe_secret_key',
-        'stripe_public_key'
+        'stripe_public_key',
     ];
 }

@@ -28,6 +28,10 @@ class StoreServiceRequest extends FormRequest
             'pricings.*.price' => 'required|numeric|min:0',
             'pricings.*.description' => 'nullable|string',
             'pricings.*.features' => 'nullable|array',
+
+            'faqs' => 'nullable|array',
+            'faqs.*.question' => 'required_with:faqs|string|max:255',
+            'faqs.*.answer' => 'required_with:faqs|string',
         ];
     }
 }

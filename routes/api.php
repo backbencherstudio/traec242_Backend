@@ -28,8 +28,8 @@ use App\Http\Controllers\Api\VerifyRegistrationOtpController;
 use App\Http\Controllers\Frontend\OrderController;
 use App\Http\Controllers\Frontend\SubscriberController;
 use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Provider\ProviderStripeController;
+use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 // Admin Public Routes
@@ -213,6 +213,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::post('/create-order', [OrderController::class, 'store']);
         Route::get('index', [OrderController::class, 'index'])->name('order.index');
         Route::get('show/{id}', [OrderController::class, 'show'])->name('order.show');
+        Route::patch('update-status/{id}', [OrderController::class, 'updateStatus'])->name('order.updateStatus');
     });
 
     // Profile
@@ -235,6 +236,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     // Admin Dashboard
     Route::prefix('client')->group(function () {
         Route::get('index', [UserManagementController::class, 'clients']);
+        Route::get('show-details/{id}', [UserManagementController::class, 'showDetails']);
         Route::get('seller-index', [UserManagementController::class, 'sellers']);
         Route::patch('change-status/{id}', [UserManagementController::class, 'changeStatus']);
         Route::delete('delete-user/{id}', [UserManagementController::class, 'deleteUser']);
@@ -247,9 +249,10 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     // Order Management
     Route::prefix('admin-order')->group(function () {
         Route::get('index', [OrderManagementController::class, 'index']);
+        Route::get('show-details/{id}', [OrderManagementController::class, 'showOrderDetails']);
     });
 
-// user-dashboard
+    // user-dashboard
     Route::prefix('user-dashboard')->group(function () {
         Route::get('summary', [UserDashboardController::class, 'summary']);
         Route::get('recent-orders', [UserDashboardController::class, 'recentOrders']);
@@ -261,19 +264,18 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
     // Review
     Route::prefix('review')->group(function () {
         Route::get('index', [ReviewController::class, 'index']);
+        Route::get('received', [ReviewController::class, 'providerReviews']);
         Route::get('show/{id}', [ReviewController::class, 'show']);
-        Route::get('store', [ReviewController::class, 'store']);
-        Route::get('update/{id}', [ReviewController::class, 'update']);
-        Route::get('status/{id}', [ReviewController::class, 'changeStatus']);
-        Route::get('public-review/{id}', [ReviewController::class, 'review']);
-
+        Route::post('store', [ReviewController::class, 'store']);
+        Route::patch('reply/{id}', [ReviewController::class, 'reply']);
     });
-
-
 });
 
 Route::get('/order/success/{orderId}', [OrderController::class, 'success'])->name('order.success');
 Route::get('/order/cancel/{orderId}', [OrderController::class, 'cancel'])->name('order.cancel');
 Route::get('/order/invoice/{orderId}', [OrderController::class, 'generateInvoice'])->name('order.invoice');
 
-require __DIR__.'/mahmudul.php';
+//Stripe Public_key
+Route::get('stripe/p-k/{service}', [ProviderStripeController::class, 'getPublicKey'])->name('p-stripe.getPublicKey');
+
+require __DIR__ . '/mahmudul.php';

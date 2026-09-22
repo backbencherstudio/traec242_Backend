@@ -39,7 +39,7 @@ class OrderManagementController extends Controller
                 $q->whereIn('status', ['pending', 'confirmed']);
 
                 self::applyPeriodFilter($q, $period);
-            }
+            },
         ]);
 
         if ($search) {
@@ -50,7 +50,7 @@ class OrderManagementController extends Controller
             });
         }
 
-        if (!is_null($status)) {
+        if (! is_null($status)) {
             $query->where('status', $status);
         }
 
@@ -102,14 +102,14 @@ class OrderManagementController extends Controller
             return [
                 'customer_info' => [
                     'id' => $user->id,
-                    'image' => $user->image,
-                    'name' => trim(($user->name ?? '') . ' ' . ($user->last_name ?? '')),
+                    'image_url' => $user->image ? asset($user->image) : null,
+                    'name' => trim(($user->name ?? '').' '.($user->last_name ?? '')),
                     'email' => $user->email,
                     'total_order' => $user->total_order,
                     'complete_order' => $user->complete_order,
                     'pending_order' => $user->pending_order,
-                    'total_spent' => '$' . number_format($totalSpent, 2),
-                ]
+                    'total_spent' => '$'.number_format($totalSpent, 2),
+                ],
             ];
         });
 
@@ -134,7 +134,79 @@ class OrderManagementController extends Controller
                 'total' => $users->total(),
                 'next_page_url' => $users->nextPageUrl(),
                 'prev_page_url' => $users->previousPageUrl(),
-            ]
+            ],
+        ]);
+    }
+
+    public function showOrderDetails($id, Request $request)
+    {
+        $period = $request->period;
+
+        $user = User::where('type', '0')->find($id);
+
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer not found or not available.',
+            ], 404);
+        }
+
+        $ordersQuery = Order::where('user_id', $user->id);
+
+        self::applyPeriodFilter($ordersQuery, $period);
+
+        $totalOrders = (clone $ordersQuery)->count();
+
+        $completedOrders = (clone $ordersQuery)
+            ->where('status', 'completed')
+            ->count();
+
+        $pendingOrders = (clone $ordersQuery)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->count();
+
+        $paymentQuery = ProviderPayment::join('orders', 'provider_payments.order_id', '=', 'orders.id')
+            ->where('provider_payments.user_id', $user->id)
+            ->where('provider_payments.status', 'successful')
+            ->where('orders.status', 'completed');
+
+        self::applyPeriodFilter($paymentQuery, $period, 'provider_payments.created_at');
+
+        $totalSpent = (clone $paymentQuery)->sum('provider_payments.amount');
+
+        return response()->json([
+            'success' => true,
+
+            'data' => [
+                'customer' => [
+                    'id' => $user->id,
+                    'name' => trim(($user->name ?? '').' '.($user->last_name ?? '')),
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'image_url' => $user->image ? asset($user->image) : null,
+
+                    'address' => trim(
+                        ($user->address ?? '').', '.
+                            ($user->city ?? '').', '.
+                            ($user->state ?? '').' '.
+                            ($user->zip_code ?? '')
+                    ),
+
+                    'status' => $user->status ? 'Active' : 'Inactive',
+                    'is_verified' => (bool) $user->is_verified,
+                    'joined' => $user->created_at->format('m/d/Y'),
+                ],
+
+                'orders' => [
+                    'total_orders' => $totalOrders,
+                    'completed_orders' => $completedOrders,
+                    'pending_orders' => $pendingOrders,
+                ],
+
+                'payments' => [
+                    'total_spent' => '$'.number_format($totalSpent, 2),
+                ],
+            ],
         ]);
     }
 
@@ -148,7 +220,7 @@ class OrderManagementController extends Controller
 
             $query->whereBetween($column, [
                 now()->startOfWeek(),
-                now()->endOfWeek()
+                now()->endOfWeek(),
             ]);
         } elseif ($period == 'yearly') {
 

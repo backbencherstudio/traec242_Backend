@@ -14,7 +14,7 @@ class ServicePricing extends Model
         'duration',
         'price',
         'description',
-        'features'
+        'features',
     ];
 
     protected $casts = [
@@ -22,7 +22,6 @@ class ServicePricing extends Model
         'features' => 'array',
         'price' => 'decimal:2',
     ];
-
 
     public function service(): BelongsTo
     {

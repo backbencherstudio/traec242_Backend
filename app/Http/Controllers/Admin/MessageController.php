@@ -4,16 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
-use App\Models\Message;
 use App\Models\Conversation;
+use App\Models\Message;
 // use App\Models\Attachment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class MessageController extends Controller
 {
-
-
     public function index(Request $request)
     {
 
@@ -24,18 +22,16 @@ class MessageController extends Controller
         $senderId = auth()->id();
         $receiverId = $request->receiver_id;
 
-
         $conversation = Conversation::whereHas('users', function ($q) use ($senderId) {
-                $q->where('user_id', $senderId);
-            })
+            $q->where('user_id', $senderId);
+        })
             ->whereHas('users', function ($q) use ($receiverId) {
                 $q->where('user_id', $receiverId);
             })
             ->where('is_group', false)
             ->first();
 
-
-        if (!$conversation) {
+        if (! $conversation) {
             return response()->json([
                 'status' => 'success',
                 'data' => [],
@@ -43,12 +39,11 @@ class MessageController extends Controller
             ]);
         }
 
-
         $messages = $conversation->messages()
             ->with([
                 'attachments',
                 'sender:id,name,image',
-                'receiver:id,name,image'
+                'receiver:id,name,image',
             ])
             ->orderBy('created_at', 'asc')
             ->get()
@@ -57,14 +52,14 @@ class MessageController extends Controller
                     'id' => $msg->id,
 
                     'sender' => [
-                        'id'    => $msg->sender?->id,
-                        'name'  => $msg->sender?->name,
+                        'id' => $msg->sender?->id,
+                        'name' => $msg->sender?->name,
                         'image' => $msg->sender?->image,
                     ],
 
                     'receiver' => [
-                        'id'    => $msg->receiver?->id,
-                        'name'  => $msg->receiver?->name,
+                        'id' => $msg->receiver?->id,
+                        'name' => $msg->receiver?->name,
                         'image' => $msg->receiver?->image,
                     ],
 
@@ -72,22 +67,22 @@ class MessageController extends Controller
 
                     'attachments' => $msg->attachments->map(function ($file) {
                         return [
-                            'id'         => $file->id,
-                            'file_name'  => $file->file_name,
-                            'file_type'  => $file->file_type,
-                            'file_size'  => $file->file_size,
-                            'file_url'   => $file->file_path ? asset('storage/' . $file->file_path) : null,
+                            'id' => $file->id,
+                            'file_name' => $file->file_name,
+                            'file_type' => $file->file_type,
+                            'file_size' => $file->file_size,
+                            'file_url' => $file->file_path ? asset('storage/'.$file->file_path) : null,
                         ];
                     }),
 
                     'created_at' => $msg->created_at->format('Y-m-d H:i:s'),
                 ];
-    });
+            });
 
-    return response()->json([
-        'status' => 'success',
-        'data' => $messages,
-    ]);
+        return response()->json([
+            'status' => 'success',
+            'data' => $messages,
+        ]);
     }
 
     public function messageslist()
@@ -96,7 +91,7 @@ class MessageController extends Controller
             ->orWhere('receiver_id', auth()->id())
             ->with([
                 'sender:id,name,image',
-                'attachments'
+                'attachments',
             ])
             ->get()
             ->map(function ($msg) {
@@ -115,12 +110,12 @@ class MessageController extends Controller
 
                     'attachments' => $msg->attachments->map(function ($file) {
                         return [
-                            'id'        => $file->id,
+                            'id' => $file->id,
                             'file_name' => $file->file_name,
                             'file_type' => $file->file_type,
                             'file_size' => $file->file_size,
-                            'file_url'  => $file->file_path
-                                ? asset('storage/' . $file->file_path)
+                            'file_url' => $file->file_path
+                                ? asset('storage/'.$file->file_path)
                                 : null,
                         ];
                     }),
@@ -132,7 +127,6 @@ class MessageController extends Controller
             'data' => $messages,
         ]);
     }
-
 
     public function sendMessage(Request $request)
     {
@@ -187,7 +181,7 @@ class MessageController extends Controller
 
             $conversation->touch();
 
-            event(new \App\Events\MessageSent($message));
+            event(new MessageSent($message));
 
             broadcast(new MessageSent(
                 $message->load(['attachments', 'sender'])
@@ -199,5 +193,4 @@ class MessageController extends Controller
             ]);
         });
     }
-    
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\Order;
+use App\Models\Review;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -21,18 +22,23 @@ class UserDashboardController extends Controller
             ->where('event_start_date', '>=', now()->toDateString())
             ->count();
 
-        $pastOrders = Order::where('event_start_date', '<', now()->toDateString())
+        $pastOrders = Order::where('user_id', $userId)
+            ->where('event_start_date', '<', now()->toDateString())
             ->count();
 
         $unreadMessage = Message::where('receiver_id', $userId)
             ->whereNull('read_at')
             ->count();
 
-        $rating = 'Not set';
+        $rating = Review::where('user_id', $userId)
+            ->avg('rating');
+
+        $rating = $rating ? round($rating, 2) : null;
+
 
         return response()->json([
             'success' => true,
-            'date' => [
+            'data' => [
                 'upcoming_events' => $upComingEvents,
                 'past_orders' => $pastOrders,
                 'unread_messages' => $unreadMessage,
@@ -45,7 +51,8 @@ class UserDashboardController extends Controller
     {
         $userId = $request->user()->id;
 
-        $orders = Order::where('user_id', $userId)
+        $orders = Order::with(['service.user'])
+            ->where('user_id', $userId)
             ->orderBy('event_start_date', 'desc')
             ->take(4)
             ->get();
@@ -53,7 +60,10 @@ class UserDashboardController extends Controller
         $recentOrders = $orders->map(function ($order) {
             return [
                 'event_name' => $order->event_name,
-                'order_by' => "{$order->user->name} {$order->user->last_name}",
+                'order_by' => trim(
+                    ($order->service?->user?->name ?? '') . ' ' .
+                        ($order->service?->user?->last_name ?? '')
+                ),
                 'date' => Carbon::parse($order->event_start_date)->format('M d, Y'),
                 'status' => ucfirst($order->status),
             ];
@@ -71,31 +81,33 @@ class UserDashboardController extends Controller
 
         $completedOrders = Order::where('user_id', $userId)
             ->where('status', 'completed')
-            ->orderBy('event_start_date', 'desc')
-            ->get();
+            ->latest('updated_at')
+            ->first();
 
         $activities = [];
 
-        foreach ($completedOrders as $order) {
+        if ($completedOrders) {
             $activities[] = [
-                'title' => "Completed order #" . $order->id,
-                'time' => Carbon::parse($order->updated_at)->diffForHumans(),
+                'title' => 'Completed order #' . $completedOrders->id,
+                'time'  => Carbon::parse($completedOrders->updated_at)->diffForHumans(),
             ];
         }
 
-        $activities[] = [
-            'title' => "Received 5-star review",
-            'time' => 'response static',
-        ];
+        $review = Review::where('user_id', $userId)
+            ->where('rating', 5)
+            ->latest()
+            ->first();
 
-        $activities[] = [
-            'title' => "Earned Party Pro",
-            'time' => 'response static',
-        ];
+        if ($review) {
+            $activities[] = [
+                'title' => 'Received 5-star review',
+                'time'  => Carbon::parse($review->created_at)->diffForHumans(),
+            ];
+        }
 
         return response()->json([
             'success' => true,
-            'recent_activity' => $activities
+            'recent_activity' => $activities,
         ]);
     }
 
@@ -128,7 +140,7 @@ class UserDashboardController extends Controller
         });
 
         return response()->json([
-            'recent_messages' => $data
+            'recent_messages' => $data,
         ]);
     }
 
@@ -146,8 +158,8 @@ class UserDashboardController extends Controller
 
         $messages = Message::with(['sender', 'receiver'])
             ->whereIn('id', $latestMessages->pluck('last_id'))
-            ->when($search, function ($query) use ($search, $userId) {
-                $query->where(function ($q) use ($search, $userId) {
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->where('message', 'like', "%{$search}%")
                         ->orWhereHas('sender', function ($q2) use ($search) {
                             $q2->where('name', 'like', "%{$search}%")
@@ -187,7 +199,7 @@ class UserDashboardController extends Controller
 
         return response()->json([
             'success' => true,
-            'conversations' => $conversations->values()
+            'conversations' => $conversations->values(),
         ]);
     }
 }

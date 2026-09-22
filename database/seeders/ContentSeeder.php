@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Content;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class ContentSeeder extends Seeder
@@ -20,7 +19,7 @@ class ContentSeeder extends Seeder
             'heading' => 'Welcome',
             'sub_heading' => 'Sub heading',
             'input_placeholder' => 'Email address',
-            'button_text' => 'Submit'
+            'button_text' => 'Submit',
         ];
 
         foreach ($keys as $key => $value) {

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\Review;
 use App\Models\Service;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class ReviewController extends Controller
 {
@@ -13,223 +13,123 @@ class ReviewController extends Controller
     {
         $user = auth()->user();
 
-        if (! $user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated.',
-            ], 401);
-        }
-
         $reviews = Review::with(['user', 'service'])
             ->where('user_id', $user->id)
+            ->latest()
+            ->get();
+
+        return $this->sendResponse($reviews);
+    }
+
+    public function providerReviews()
+    {
+        $providerId = auth()->id();
+
+        $reviews = Review::with(['user', 'service', 'order'])
+            ->whereHas('service', function ($query) use ($providerId) {
+                $query->where('user_id', $providerId);
+            })
             ->latest()
             ->get()
             ->map(function ($review) {
                 return [
                     'id' => $review->id,
-                    'user_name' => $review->user->name ?? null,
-                    'service_title' => $review->service->title ?? null,
+                    'order_id' => $review->order_id,
+                    'service_id' => $review->service_id,
+                    'service_title' => $review->service?->title,
+                    'reviewer_name' => trim("{$review->user?->name} {$review->user?->last_name}"),
                     'rating' => $review->rating,
                     'review' => $review->review,
-                    'status' => $review->status,
+                    'reply' => $review->reply,
+                    'has_replied' => $review->reply !== null,
                     'created_at' => $review->created_at,
                 ];
             });
 
-        return response()->json([
-            'success' => true,
-            'data' => $reviews,
-        ]);
+        return $this->sendResponse($reviews);
     }
 
     public function review($id)
     {
-        $service = Service::with([
-            'reviews' => function ($query) {
-                $query->where('status', 'approved');
-            },
-            'reviews.user',
-        ])->findOrFail($id);
+        $service = Service::with(['reviews.user'])->findOrFail($id);
 
-        $reviews = $service->reviews->map(function ($review) {
-            return [
-                'id' => $review->id,
-                'user_name' => $review->user->name ?? null,
-                'rating' => $review->rating,
-                'review' => $review->review,
-                'created_at' => $review->created_at,
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
+        return $this->sendResponse([
             'service_title' => $service->title,
-            'data' => $reviews,
+            'reviews' => $service->reviews,
         ]);
     }
 
     public function show($id)
     {
-        $user = auth()->user();
-
-        if (! $user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated.',
-            ], 401);
-        }
+        $userId = auth()->id();
 
         $review = Review::with(['user', 'service'])
-            ->where('user_id', $user->id)
             ->where('id', $id)
+            ->where(function ($query) use ($userId) {
+                $query->where('user_id', $userId)
+                    ->orWhereHas('service', function ($serviceQuery) use ($userId) {
+                        $serviceQuery->where('user_id', $userId);
+                    });
+            })
             ->first();
 
         if (! $review) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Review not found.',
-            ], 404);
+            return $this->sendError('Review not found.');
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'id' => $review->id,
-                'user_name' => $review->user->name ?? null,
-                'service_title' => $review->service->title ?? null,
-                'rating' => $review->rating,
-                'review' => $review->review,
-                'status' => $review->status,
-                'created_at' => $review->created_at,
-            ],
-        ]);
+        return $this->sendResponse($review);
     }
 
     public function store(Request $request)
     {
-        $validator = Validator::make(
-            $request->all(),
-            [
-                'service_id' => 'required|exists:services,id',
-                'review' => 'nullable|string',
-            ],
-            [
-                'service_id.required' => 'Service ID is required.',
-                'service_id.exists' => 'Service not found.',
-            ]
-        );
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => $validator->errors()->first(),
-                'errors' => $validator->errors(),
-            ], 422);
-        }
+        $validated = $request->validate([
+            'order_id' => 'required|exists:orders,id',
+            'review' => 'nullable|string',
+            'rating' => 'required|integer|min:1|max:5',
+        ]);
 
         $user = auth()->user();
+        $order = Order::findOrFail($validated['order_id']);
 
-        if (! $user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated.',
-            ], 401);
+        if ((int) $order->user_id !== (int) $user->id) {
+            return $this->sendError('You can only review your own order.', [], 403);
+        }
+
+        if ($order->status !== 'completed') {
+            return $this->sendError('You can only review an order after it is completed.', [], 403);
+        }
+
+        if (Review::where('order_id', $order->id)->exists()) {
+            return $this->sendError('You have already reviewed this order.', [], 409);
         }
 
         $review = Review::create([
             'user_id' => $user->id,
-            'service_id' => $request->service_id,
-            'rating' => 5,
-            'review' => $request->review,
-            'status' => 'pending',
+            'order_id' => $order->id,
+            'service_id' => $order->service_id,
+            'rating' => $validated['rating'],
+            'review' => $validated['review'] ?? null,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Review submitted successfully.',
-            'data' => $review,
-        ], 201);
+        return $this->sendResponse($review, 'Review submitted successfully.', 201);
     }
 
-    public function update(Request $request, $id)
+    public function reply(Request $request, $id)
     {
-        $validator = Validator::make(
-            $request->all(),
-            [
-                'service_id' => 'required|exists:services,id',
-                'review' => 'nullable|string',
-                'rating' => 'nullable|integer|min:1|max:5',
-            ],
-            [
-                'service_id.required' => 'Service ID is required.',
-                'service_id.exists' => 'Service not found.',
-            ]
-        );
+        $validated = $request->validate([
+            'reply' => 'required|string',
+        ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => $validator->errors()->first(),
-                'errors' => $validator->errors(),
-            ], 422);
-        }
+        $review = Review::with('service')->findOrFail($id);
 
-        $user = auth()->user();
-
-        if (! $user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated.',
-            ], 401);
-        }
-
-        $review = Review::where('id', $id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if (! $review) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Review not found.',
-            ], 404);
+        if ((int) $review->service->user_id !== (int) auth()->id()) {
+            return $this->sendError('You are not authorized to reply to this review.', [], 403);
         }
 
         $review->update([
-            'service_id' => $request->service_id,
-            'review' => $request->review,
-            'rating' => $request->rating ?? $review->rating,
+            'reply' => $validated['reply'],
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Review updated successfully.',
-            'data' => $review,
-        ], 200);
-    }
-
-    public function changeStatus(Request $request, $id)
-    {
-        $allowedStatus = ['approved', 'rejected'];
-
-        $status = $request->status;
-
-        if (! in_array($status, $allowedStatus)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid status.',
-            ], 400);
-        }
-
-        $review = Review::findOrFail($id);
-
-        $review->update([
-            'status' => $status,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => "Review {$status} successfully",
-            'data' => $review,
-        ]);
+        return $this->sendResponse($review, 'Review replied successfully.');
     }
 }

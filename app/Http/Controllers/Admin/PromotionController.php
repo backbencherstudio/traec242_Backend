@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Promotion;
+use Illuminate\Http\Request;
 
 class PromotionController extends Controller
 {
-
     public function index()
     {
         $promotions = Promotion::latest()->get();
@@ -16,10 +15,9 @@ class PromotionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Promotion list',
-            'data' => $promotions
+            'data' => $promotions,
         ]);
     }
-
 
     public function store(Request $request)
     {
@@ -44,37 +42,35 @@ class PromotionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Promotion created successfully',
-            'data' => $promotion
+            'data' => $promotion,
         ], 201);
     }
-
 
     public function edit($id)
     {
         $promotion = Promotion::find($id);
 
-        if (!$promotion) {
+        if (! $promotion) {
             return response()->json([
                 'success' => false,
-                'message' => 'Promotion not found'
+                'message' => 'Promotion not found',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $promotion
+            'data' => $promotion,
         ]);
     }
-
 
     public function update(Request $request, $id)
     {
         $promotion = Promotion::find($id);
 
-        if (!$promotion) {
+        if (! $promotion) {
             return response()->json([
                 'success' => false,
-                'message' => 'Promotion not found'
+                'message' => 'Promotion not found',
             ], 404);
         }
 
@@ -99,19 +95,18 @@ class PromotionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Promotion updated successfully',
-            'data' => $promotion
+            'data' => $promotion,
         ]);
     }
-
 
     public function destroy($id)
     {
         $promotion = Promotion::find($id);
 
-        if (!$promotion) {
+        if (! $promotion) {
             return response()->json([
                 'success' => false,
-                'message' => 'Promotion not found'
+                'message' => 'Promotion not found',
             ], 404);
         }
 
@@ -119,10 +114,9 @@ class PromotionController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Promotion deleted successfully'
+            'message' => 'Promotion deleted successfully',
         ]);
     }
-
 
     public function activePromotions()
     {
@@ -142,7 +136,7 @@ class PromotionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Active promotions',
-            'data' => $promotions
+            'data' => $promotions,
         ]);
     }
 }
