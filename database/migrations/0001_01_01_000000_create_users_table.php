@@ -13,13 +13,32 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table): void {
             $table->id();
-            $table->string('name');
+            $table->string('first_name')->nullable();
+            $table->string('last_name')->nullable();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->rememberToken();
-            $table->string('jwt_token', 1000)->nullable();
+            $table->string('phone')->nullable();
+            $table->string('status')->nullable()->comment('0 = Inactive, 1 = Active');
+            $table->string('image')->nullable();
             $table->string('google_id')->nullable();
+            $table->string('address')->nullable();
+            $table->string('city')->nullable();
+            $table->string('state')->nullable();
+            $table->string('zip_code')->nullable();
+            $table->text('bio')->nullable();
+            $table->json('languages')->nullable();
+            $table->json('category_id')->nullable();
+            $table->string('plan_id')->nullable();
+            $table->string('otp')->nullable();
+            $table->string('otp_expires_at')->nullable();
+
+            // Cashier Billable columns
+            $table->string('stripe_id')->nullable()->index();
+            $table->string('pm_type')->nullable();
+            $table->string('pm_last_four', 4)->nullable();
+            $table->timestamp('trial_ends_at')->nullable();
+
             $table->timestamps();
             $table->softDeletes();
         });

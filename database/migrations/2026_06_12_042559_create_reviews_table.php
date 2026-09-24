@@ -16,8 +16,12 @@ return new class extends Migration
             $table->foreignId('user_id')
                 ->constrained()
                 ->onDelete('cascade');
-
             $table->foreignId('service_id')
+                ->constrained()
+                ->onDelete('cascade');
+            $table->foreignId('order_id')
+                ->nullable()
+                ->unique()
                 ->constrained()
                 ->onDelete('cascade');
             $table->float('rating', 2)->default(0);

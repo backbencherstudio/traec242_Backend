@@ -16,6 +16,7 @@ return new class extends Migration
             $table->enum('stripe_mode', ['test', 'live'])->default('test');
             $table->string('stripe_secret_key');
             $table->string('stripe_public_key');
+            $table->string('stripe_webhook_secret')->nullable();
             $table->timestamps();
         });
     }
