@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
-use App\Models\ProviderPayment;
+use App\Http\Resources\UserManagementClientDetailResource;
+use App\Http\Resources\UserManagementClientResource;
+use App\Http\Resources\UserManagementSellerResource;
 use App\Models\User;
-use App\Services\FileUploadService;
 use App\Services\UserManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,8 +14,7 @@ use Illuminate\Http\Request;
 class UserManagementController extends Controller
 {
     public function __construct(
-        protected UserManagementService $userManagementService,
-        protected FileUploadService $fileUploadService
+        protected UserManagementService $userManagementService
     ) {}
 
     public function clients(Request $request): JsonResponse
@@ -27,76 +26,18 @@ class UserManagementController extends Controller
             (int) ($request->per_page ?? 10)
         );
 
-        $data = $users->getCollection()->map(fn ($user): array => [
-            'id' => $user->id,
-            'image_url' => $user->image ? asset($user->image) : null,
-            'name' => trim(($user->name ?? '').' '.($user->last_name ?? '')),
-            'email' => $user->email,
-            'phone' => $user->phone,
-            'address' => trim(
-                ($user->address ?? '').', '.
-                    ($user->city ?? '').', '.
-                    ($user->state ?? '').' '.
-                    ($user->zip_code ?? '')
-            ),
-            'joined' => $user->created_at?->format('m/d/Y'),
-            'total_orders' => (int) ($user->total_orders ?? 0),
-            'total_spent' => '$'.number_format((float) ($user->total_spent ?? 0), 2),
-            'status' => $user->status ? 'Active' : 'Inactive',
-            'is_verified' => (bool) $user->is_verified,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'data' => $data,
-            'pagination' => [
-                'total' => $users->total(),
-                'per_page' => $users->perPage(),
-                'current_page' => $users->currentPage(),
-                'last_page' => $users->lastPage(),
-            ],
-        ]);
+        return $this->sendResponse(UserManagementClientResource::collection($users));
     }
 
     public function showDetails($id, Request $request): JsonResponse
     {
-        $user = User::where('type', 0)->findOrFail($id);
-        $period = $request->period;
+        $user = $this->userManagementService->getClientDetails((int) $id, $request->period);
 
-        $ordersQuery = Order::where('user_id', $user->id);
-        $this->applyPeriodFilter($ordersQuery, $period);
-        $totalOrders = $ordersQuery->count();
+        if (! $user instanceof User) {
+            return $this->sendError('User not found', [], 404);
+        }
 
-        $spentQuery = ProviderPayment::join('orders', 'provider_payments.order_id', '=', 'orders.id')
-            ->where('provider_payments.user_id', $user->id)
-            ->where('orders.status', 'completed')
-            ->where('provider_payments.status', 'successful');
-        $this->applyPeriodFilter($spentQuery, $period, 'provider_payments.created_at');
-        $totalSpent = $spentQuery->sum('provider_payments.amount');
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'id' => $user->id,
-                'name' => trim(($user->name ?? '').' '.($user->last_name ?? '')),
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'image_url' => $user->image ? asset($user->image) : null,
-                'address' => trim(
-                    ($user->address ?? '').', '.
-                        ($user->city ?? '').', '.
-                        ($user->state ?? '').' '.
-                        ($user->zip_code ?? '')
-                ),
-                'status' => $user->status ? 'Active' : 'Inactive',
-                'is_verified' => (bool) $user->is_verified,
-                'joined' => $user->created_at?->format('m/d/Y'),
-                'stats' => [
-                    'total_orders' => $totalOrders,
-                    'total_spent' => '$'.number_format((float) $totalSpent, 2),
-                ],
-            ],
-        ]);
+        return $this->sendResponse(new UserManagementClientDetailResource($user));
     }
 
     public function sellers(Request $request): JsonResponse
@@ -108,34 +49,7 @@ class UserManagementController extends Controller
             (int) ($request->per_page ?? 10)
         );
 
-        $data = $users->getCollection()->map(fn ($user): array => [
-            'id' => $user->id,
-            'image_url' => $user->image ? asset($user->image) : null,
-            'name' => trim(($user->name ?? '').' '.($user->last_name ?? '')),
-            'email' => $user->email,
-            'phone' => $user->phone,
-            'address' => trim(
-                ($user->address ?? '').', '.
-                    ($user->city ?? '').', '.
-                    ($user->state ?? '').' '.
-                    ($user->zip_code ?? '')
-            ),
-            'joined' => $user->created_at?->format('m/d/Y'),
-            'total_products' => (int) ($user->total_services ?? 0),
-            'status' => $user->status ? 'Active' : 'Inactive',
-            'is_verified' => (bool) $user->is_verified,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'data' => $data,
-            'pagination' => [
-                'total' => $users->total(),
-                'per_page' => $users->perPage(),
-                'current_page' => $users->currentPage(),
-                'last_page' => $users->lastPage(),
-            ],
-        ]);
+        return $this->sendResponse(UserManagementSellerResource::collection($users));
     }
 
     public function changeStatus(Request $request, $id): JsonResponse
@@ -144,44 +58,26 @@ class UserManagementController extends Controller
             'status' => 'required|in:0,1',
         ]);
 
-        $user = User::findOrFail($id);
-        $user->status = $request->status;
-        $user->save();
+        $user = $this->userManagementService->updateUserStatus((int) $id, (int) $request->status);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User status updated successfully.',
-            'data' => [
-                'id' => $user->id,
-                'status' => $user->status ? 'Active' : 'Inactive',
-            ],
-        ]);
+        if (! $user instanceof User) {
+            return $this->sendError('User not found', [], 404);
+        }
+
+        return $this->sendResponse([
+            'id' => $user->id,
+            'status' => $user->status ? 'Active' : 'Inactive',
+        ], 'User status updated successfully.');
     }
 
     public function deleteUser($id): JsonResponse
     {
-        $user = User::findOrFail($id);
-        $this->fileUploadService->delete($user->image);
-        $user->delete();
+        $deleted = $this->userManagementService->deleteUser((int) $id);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User deleted successfully.',
-        ]);
-    }
-
-    protected function applyPeriodFilter($query, ?string $period, string $column = 'created_at'): void
-    {
-        if ($period === 'monthly') {
-            $query->whereMonth($column, now()->month)
-                ->whereYear($column, now()->year);
-        } elseif ($period === 'weekly') {
-            $query->whereBetween($column, [
-                now()->startOfWeek(),
-                now()->endOfWeek(),
-            ]);
-        } elseif ($period === 'yearly') {
-            $query->whereYear($column, now()->year);
+        if (! $deleted) {
+            return $this->sendError('User not found', [], 404);
         }
+
+        return $this->sendResponse([], 'User deleted successfully.');
     }
 }

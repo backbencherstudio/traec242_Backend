@@ -3,12 +3,17 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\ProviderPayment;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 
 class UserManagementService
 {
+    public function __construct(
+        protected FileUploadService $fileUploadService
+    ) {}
+
     /**
      * Get paginated clients with optimized order counts and total spent without N+1 queries.
      */
@@ -83,6 +88,66 @@ class UserManagementService
         ]);
 
         return $query->latest()->paginate($perPage);
+    }
+
+    /**
+     * Get single client details with order and spend statistics.
+     */
+    public function getClientDetails(int $id, ?string $period = null): ?User
+    {
+        $user = User::where('type', 0)->find($id);
+
+        if (! $user) {
+            return null;
+        }
+
+        $ordersQuery = Order::where('user_id', $user->id);
+        $this->applyPeriodFilter($ordersQuery, $period);
+        $totalOrders = $ordersQuery->count();
+
+        $spentQuery = ProviderPayment::join('orders', 'provider_payments.order_id', '=', 'orders.id')
+            ->where('provider_payments.user_id', $user->id)
+            ->where('orders.status', 'completed')
+            ->where('provider_payments.status', 'successful');
+        $this->applyPeriodFilter($spentQuery, $period, 'provider_payments.created_at');
+        $totalSpent = (float) $spentQuery->sum('provider_payments.amount');
+
+        $user->total_orders = $totalOrders;
+        $user->total_spent = $totalSpent;
+
+        return $user;
+    }
+
+    /**
+     * Update user status.
+     */
+    public function updateUserStatus(int $id, int $status): ?User
+    {
+        $user = User::find($id);
+        if (! $user) {
+            return null;
+        }
+
+        $user->status = $status;
+        $user->save();
+
+        return $user;
+    }
+
+    /**
+     * Delete user and their associated uploaded image.
+     */
+    public function deleteUser(int $id): bool
+    {
+        $user = User::find($id);
+        if (! $user) {
+            return false;
+        }
+
+        $this->fileUploadService->delete($user->image);
+        $user->delete();
+
+        return true;
     }
 
     /**
