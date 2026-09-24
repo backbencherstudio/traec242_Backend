@@ -20,12 +20,12 @@ class ProviderDirectoryController extends Controller
     {
         $perPage = (int) $request->get('per_page', 10);
 
-        $query = User::where('type', 2)->with(['subscriptions', 'plan']);
+        $query = User::role('provider')->with(['subscriptions', 'plan']);
 
         if ($request->filled('search')) {
             $search = $request->get('search');
             $query->where(function (Builder $qBuilder) use ($search): void {
-                $qBuilder->where('name', 'like', "%{$search}%")
+                $qBuilder->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%");
             });
         }
@@ -51,7 +51,7 @@ class ProviderDirectoryController extends Controller
 
     public function show($id): JsonResponse
     {
-        $provider = User::where('type', 2)
+        $provider = User::role('provider')
             ->with(['subscriptions', 'plan'])
             ->find($id);
 

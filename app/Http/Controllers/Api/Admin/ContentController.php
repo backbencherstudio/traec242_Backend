@@ -27,8 +27,8 @@ class ContentController extends Controller
         $data = [
             'content' => $content,
             'other_data' => [
-                'total_user' => User::where('type', 0)->count(),
-                'total_provider' => User::where('type', 2)->count(),
+                'total_user' => User::role('user')->count(),
+                'total_provider' => User::role('provider')->count(),
                 'avg_rating' => $avgRating ? round((float) $avgRating, 1) : 5.0,
             ],
         ];

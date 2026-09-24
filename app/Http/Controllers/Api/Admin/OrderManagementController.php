@@ -21,7 +21,7 @@ class OrderManagementController extends Controller
         $period = $request->query('period');
         $perPage = (int) $request->query('per_page', 10);
 
-        $query = User::where('type', 0);
+        $query = User::role('user');
 
         $this->applyPeriodFilter($query, $period);
 
@@ -49,7 +49,7 @@ class OrderManagementController extends Controller
 
         if ($search) {
             $query->where(function (Builder $q) use ($search): void {
-                $q->where('name', 'like', "%{$search}%")
+                $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
             });
@@ -92,7 +92,7 @@ class OrderManagementController extends Controller
     {
         $period = $request->query('period');
 
-        $user = User::where('type', 0)->find($id);
+        $user = User::role('user')->find($id);
 
         if (! $user) {
             return $this->sendError('Customer not found or not available.', [], 404);

@@ -23,11 +23,11 @@ class UserManagementService
         ?string $period = null,
         int $perPage = 10
     ): LengthAwarePaginator {
-        $query = User::where('type', 0);
+        $query = User::role('user');
 
         if ($search) {
             $query->where(function (Builder $q) use ($search): void {
-                $q->where('name', 'like', "%{$search}%")
+                $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
             });
@@ -65,11 +65,11 @@ class UserManagementService
         ?string $period = null,
         int $perPage = 10
     ): LengthAwarePaginator {
-        $query = User::where('type', 2);
+        $query = User::role('provider');
 
         if ($search) {
             $query->where(function (Builder $q) use ($search): void {
-                $q->where('name', 'like', "%{$search}%")
+                $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
             });
@@ -95,7 +95,7 @@ class UserManagementService
      */
     public function getClientDetails(int $id, ?string $period = null): ?User
     {
-        $user = User::where('type', 0)->find($id);
+        $user = User::role('user')->find($id);
 
         if (! $user) {
             return null;

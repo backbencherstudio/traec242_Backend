@@ -15,12 +15,12 @@ class SubscriptionManagementService
      */
     public function getProviders(?string $search = null, ?string $status = null, int $perPage = 10): LengthAwarePaginator
     {
-        $query = User::where('type', '2')
+        $query = User::role('provider')
             ->with(['subscriptions', 'plan']);
 
         if ($search) {
             $query->where(function (Builder $q) use ($search): void {
-                $q->where('name', 'like', "%{$search}%")
+                $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
             });
@@ -38,7 +38,7 @@ class SubscriptionManagementService
      */
     public function findProvider(int $providerId): ?User
     {
-        return User::where('type', '2')
+        return User::role('provider')
             ->with(['subscriptions', 'plan'])
             ->find($providerId);
     }
@@ -169,7 +169,7 @@ class SubscriptionManagementService
     public function getAllSubscriptions(?string $status = null): Collection
     {
         $query = Subscription::with('user.plan')
-            ->whereHas('user', fn (Builder $q) => $q->where('type', '2'));
+            ->whereHas('user', fn (Builder $q) => $q->role('provider'));
 
         if ($status) {
             $query->where('stripe_status', $status);

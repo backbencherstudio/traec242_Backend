@@ -125,11 +125,11 @@ class DashboardService
                 $query->where(function ($q) use ($search): void {
                     $q->where('message', 'like', "%{$search}%")
                         ->orWhereHas('sender', function ($q2) use ($search): void {
-                            $q2->where('name', 'like', "%{$search}%")
+                            $q2->where('first_name', 'like', "%{$search}%")
                                 ->orWhere('last_name', 'like', "%{$search}%");
                         })
                         ->orWhereHas('receiver', function ($q3) use ($search): void {
-                            $q3->where('name', 'like', "%{$search}%")
+                            $q3->where('first_name', 'like', "%{$search}%")
                                 ->orWhere('last_name', 'like', "%{$search}%");
                         });
                 });
@@ -157,7 +157,7 @@ class DashboardService
      */
     public function getAdminMetrics(string $filter = 'yearly'): array
     {
-        $totalUser = User::whereIn('type', [0, 2])->count();
+        $totalUser = User::role(['user', 'provider'])->count();
 
         $totalRevenue = ProviderPayment::where('status', 'successful')
             ->whereHas('order', fn ($q) => $q->where('status', 'completed'))
