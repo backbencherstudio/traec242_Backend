@@ -19,7 +19,7 @@ use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
-#[Group('public-auth', weight: 1)]
+#[Group('Authentication', weight: 1)]
 class AuthController extends Controller
 {
     public function __construct(
@@ -187,7 +187,6 @@ class AuthController extends Controller
     /**
      * Get authenticated user profile.
      */
-    #[Group('user-auth', weight: 2)]
     public function me(): JsonResponse
     {
         /** @var User $user */
@@ -202,7 +201,6 @@ class AuthController extends Controller
     /**
      * Log out current user and invalidate JWT token.
      */
-    #[Group('user-auth', weight: 2)]
     public function logout(): JsonResponse
     {
         try {
@@ -230,7 +228,6 @@ class AuthController extends Controller
     /**
      * Change authenticated user's password.
      */
-    #[Group('user-auth', weight: 2)]
     public function passwordchange(PasswordChangeRequest $request): JsonResponse
     {
         /** @var User $user */

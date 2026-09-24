@@ -11,7 +11,7 @@ use App\Services\OtpService;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 
-#[Group('public-auth', weight: 1)]
+#[Group('Authentication', weight: 1)]
 class VerifyRegistrationOtpController extends Controller
 {
     public function __construct(
