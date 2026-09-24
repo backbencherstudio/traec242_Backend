@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Events;
 
 use Illuminate\Broadcasting\InteractsWithSockets;
@@ -12,12 +14,7 @@ class TestEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $message;
-
-    public function __construct($message)
-    {
-        $this->message = $message;
-    }
+    public function __construct(public $message) {}
 
     // public function broadcastOn()
     // {
@@ -29,7 +26,7 @@ class TestEvent implements ShouldBroadcast
         return new PrivateChannel('test-channel');
     }
 
-    public function broadcastAs()
+    public function broadcastAs(): string
     {
         return 'test-event';
     }

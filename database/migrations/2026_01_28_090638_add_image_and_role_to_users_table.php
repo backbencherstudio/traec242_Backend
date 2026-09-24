@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table): void {
             $table->string('image')->nullable()->after('password');
             $table->tinyInteger('type')->default(0)->comment('0 = User, 1 = Admin, 2 = Provider')->after('image');
             $table->string('phone')->nullable()->after('type');
@@ -37,7 +37,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table): void {
             $table->dropColumn([
                 'image',
                 'type',

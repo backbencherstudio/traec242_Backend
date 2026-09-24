@@ -59,7 +59,7 @@ class AuthController extends Controller
                 'requires_verification' => true,
                 'email' => $request->email,
             ], 403);
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             return response()->json(['error' => 'Invalid credentials'], 401);
         }
     }
@@ -203,7 +203,7 @@ class AuthController extends Controller
         if ($user && $user->jwt_token) {
             try {
                 JWTAuth::setToken($user->jwt_token)->invalidate();
-            } catch (\Throwable $e) {
+            } catch (\Throwable) {
             }
             $user->update(['jwt_token' => null]);
         }
@@ -262,7 +262,7 @@ class AuthController extends Controller
                 'success' => false,
                 'message' => $e->getMessage(),
             ], 429);
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to send OTP email',

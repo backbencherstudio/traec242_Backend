@@ -12,14 +12,10 @@ class MessageSent implements ShouldBroadcast
 {
     use InteractsWithSockets, SerializesModels;
 
-    public $message;
-
-    public function __construct($message)
+    public function __construct(public $message)
     {
-        $this->message = $message;
-
         Log::info('MessageSent Event Payload', [
-            'message' => $message->toArray(),
+            'message' => $this->message->toArray(),
         ]);
     }
 

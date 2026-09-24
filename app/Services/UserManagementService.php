@@ -21,7 +21,7 @@ class UserManagementService
         $query = User::where('type', 0);
 
         if ($search) {
-            $query->where(function (Builder $q) use ($search) {
+            $query->where(function (Builder $q) use ($search): void {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
@@ -35,13 +35,13 @@ class UserManagementService
         $this->applyPeriodFilter($query, $period);
 
         $query->withCount([
-            'orders as total_orders' => function (Builder $q) use ($period) {
+            'orders as total_orders' => function (Builder $q) use ($period): void {
                 $this->applyPeriodFilter($q, $period);
             },
         ]);
 
         $query->withSum([
-            'providerPayments as total_spent' => function (Builder $q) use ($period) {
+            'providerPayments as total_spent' => function (Builder $q) use ($period): void {
                 $q->where('status', 'successful')
                     ->whereHas('order', fn (Builder $oq) => $oq->where('status', 'completed'));
                 $this->applyPeriodFilter($q, $period);
@@ -63,7 +63,7 @@ class UserManagementService
         $query = User::where('type', 2);
 
         if ($search) {
-            $query->where(function (Builder $q) use ($search) {
+            $query->where(function (Builder $q) use ($search): void {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
@@ -77,7 +77,7 @@ class UserManagementService
         $this->applyPeriodFilter($query, $period);
 
         $query->withCount([
-            'services as total_services' => function (Builder $q) {
+            'services as total_services' => function (Builder $q): void {
                 $q->where('status', 1);
             },
         ]);

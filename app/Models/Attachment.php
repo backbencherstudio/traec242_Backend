@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +15,7 @@ class Attachment extends Model
         return $this->belongsTo(Message::class);
     }
 
-    public function getFileUrlAttribute()
+    public function getFileUrlAttribute(): string
     {
         return asset('storage/'.$this->file_path);
     }

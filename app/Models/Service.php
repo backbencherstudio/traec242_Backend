@@ -47,7 +47,7 @@ class Service extends Model
 
     public function getImageUrlAttribute()
     {
-        return collect($this->image)->map(fn ($img) => asset('storage/'.$img));
+        return collect($this->image)->map(fn ($img): string => asset('storage/'.$img));
     }
 
     public function reviews()

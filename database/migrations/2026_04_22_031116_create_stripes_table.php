@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('stripes', function (Blueprint $table) {
+        Schema::create('stripes', function (Blueprint $table): void {
             $table->id();
             $table->enum('stripe_mode', ['test', 'live'])->default('test');
             $table->string('stripe_secret_key');

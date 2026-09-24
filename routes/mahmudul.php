@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\ContentController;
 use App\Http\Controllers\Api\Admin\PlanController;
@@ -19,8 +21,8 @@ Route::get('services/{id}', [AllServiceController::class, 'show']);
 Route::get('plans', [PlanController::class, 'index']);
 Route::get('categories', [CategoryController::class, 'index']);
 
-Route::prefix('admin')->group(function () {
-    Route::prefix('content')->group(function () {
+Route::prefix('admin')->group(function (): void {
+    Route::prefix('content')->group(function (): void {
         Route::get('home_index', [ContentController::class, 'home_index']);
         Route::post('home_update', [ContentController::class, 'home_update']);
 
@@ -33,7 +35,7 @@ Route::prefix('admin')->group(function () {
     });
 });
 
-Route::middleware('auth:api')->group(function () {
+Route::middleware('auth:api')->group(function (): void {
     Route::get('provider/services', [ServiceController::class, 'index']);
     Route::get('provider/services/{id}', [ServiceController::class, 'show']);
     Route::post('provider/services/store', [ServiceController::class, 'store']);

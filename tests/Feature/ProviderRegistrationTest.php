@@ -311,6 +311,6 @@ class ProviderRegistrationTest extends TestCase
             ) {}
         };
 
-        $this->app->bind(StripeClient::class, fn () => $stripeClient);
+        $this->app->bind(StripeClient::class, fn (): object => $stripeClient);
     }
 }

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('privacy_policies', function (Blueprint $table) {
+        Schema::create('privacy_policies', function (Blueprint $table): void {
             $table->id();
             $table->string('title');
             $table->longText('description');

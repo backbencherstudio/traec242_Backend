@@ -30,7 +30,7 @@ class ReviewController extends Controller
         $providerId = auth()->id();
 
         $reviews = Review::with(['user', 'service', 'order'])
-            ->whereHas('service', function ($query) use ($providerId) {
+            ->whereHas('service', function ($query) use ($providerId): void {
                 $query->where('user_id', $providerId);
             })
             ->latest()
@@ -55,9 +55,9 @@ class ReviewController extends Controller
 
         $review = Review::with(['user', 'service'])
             ->where('id', $id)
-            ->where(function ($query) use ($userId) {
+            ->where(function ($query) use ($userId): void {
                 $query->where('user_id', $userId)
-                    ->orWhereHas('service', function ($serviceQuery) use ($userId) {
+                    ->orWhereHas('service', function ($serviceQuery) use ($userId): void {
                         $serviceQuery->where('user_id', $userId);
                     });
             })

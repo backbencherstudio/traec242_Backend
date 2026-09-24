@@ -71,7 +71,7 @@ class OrderService
             $adminCommission,
             $providerAmount,
             $providerStripe
-        ) {
+        ): array {
             $order = Order::create([
                 'service_id' => $service->id,
                 'service_pricing_id' => $pricing->id,

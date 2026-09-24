@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('stripes', function (Blueprint $table) {
+        Schema::table('stripes', function (Blueprint $table): void {
             $table->string('stripe_webhook_secret')->nullable()->after('stripe_public_key');
         });
     }
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('stripes', function (Blueprint $table) {
+        Schema::table('stripes', function (Blueprint $table): void {
             $table->dropColumn('stripe_webhook_secret');
         });
     }

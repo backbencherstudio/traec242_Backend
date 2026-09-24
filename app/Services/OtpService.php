@@ -36,7 +36,7 @@ class OtpService
             RateLimiter::hit($key, 60);
 
             return true;
-        } catch (\Throwable $exception) {
+        } catch (\Throwable) {
             return false;
         }
     }

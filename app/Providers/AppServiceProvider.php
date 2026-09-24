@@ -25,9 +25,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // 1. Super Admin Gate Bypass
         // This allows Super Admins to bypass all permission checks
-        Gate::before(function ($user, $ability) {
-            return $user->hasRole('Super Admin') ? true : null;
-        });
+        Gate::before(fn ($user, $ability) => $user->hasRole('Super Admin') ? true : null);
 
         try {
             if (Schema::hasTable('settings')) {
@@ -61,7 +59,7 @@ class AppServiceProvider extends ServiceProvider
                     ]);
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             //
         }
 

@@ -38,16 +38,14 @@ class UserResource extends JsonResource
                 ? Category::whereIn('id', $this->category_id ?? [])->get(['id', 'name', 'image'])
                 : null,
             'plan_id' => $this->plan_id,
-            'plan' => $this->whenLoaded('plan', function () {
-                return [
-                    'id' => $this->plan?->id,
-                    'name' => $this->plan?->name,
-                    'title' => $this->plan?->title,
-                    'price' => $this->plan?->price,
-                    'currency' => $this->plan?->currency,
-                    'package' => $this->plan?->package,
-                ];
-            }),
+            'plan' => $this->whenLoaded('plan', fn () => [
+                'id' => $this->plan?->id,
+                'name' => $this->plan?->name,
+                'title' => $this->plan?->title,
+                'price' => $this->plan?->price,
+                'currency' => $this->plan?->currency,
+                'package' => $this->plan?->package,
+            ]),
             'provider_subscription' => $this->type === 2
                 ? $this->providerSubscriptionPayload()
                 : null,

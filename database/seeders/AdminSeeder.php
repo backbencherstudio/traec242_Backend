@@ -9,7 +9,7 @@ use Spatie\Permission\Models\Role;
 
 class AdminSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
 
         $superAdminRole = Role::updateOrCreate(

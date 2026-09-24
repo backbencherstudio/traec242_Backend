@@ -20,7 +20,7 @@ class FaqCategoryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Faq_Category fetched Successfull!',
+            'message' => 'Faq Category fetched Successfull!',
             'data' => FaqCategoryResource::collection($categories),
         ], 200);
     }
@@ -36,7 +36,7 @@ class FaqCategoryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Faq_Category Created Successfull!',
+            'message' => 'Faq Category Created Successfull!',
             'data' => new FaqCategoryResource($category),
         ], 201);
     }
@@ -81,6 +81,6 @@ class FaqCategoryController extends Controller
 
         $category->delete();
 
-        return response()->json(['success' => true, 'message' => 'Faq_Category Deleted Successfull!']);
+        return response()->json(['success' => true, 'message' => 'Faq Category Deleted Successfull!']);
     }
 }

@@ -33,17 +33,15 @@ class UserDashboardController extends Controller
         $userId = (int) $request->user()->id;
         $orders = $this->dashboardService->getUserRecentOrders($userId);
 
-        $recentOrders = $orders->map(function ($order) {
-            return [
-                'event_name' => $order->event_name,
-                'order_by' => trim(
-                    ($order->service?->user?->name ?? '').' '.
-                    ($order->service?->user?->last_name ?? '')
-                ),
-                'date' => Carbon::parse($order->event_start_date)->format('M d, Y'),
-                'status' => ucfirst($order->status),
-            ];
-        });
+        $recentOrders = $orders->map(fn ($order) => [
+            'event_name' => $order->event_name,
+            'order_by' => trim(
+                ($order->service?->user?->name ?? '').' '.
+                ($order->service?->user?->last_name ?? '')
+            ),
+            'date' => Carbon::parse($order->event_start_date)->format('M d, Y'),
+            'status' => ucfirst($order->status),
+        ]);
 
         return response()->json([
             'success' => true,
@@ -66,7 +64,7 @@ class UserDashboardController extends Controller
     {
         $userId = (int) $request->user()->id;
 
-        $messages = Message::where(function ($query) use ($userId) {
+        $messages = Message::where(function ($query) use ($userId): void {
             $query->where('sender_id', $userId)
                 ->orWhere('receiver_id', $userId);
         })
@@ -76,7 +74,7 @@ class UserDashboardController extends Controller
             ->unique('conversation_id')
             ->take(4);
 
-        $data = $messages->map(function ($message) use ($userId) {
+        $data = $messages->map(function ($message) use ($userId): array {
             $otherUser = (int) $message->sender_id === $userId
                 ? $message->receiver
                 : $message->sender;
@@ -99,7 +97,7 @@ class UserDashboardController extends Controller
         $search = $request->input('search');
 
         $latestMessages = Message::select('conversation_id', DB::raw('MAX(id) as last_id'))
-            ->where(function ($q) use ($userId) {
+            ->where(function ($q) use ($userId): void {
                 $q->where('sender_id', $userId)
                     ->orWhere('receiver_id', $userId);
             })
@@ -107,14 +105,14 @@ class UserDashboardController extends Controller
 
         $messages = Message::with(['sender', 'receiver'])
             ->whereIn('id', $latestMessages->pluck('last_id'))
-            ->when($search, function ($query) use ($search) {
-                $query->where(function ($q) use ($search) {
+            ->when($search, function ($query) use ($search): void {
+                $query->where(function ($q) use ($search): void {
                     $q->where('message', 'like', "%{$search}%")
-                        ->orWhereHas('sender', function ($q2) use ($search) {
+                        ->orWhereHas('sender', function ($q2) use ($search): void {
                             $q2->where('name', 'like', "%{$search}%")
                                 ->orWhere('last_name', 'like', "%{$search}%");
                         })
-                        ->orWhereHas('receiver', function ($q3) use ($search) {
+                        ->orWhereHas('receiver', function ($q3) use ($search): void {
                             $q3->where('name', 'like', "%{$search}%")
                                 ->orWhere('last_name', 'like', "%{$search}%");
                         });
@@ -129,7 +127,7 @@ class UserDashboardController extends Controller
             ->groupBy('conversation_id')
             ->pluck('total', 'conversation_id');
 
-        $conversations = $messages->map(function ($message) use ($userId, $unreadCounts) {
+        $conversations = $messages->map(function ($message) use ($userId, $unreadCounts): array {
             $otherUser = (int) $message->sender_id === $userId
                 ? $message->receiver
                 : $message->sender;

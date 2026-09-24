@@ -23,32 +23,32 @@ class OrderManagementController extends Controller
 
         $query = User::where('type', 0);
 
-        self::applyPeriodFilter($query, $period);
+        $this->applyPeriodFilter($query, $period);
 
         $query->withCount([
-            'orders as total_order' => function (Builder $q) use ($period) {
-                self::applyPeriodFilter($q, $period);
+            'orders as total_order' => function (Builder $q) use ($period): void {
+                $this->applyPeriodFilter($q, $period);
             },
-            'orders as complete_order' => function (Builder $q) use ($period) {
+            'orders as complete_order' => function (Builder $q) use ($period): void {
                 $q->where('status', 'completed');
-                self::applyPeriodFilter($q, $period);
+                $this->applyPeriodFilter($q, $period);
             },
-            'orders as pending_order' => function (Builder $q) use ($period) {
+            'orders as pending_order' => function (Builder $q) use ($period): void {
                 $q->whereIn('status', ['pending', 'confirmed']);
-                self::applyPeriodFilter($q, $period);
+                $this->applyPeriodFilter($q, $period);
             },
         ]);
 
         $query->withSum([
-            'providerPayments as total_spent' => function (Builder $q) use ($period) {
+            'providerPayments as total_spent' => function (Builder $q) use ($period): void {
                 $q->where('provider_payments.status', 'successful')
                     ->whereHas('order', fn (Builder $oq) => $oq->where('status', 'completed'));
-                self::applyPeriodFilter($q, $period, 'provider_payments.created_at');
+                $this->applyPeriodFilter($q, $period, 'provider_payments.created_at');
             },
         ], 'amount');
 
         if ($search) {
-            $query->where(function (Builder $q) use ($search) {
+            $query->where(function (Builder $q) use ($search): void {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
@@ -62,7 +62,7 @@ class OrderManagementController extends Controller
         $users = $query->paginate($perPage);
 
         $orderQuery = Order::query();
-        self::applyPeriodFilter($orderQuery, $period);
+        $this->applyPeriodFilter($orderQuery, $period);
 
         $summary = [
             'total_orders' => (clone $orderQuery)->count(),
@@ -99,7 +99,7 @@ class OrderManagementController extends Controller
         }
 
         $ordersQuery = Order::where('user_id', $user->id);
-        self::applyPeriodFilter($ordersQuery, $period);
+        $this->applyPeriodFilter($ordersQuery, $period);
 
         $user->total_orders = (clone $ordersQuery)->count();
         $user->completed_orders = (clone $ordersQuery)->where('status', 'completed')->count();
@@ -108,14 +108,14 @@ class OrderManagementController extends Controller
         $paymentQuery = ProviderPayment::where('user_id', $user->id)
             ->where('status', 'successful')
             ->whereHas('order', fn (Builder $q) => $q->where('status', 'completed'));
-        self::applyPeriodFilter($paymentQuery, $period, 'created_at');
+        $this->applyPeriodFilter($paymentQuery, $period, 'created_at');
 
         $user->total_spent = (clone $paymentQuery)->sum('amount');
 
         return $this->sendResponse(OrderManagementCustomerDetailResource::make($user));
     }
 
-    private static function applyPeriodFilter(Builder $query, ?string $period, string $column = 'created_at'): Builder
+    private function applyPeriodFilter(Builder $query, ?string $period, string $column = 'created_at'): Builder
     {
         if ($period === 'monthly') {
             $query->whereMonth($column, now()->month)

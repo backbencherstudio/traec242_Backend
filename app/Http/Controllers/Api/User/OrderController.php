@@ -15,6 +15,7 @@ use App\Services\OrderService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Stripe\Checkout\Session;
 use Stripe\Exception\CardException;
@@ -39,7 +40,7 @@ class OrderController extends Controller
         if ((int) $user->type === 0) {
             $query->where('user_id', $user->id);
         } elseif ((int) $user->type === 2) {
-            $query->whereHas('service', function ($q) use ($user) {
+            $query->whereHas('service', function ($q) use ($user): void {
                 $q->where('user_id', $user->id);
             });
         }
@@ -117,7 +118,7 @@ class OrderController extends Controller
                 'order_id' => $result['order']->id,
                 'payment_status' => $result['payment_intent']?->status,
             ], 402);
-        } catch (\DomainException $e) {
+        } catch (\DomainException) {
             return response()->json([
                 'status' => false,
                 'error' => 'Stripe key not found',
@@ -262,7 +263,7 @@ class OrderController extends Controller
     /**
      * Download order invoice PDF.
      */
-    public function generateInvoice($orderId)
+    public function generateInvoice($orderId): Response
     {
         $order = Order::with(['service', 'pricing', 'user'])->findOrFail($orderId);
 

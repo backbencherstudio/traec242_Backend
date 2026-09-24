@@ -24,15 +24,13 @@ class MessageResource extends JsonResource
             'message' => $this->message,
             'type' => $this->type,
             'read_at' => $this->read_at,
-            'attachments' => $this->attachments ? $this->attachments->map(function ($file) {
-                return [
-                    'id' => $file->id,
-                    'file_name' => $file->file_name,
-                    'file_type' => $file->file_type,
-                    'file_size' => $file->file_size,
-                    'file_url' => $file->file_path ? asset('storage/'.$file->file_path) : null,
-                ];
-            }) : [],
+            'attachments' => $this->attachments ? $this->attachments->map(fn ($file) => [
+                'id' => $file->id,
+                'file_name' => $file->file_name,
+                'file_type' => $file->file_type,
+                'file_size' => $file->file_size,
+                'file_url' => $file->file_path ? asset('storage/'.$file->file_path) : null,
+            ]) : [],
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
         ];
     }

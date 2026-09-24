@@ -131,7 +131,7 @@ class ProviderRegisterController extends Controller
         ?string $paymentIntentClientSecret = null,
         ?string $paymentStatus = null
     ): JsonResponse {
-        if (! $user) {
+        if (! $user instanceof User) {
             return $this->sendError('Registration failed', [], 500);
         }
 
@@ -143,6 +143,6 @@ class ProviderRegisterController extends Controller
             'token' => $token,
             'payment_intent_client_secret' => $paymentIntentClientSecret,
             'payment_status' => $paymentStatus,
-        ], fn ($value) => ! is_null($value)), 'Provider registered successfully', 201);
+        ], fn ($value): bool => ! is_null($value)), 'Provider registered successfully', 201);
     }
 }

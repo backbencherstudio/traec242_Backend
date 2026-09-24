@@ -38,7 +38,7 @@ class ProviderRegisterRequest extends FormRequest
             'plan_id' => [
                 'required',
                 'integer',
-                Rule::exists('plans', 'id')->where(function ($query) {
+                Rule::exists('plans', 'id')->where(function ($query): void {
                     $query
                         ->where('status', true)
                         ->where('package', 'monthly')

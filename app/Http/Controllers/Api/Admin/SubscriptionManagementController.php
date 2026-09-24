@@ -25,7 +25,7 @@ class SubscriptionManagementController extends Controller
             ->with(['subscriptions', 'plan']);
 
         if ($search) {
-            $query->where(function ($q) use ($search) {
+            $query->where(function ($q) use ($search): void {
                 $q->where('name', 'like', "%$search%")
                     ->orWhere('last_name', 'like', "%$search%")
                     ->orWhere('email', 'like', "%$search%");
@@ -67,7 +67,7 @@ class SubscriptionManagementController extends Controller
 
         $subscription = $provider->subscription('provider');
 
-        if (! $subscription || ! $subscription->valid()) {
+        if (! $subscription instanceof Subscription || ! $subscription->valid()) {
             return $this->sendError('No active subscription found', [], 422);
         }
 
@@ -95,7 +95,7 @@ class SubscriptionManagementController extends Controller
 
         $subscription = $provider->subscription('provider');
 
-        if (! $subscription || ! $subscription->valid()) {
+        if (! $subscription instanceof Subscription || ! $subscription->valid()) {
             return $this->sendError('No active subscription found', [], 422);
         }
 
@@ -119,7 +119,7 @@ class SubscriptionManagementController extends Controller
 
         $subscription = $provider->subscription('provider');
 
-        if (! $subscription || ! $subscription->active()) {
+        if (! $subscription instanceof Subscription || ! $subscription->active()) {
             return $this->sendError('No active subscription to pause', [], 422);
         }
 
@@ -151,7 +151,7 @@ class SubscriptionManagementController extends Controller
 
         $subscription = $provider->subscription('provider');
 
-        if (! $subscription) {
+        if (! $subscription instanceof Subscription) {
             return $this->sendError('No subscription found', [], 422);
         }
 
@@ -196,7 +196,7 @@ class SubscriptionManagementController extends Controller
 
         $subscriptions = $query->latest()->get();
 
-        $data = $subscriptions->map(fn (Subscription $sub) => $this->formatSubscription($sub));
+        $data = $subscriptions->map(fn (Subscription $sub): array => $this->formatSubscription($sub));
 
         return $this->sendResponse($data);
     }

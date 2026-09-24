@@ -35,7 +35,7 @@ class ServiceController extends Controller
     public function store(StoreServiceRequest $request): JsonResponse
     {
         try {
-            return DB::transaction(function () use ($request) {
+            return DB::transaction(function () use ($request): JsonResponse {
                 $imagePaths = [];
 
                 if ($request->hasFile('images')) {
@@ -61,7 +61,7 @@ class ServiceController extends Controller
                     $service->faqs()->create($faqData);
                 }
 
-                Subscriber::chunk(50, function ($subscribers) use ($service) {
+                Subscriber::chunk(50, function ($subscribers) use ($service): void {
                     foreach ($subscribers as $subscriber) {
                         Mail::to($subscriber->email)
                             ->queue(new NewServiceMail($service));
@@ -85,7 +85,7 @@ class ServiceController extends Controller
         }
 
         try {
-            return DB::transaction(function () use ($request, $service) {
+            return DB::transaction(function () use ($request, $service): JsonResponse {
                 $data = $request->only([
                     'title',
                     'category_id',

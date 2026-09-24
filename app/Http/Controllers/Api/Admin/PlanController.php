@@ -32,11 +32,11 @@ class PlanController extends Controller
         $data = $request->validated();
 
         $data['day'] = $this->daysMap[$data['package']] ?? 0;
-        $data['title'] = $data['title'] ?? $data['name'].' Plan';
-        $data['currency'] = $data['currency'] ?? 'USD';
-        $data['features'] = $data['features'] ?? [];
-        $data['stripe_product_id'] = $data['stripe_product_id'] ?? null;
-        $data['stripe_price_id'] = $data['stripe_price_id'] ?? null;
+        $data['title'] ??= $data['name'].' Plan';
+        $data['currency'] ??= 'USD';
+        $data['features'] ??= [];
+        $data['stripe_product_id'] ??= null;
+        $data['stripe_price_id'] ??= null;
         $data['status'] = 1;
 
         $plan = Plan::create($data);

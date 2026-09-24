@@ -27,16 +27,16 @@ class ProviderSubscriptionResource extends JsonResource
             'ends_at' => $subscription?->ends_at?->format('m/d/Y'),
             'trial_ends_at' => $this->trial_ends_at?->format('m/d/Y'),
             'on_grace_period' => $subscription?->onGracePeriod() ?? false,
-            'is_paused' => $subscription ? $this->isPaused($subscription) : false,
+            'is_paused' => $subscription && $this->isPaused($subscription),
             'is_canceled' => $subscription?->canceled() ?? false,
             'subscription_history' => $this->subscriptions
                 ->sortByDesc('created_at')
                 ->values()
-                ->map(fn (Subscription $s) => $this->formatSubscription($s)),
+                ->map(fn (Subscription $s): array => $this->formatSubscription($s)),
             'all_subscriptions' => $this->subscriptions
                 ->sortByDesc('created_at')
                 ->values()
-                ->map(fn (Subscription $s) => $this->formatSubscription($s)),
+                ->map(fn (Subscription $s): array => $this->formatSubscription($s)),
         ];
     }
 
@@ -47,7 +47,7 @@ class ProviderSubscriptionResource extends JsonResource
 
     private function resolveStatus(?Subscription $subscription): string
     {
-        if (! $subscription) {
+        if (! $subscription instanceof Subscription) {
             return 'none';
         }
 

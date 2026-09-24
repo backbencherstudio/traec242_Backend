@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
@@ -10,11 +12,9 @@ class TestMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $data;
-
-    public function __construct($data)
+    public function __construct(public $data)
     {
-        $this->data = $data; // optional dynamic content
+        // optional dynamic content
     }
 
     public function build()

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('registration_otps', function (Blueprint $table) {
+        Schema::create('registration_otps', function (Blueprint $table): void {
             $table->id();
             $table->string('email')->unique();
             $table->unsignedBigInteger('user_id')->nullable();

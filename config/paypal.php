@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * PayPal Setting & API Credentials
  * Created by Raza Mehdi <srmk@outlook.com>.
  */
-
 return [
     'mode' => env('PAYPAL_MODE', 'sandbox'), // Can only be 'sandbox' Or 'live'. If empty or invalid, 'live' will be used.
     'sandbox' => [

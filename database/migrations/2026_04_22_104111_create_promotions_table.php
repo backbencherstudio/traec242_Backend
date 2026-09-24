@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('promotions', function (Blueprint $table) {
+        Schema::create('promotions', function (Blueprint $table): void {
             $table->id();
             $table->string('name')->nullable();
             $table->decimal('discount', 8, 2)->default(0);

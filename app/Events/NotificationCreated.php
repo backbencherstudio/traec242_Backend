@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Events;
 
 use Illuminate\Broadcasting\PrivateChannel;
@@ -7,6 +9,9 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
 class NotificationCreated implements ShouldBroadcast
 {
+    /**
+     * @var mixed[]
+     */
     public $notification;
 
     public function __construct(array $notification)

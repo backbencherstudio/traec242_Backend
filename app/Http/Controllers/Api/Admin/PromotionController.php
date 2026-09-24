@@ -25,7 +25,7 @@ class PromotionController extends Controller
     public function store(StorePromotionRequest $request): JsonResponse
     {
         $data = $request->validated();
-        $data['status'] = $data['status'] ?? 1;
+        $data['status'] ??= 1;
 
         $promotion = Promotion::create($data);
 
@@ -94,11 +94,11 @@ class PromotionController extends Controller
         $today = now()->toDateString();
 
         $promotions = Promotion::where('status', 1)
-            ->where(function ($query) use ($today) {
+            ->where(function ($query) use ($today): void {
                 $query->whereNull('start_date')
                     ->orWhere('start_date', '<=', $today);
             })
-            ->where(function ($query) use ($today) {
+            ->where(function ($query) use ($today): void {
                 $query->whereNull('end_date')
                     ->orWhere('end_date', '>=', $today);
             })

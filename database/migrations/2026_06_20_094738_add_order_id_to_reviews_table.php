@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('reviews', function (Blueprint $table) {
+        Schema::table('reviews', function (Blueprint $table): void {
             $table->foreignId('order_id')
                 ->nullable()
                 ->after('service_id')
@@ -27,7 +27,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('reviews', function (Blueprint $table) {
+        Schema::table('reviews', function (Blueprint $table): void {
             $table->dropUnique(['order_id']);
             $table->dropForeign(['order_id']);
             $table->dropColumn('order_id');

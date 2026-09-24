@@ -27,26 +27,24 @@ class UserManagementController extends Controller
             (int) ($request->per_page ?? 10)
         );
 
-        $data = $users->getCollection()->map(function ($user) {
-            return [
-                'id' => $user->id,
-                'image_url' => $user->image ? asset($user->image) : null,
-                'name' => trim(($user->name ?? '').' '.($user->last_name ?? '')),
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'address' => trim(
-                    ($user->address ?? '').', '.
-                        ($user->city ?? '').', '.
-                        ($user->state ?? '').' '.
-                        ($user->zip_code ?? '')
-                ),
-                'joined' => $user->created_at?->format('m/d/Y'),
-                'total_orders' => (int) ($user->total_orders ?? 0),
-                'total_spent' => '$'.number_format((float) ($user->total_spent ?? 0), 2),
-                'status' => $user->status ? 'Active' : 'Inactive',
-                'is_verified' => (bool) $user->is_verified,
-            ];
-        });
+        $data = $users->getCollection()->map(fn ($user) => [
+            'id' => $user->id,
+            'image_url' => $user->image ? asset($user->image) : null,
+            'name' => trim(($user->name ?? '').' '.($user->last_name ?? '')),
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'address' => trim(
+                ($user->address ?? '').', '.
+                    ($user->city ?? '').', '.
+                    ($user->state ?? '').' '.
+                    ($user->zip_code ?? '')
+            ),
+            'joined' => $user->created_at?->format('m/d/Y'),
+            'total_orders' => (int) ($user->total_orders ?? 0),
+            'total_spent' => '$'.number_format((float) ($user->total_spent ?? 0), 2),
+            'status' => $user->status ? 'Active' : 'Inactive',
+            'is_verified' => (bool) $user->is_verified,
+        ]);
 
         return response()->json([
             'success' => true,
@@ -110,25 +108,23 @@ class UserManagementController extends Controller
             (int) ($request->per_page ?? 10)
         );
 
-        $data = $users->getCollection()->map(function ($user) {
-            return [
-                'id' => $user->id,
-                'image_url' => $user->image ? asset($user->image) : null,
-                'name' => trim(($user->name ?? '').' '.($user->last_name ?? '')),
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'address' => trim(
-                    ($user->address ?? '').', '.
-                        ($user->city ?? '').', '.
-                        ($user->state ?? '').' '.
-                        ($user->zip_code ?? '')
-                ),
-                'joined' => $user->created_at?->format('m/d/Y'),
-                'total_products' => (int) ($user->total_services ?? 0),
-                'status' => $user->status ? 'Active' : 'Inactive',
-                'is_verified' => (bool) $user->is_verified,
-            ];
-        });
+        $data = $users->getCollection()->map(fn ($user) => [
+            'id' => $user->id,
+            'image_url' => $user->image ? asset($user->image) : null,
+            'name' => trim(($user->name ?? '').' '.($user->last_name ?? '')),
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'address' => trim(
+                ($user->address ?? '').', '.
+                    ($user->city ?? '').', '.
+                    ($user->state ?? '').' '.
+                    ($user->zip_code ?? '')
+            ),
+            'joined' => $user->created_at?->format('m/d/Y'),
+            'total_products' => (int) ($user->total_services ?? 0),
+            'status' => $user->status ? 'Active' : 'Inactive',
+            'is_verified' => (bool) $user->is_verified,
+        ]);
 
         return response()->json([
             'success' => true,

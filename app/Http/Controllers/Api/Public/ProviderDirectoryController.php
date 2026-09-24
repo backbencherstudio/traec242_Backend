@@ -24,7 +24,7 @@ class ProviderDirectoryController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->get('search');
-            $query->where(function (Builder $qBuilder) use ($search) {
+            $query->where(function (Builder $qBuilder) use ($search): void {
                 $qBuilder->where('name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%");
             });
@@ -33,9 +33,9 @@ class ProviderDirectoryController extends Controller
         if ($request->filled('category')) {
             $category = $request->get('category');
 
-            $query->where(function (Builder $qb) use ($category) {
+            $query->where(function (Builder $qb) use ($category): void {
                 $qb->whereJsonContains('category_id', $category)
-                    ->orWhereExists(function ($sub) use ($category) {
+                    ->orWhereExists(function ($sub) use ($category): void {
                         $sub->select(DB::raw(1))
                             ->from('services')
                             ->whereColumn('services.user_id', 'users.id')

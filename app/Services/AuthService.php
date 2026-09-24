@@ -51,7 +51,7 @@ class AuthService
         if ($user->jwt_token) {
             try {
                 JWTAuth::setToken($user->jwt_token)->invalidate(true);
-            } catch (\Throwable $e) {
+            } catch (\Throwable) {
                 // Ignore invalidation failures for expired tokens
             }
         }
@@ -102,7 +102,7 @@ class AuthService
         ]);
 
         $imagePath = null;
-        if ($image) {
+        if ($image instanceof UploadedFile) {
             $imagePath = $this->fileUploadService->upload($image, 'user');
         }
 
@@ -134,7 +134,7 @@ class AuthService
      */
     public function adminUpdate(User $user, array $data, ?UploadedFile $image = null): User
     {
-        if ($image) {
+        if ($image instanceof UploadedFile) {
             $this->fileUploadService->delete($user->image);
             $data['image'] = $this->fileUploadService->upload($image, 'user');
         }

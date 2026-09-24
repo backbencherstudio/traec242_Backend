@@ -42,7 +42,7 @@ class MonthlyOrderSeeder extends Seeder
                 'event_name' => $date->format('F Y').' Event',
                 'event_description' => 'Monthly dummy event data',
 
-                'guest_count' => rand(50, 200),
+                'guest_count' => random_int(50, 200),
                 'event_duration' => '5 Hours',
 
                 'event_start_date' => $date->toDateString(),
@@ -69,7 +69,7 @@ class MonthlyOrderSeeder extends Seeder
             ]);
 
             // Amount generate
-            $amount = rand(500, 5000);
+            $amount = random_int(500, 5000);
 
             // Provider Payment create
             ProviderPayment::create([
