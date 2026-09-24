@@ -1,25 +1,17 @@
 <?php
 
-namespace Tests\Feature;
+test('the custom maintenance page is displayed', function () {
+    $this->artisan('down', ['--render' => 'errors::503'])->assertExitCode(0);
 
-use Tests\TestCase;
+    try {
+        $response = $this->get('/');
 
-class MaintenanceModePageTest extends TestCase
-{
-    public function test_the_custom_maintenance_page_is_displayed(): void
-    {
-        $this->artisan('down', ['--render' => 'errors::503'])->assertExitCode(0);
-
-        try {
-            $response = $this->get('/');
-
-            $response
-                ->assertStatus(503)
-                ->assertSee("We'll be back before long.", false)
-                ->assertSee('Maintenance Window Active')
-                ->assertSee('Thank you for your patience.');
-        } finally {
-            $this->artisan('up')->assertExitCode(0);
-        }
+        $response
+            ->assertStatus(503)
+            ->assertSee("We'll be back before long.", false)
+            ->assertSee('Maintenance Window Active')
+            ->assertSee('Thank you for your patience.');
+    } finally {
+        $this->artisan('up')->assertExitCode(0);
     }
-}
+});
