@@ -28,6 +28,8 @@ pest()->extend(TestCase::class)->in('Feature');
 |
 */
 
+use App\Models\User;
+
 /*
 |--------------------------------------------------------------------------
 | Functions
@@ -38,3 +40,18 @@ pest()->extend(TestCase::class)->in('Feature');
 | global functions to help you to reduce the number of lines of code in your test files.
 |
 */
+
+function createAdminUser(array $attributes = []): User
+{
+    return User::factory()->create(array_merge(['type' => 1], $attributes));
+}
+
+function createClientUser(array $attributes = []): User
+{
+    return User::factory()->create(array_merge(['type' => 0], $attributes));
+}
+
+function createProviderUser(array $attributes = []): User
+{
+    return User::factory()->create(array_merge(['type' => 2], $attributes));
+}
