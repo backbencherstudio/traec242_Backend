@@ -14,19 +14,14 @@ class UserResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'name' => $this->name,
+            'first_name' => $this->first_name,
             'last_name' => $this->last_name,
+            'name' => $this->name,
             'email' => $this->email,
             'phone' => $this->phone,
             'image' => $this->image,
-            'type' => match ($this->type) {
-                0 => 'user',
-                1 => 'admin',
-                2 => 'provider',
-                default => 'user',
-            },
+            'type' => $this->getRoleNames()->first() ?? 'user',
             'status' => $this->status,
-            'provider_status' => $this->provider_status,
             'address' => $this->address,
             'city' => $this->city,
             'state' => $this->state,
@@ -34,7 +29,7 @@ class UserResource extends JsonResource
             'bio' => $this->bio,
             'languages' => $this->languages,
             'category_id' => $this->category_id,
-            'categories' => $this->type === 2
+            'categories' => $this->hasRole('provider')
                 ? Category::whereIn('id', $this->category_id ?? [])->get(['id', 'name', 'image'])
                 : null,
             'plan_id' => $this->plan_id,
@@ -46,7 +41,7 @@ class UserResource extends JsonResource
                 'currency' => $this->plan?->currency,
                 'package' => $this->plan?->package,
             ]),
-            'provider_subscription' => $this->type === 2
+            'provider_subscription' => $this->hasRole('provider')
                 ? $this->providerSubscriptionPayload()
                 : null,
             'created_at' => $this->created_at,
