@@ -29,15 +29,7 @@ class ServiceResource extends JsonResource
                     return null;
                 }
 
-                return $this->reviews->map(fn ($review): array => [
-                    'id' => $review->id,
-                    'reviewer_name' => trim(($review->user->name ?? '').' '.($review->user->last_name ?? '')),
-                    'rating' => $review->rating,
-                    'review' => $review->review,
-                    'reply' => $review->reply,
-                    'has_replied' => $review->reply !== null,
-                    'created_at' => $review->created_at,
-                ]);
+                return ReviewResource::collection($this->reviews);
             }),
             'created_at' => $this->created_at->format('Y-m-d'),
         ];
