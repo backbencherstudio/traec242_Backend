@@ -2,14 +2,13 @@
 
 use App\Models\Category;
 use App\Models\Service;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
 test('public services index lists active services with pagination', function (): void {
-    $provider = User::factory()->create(['type' => 2]);
+    $provider = createProviderUser();
     $category = Category::create(['name' => 'Music', 'status' => 1]);
 
     Service::create([
@@ -39,7 +38,7 @@ test('public services index lists active services with pagination', function ():
 });
 
 test('public services index filters by search query and category', function (): void {
-    $provider = User::factory()->create(['type' => 2]);
+    $provider = createProviderUser();
     $cat1 = Category::create(['name' => 'Catering', 'status' => 1]);
     $cat2 = Category::create(['name' => 'Decor', 'status' => 1]);
 
@@ -69,7 +68,7 @@ test('public services index filters by search query and category', function (): 
 });
 
 test('public services index filters by max price', function (): void {
-    $provider = User::factory()->create(['type' => 2]);
+    $provider = createProviderUser();
     $cat = Category::create(['name' => 'General', 'status' => 1]);
 
     $affordableService = Service::create([
@@ -112,7 +111,7 @@ test('public services index filters by max price', function (): void {
 });
 
 test('public service show returns service details', function (): void {
-    $provider = User::factory()->create(['type' => 2, 'name' => 'Chef', 'last_name' => 'Gordon']);
+    $provider = createProviderUser(['name' => 'Chef', 'last_name' => 'Gordon']);
     $cat = Category::create(['name' => 'Catering', 'status' => 1]);
 
     $service = Service::create([

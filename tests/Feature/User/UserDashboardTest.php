@@ -31,7 +31,7 @@ test('user can fetch dashboard summary', function (): void {
 
 test('user can fetch recent orders using UserDashboardRecentOrderResource', function (): void {
     $user = createClientUser();
-    $provider = User::factory()->create(['type' => 2]);
+    $provider = createProviderUser();
     $category = Category::create(['name' => 'Photo', 'status' => 1]);
     $service = Service::create([
         'title' => 'Photography',

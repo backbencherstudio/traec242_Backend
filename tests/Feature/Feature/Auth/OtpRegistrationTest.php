@@ -54,10 +54,10 @@ test('user registration succeeds when valid otp is submitted', function (): void
 
     $this->assertDatabaseHas('users', [
         'email' => 'test@example.com',
-        'name' => 'Test User',
+        'first_name' => 'Test User',
         'last_name' => 'Example',
-        'is_verified' => true,
     ]);
+    expect(User::where('email', 'test@example.com')->first()->hasVerifiedEmail())->toBeTrue();
 
     $this->assertDatabaseMissing('registration_otps', [
         'email' => 'test@example.com',
@@ -65,9 +65,8 @@ test('user registration succeeds when valid otp is submitted', function (): void
 });
 
 test('existing unverified user can still verify via verify endpoint', function (): void {
-    $user = User::factory()->create([
+    $user = User::factory()->unverified()->create([
         'email' => 'test@example.com',
-        'is_verified' => false,
     ]);
 
     DB::table('registration_otps')->insert([
@@ -90,8 +89,8 @@ test('existing unverified user can still verify via verify endpoint', function (
 
     $this->assertDatabaseHas('users', [
         'email' => 'test@example.com',
-        'is_verified' => true,
     ]);
+    expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
 });
 
 test('invalid otp prevents user registration', function (): void {
@@ -137,7 +136,6 @@ test('resend otp succeeds for unregistered email', function (): void {
 test('resend otp fails for verified email', function (): void {
     User::factory()->create([
         'email' => 'test@example.com',
-        'is_verified' => true,
     ]);
 
     $response = $this->postJson('/api/resend-email-otp', [

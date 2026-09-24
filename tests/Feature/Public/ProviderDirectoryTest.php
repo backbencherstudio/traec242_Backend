@@ -2,19 +2,16 @@
 
 use App\Models\Category;
 use App\Models\Service;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 test('provider directory index lists providers with pagination', function (): void {
-    User::factory()->create([
-        'type' => 2,
+    createProviderUser([
         'name' => 'Provider One',
     ]);
 
-    User::factory()->create([
-        'type' => 0,
+    createClientUser([
         'name' => 'Regular Customer',
     ]);
 
@@ -27,14 +24,12 @@ test('provider directory index lists providers with pagination', function (): vo
 });
 
 test('provider directory filters by search keyword', function (): void {
-    User::factory()->create([
-        'type' => 2,
+    createProviderUser([
         'name' => 'Sammy',
         'last_name' => 'Davis',
     ]);
 
-    User::factory()->create([
-        'type' => 2,
+    createProviderUser([
         'name' => 'Frank',
         'last_name' => 'Sinatra',
     ]);
@@ -49,8 +44,7 @@ test('provider directory filters by search keyword', function (): void {
 test('provider directory show returns provider details, categories, and services', function (): void {
     $category = Category::create(['name' => 'Photography', 'status' => 1]);
 
-    $provider = User::factory()->create([
-        'type' => 2,
+    $provider = createProviderUser([
         'name' => 'Alex',
         'last_name' => 'Morgan',
         'category_id' => [$category->id],

@@ -3,15 +3,14 @@
 use App\Models\Content;
 use App\Models\Faq;
 use App\Models\PrivacyPolicy;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 test('public home_response returns content and statistics', function (): void {
     Content::create(['key' => 'hero_title', 'value' => 'Find Best Providers']);
-    User::factory()->create(['type' => 0]);
-    User::factory()->create(['type' => 2]);
+    createClientUser();
+    createProviderUser();
 
     $response = $this->getJson('/api/home_response');
 

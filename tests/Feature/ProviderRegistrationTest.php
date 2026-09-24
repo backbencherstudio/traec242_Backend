@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
@@ -99,12 +100,14 @@ test('provider registration sends otp first and only creates the account after o
 
     $this->assertDatabaseHas('users', [
         'email' => 'provider@example.com',
-        'type' => 2,
         'plan_id' => $planId,
         'stripe_id' => 'cus_provider_test',
         'pm_last_four' => '4242',
-        'is_verified' => true,
     ]);
+
+    $registeredUser = User::where('email', 'provider@example.com')->first();
+    expect($registeredUser->hasRole('provider'))->toBeTrue()
+        ->and($registeredUser->hasVerifiedEmail())->toBeTrue();
 
     $this->assertDatabaseHas('subscriptions', [
         'type' => 'provider',

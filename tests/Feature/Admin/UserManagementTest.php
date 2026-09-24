@@ -6,8 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 test('admin can list clients using UserManagementClientResource and sendResponse', function (): void {
-    $client = User::factory()->create([
-        'type' => 0,
+    $client = createClientUser([
         'name' => 'Alice',
         'last_name' => 'Smith',
         'email' => 'alice@example.com',
@@ -40,8 +39,7 @@ test('admin can list clients using UserManagementClientResource and sendResponse
 });
 
 test('admin can list sellers using UserManagementSellerResource and sendResponse', function (): void {
-    $seller = User::factory()->create([
-        'type' => 2,
+    $seller = createProviderUser([
         'name' => 'Bob',
         'last_name' => 'Builder',
         'email' => 'bob@example.com',
@@ -73,8 +71,7 @@ test('admin can list sellers using UserManagementSellerResource and sendResponse
 });
 
 test('admin can view client details with stats', function (): void {
-    $client = User::factory()->create([
-        'type' => 0,
+    $client = createClientUser([
         'name' => 'Charlie',
         'last_name' => 'Brown',
     ]);

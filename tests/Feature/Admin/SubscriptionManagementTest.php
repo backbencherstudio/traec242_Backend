@@ -12,7 +12,7 @@ uses(RefreshDatabase::class);
 
 function createSubscriptionProvider(array $overrides = []): User
 {
-    return User::factory()->create(array_merge(['type' => 2], $overrides));
+    return createProviderUser($overrides);
 }
 
 function createSubscriptionRecord(User $provider, array $overrides = []): int
@@ -90,8 +90,8 @@ test('index filters providers by subscription status', function (): void {
 });
 
 test('index does not return non provider users', function (): void {
-    User::factory()->create(['type' => 0]);
-    User::factory()->create(['type' => 1]);
+    createClientUser();
+    createAdminUser();
     $provider = createSubscriptionProvider();
     createSubscriptionRecord($provider);
 
@@ -131,7 +131,7 @@ test('show returns 404 for non existent provider', function (): void {
 });
 
 test('show returns 404 for non provider user', function (): void {
-    $client = User::factory()->create(['type' => 0]);
+    $client = createClientUser();
 
     $this->actingAs(createAdminUser(), 'api')
         ->getJson("/api/admin/subscriptions/providers/{$client->id}")
@@ -146,7 +146,7 @@ test('all subscriptions returns subscriptions for providers only', function (): 
     $provider = createSubscriptionProvider();
     createSubscriptionRecord($provider);
 
-    $clientUser = User::factory()->create(['type' => 0, 'stripe_id' => 'cus_client']);
+    $clientUser = createClientUser(['stripe_id' => 'cus_client']);
     DB::table('subscriptions')->insert([
         'user_id' => $clientUser->id,
         'type' => 'provider',

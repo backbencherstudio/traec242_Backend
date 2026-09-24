@@ -257,7 +257,7 @@ test('stranger cannot show a review they do not own', function (): void {
 
 test('order index marks completed unreviewed order as reviewable', function (): void {
     [$service] = createReviewService();
-    $customer = User::factory()->create(['type' => 0]);
+    $customer = User::factory()->create();
     createCompletedOrderForReview($customer, $service);
 
     $this->actingAs($customer, 'api')->getJson('/api/admin/order/index')
@@ -268,7 +268,7 @@ test('order index marks completed unreviewed order as reviewable', function (): 
 
 test('order show includes review eligibility', function (): void {
     [$service] = createReviewService();
-    $customer = User::factory()->create(['type' => 0]);
+    $customer = User::factory()->create();
     $order = createCompletedOrderForReview($customer, $service);
 
     $this->actingAs($customer, 'api')->getJson('/api/admin/order/show/'.$order->id)
@@ -279,7 +279,7 @@ test('order show includes review eligibility', function (): void {
 
 test('order index returns null review when not yet reviewed', function (): void {
     [$service] = createReviewService();
-    $customer = User::factory()->create(['type' => 0]);
+    $customer = User::factory()->create();
     createCompletedOrderForReview($customer, $service);
 
     $this->actingAs($customer, 'api')->getJson('/api/admin/order/index')
@@ -289,7 +289,7 @@ test('order index returns null review when not yet reviewed', function (): void 
 
 test('order index includes review object with provider reply', function (): void {
     [$service, $owner] = createReviewService();
-    $customer = User::factory()->create(['type' => 0]);
+    $customer = User::factory()->create();
     $order = createCompletedOrderForReview($customer, $service);
 
     $review = Review::create([
@@ -312,7 +312,7 @@ test('order index includes review object with provider reply', function (): void
 
 test('order show includes review object when reviewed', function (): void {
     [$service] = createReviewService();
-    $customer = User::factory()->create(['type' => 0]);
+    $customer = User::factory()->create();
     $order = createCompletedOrderForReview($customer, $service);
 
     $review = Review::create([
@@ -333,7 +333,7 @@ test('order show includes review object when reviewed', function (): void {
 
 test('order index marks reviewed order as not reviewable', function (): void {
     [$service] = createReviewService();
-    $customer = User::factory()->create(['type' => 0]);
+    $customer = User::factory()->create();
     $order = createCompletedOrderForReview($customer, $service);
 
     $review = Review::create([
@@ -365,8 +365,7 @@ function createReviewService(): array
         'updated_at' => now(),
     ]);
 
-    $owner = User::factory()->create([
-        'type' => 2,
+    $owner = createProviderUser([
         'category_id' => $categoryId,
     ]);
 

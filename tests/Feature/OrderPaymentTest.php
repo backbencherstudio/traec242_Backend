@@ -58,14 +58,11 @@ function createOrderScenario(): array
         'updated_at' => now(),
     ]);
 
-    $provider = User::factory()->create([
-        'type' => 2,
+    $provider = createProviderUser([
         'category_id' => $categoryId,
     ]);
 
-    $customer = User::factory()->create([
-        'type' => 0,
-    ]);
+    $customer = createClientUser();
 
     $service = Service::create([
         'title' => 'Wedding Photography',

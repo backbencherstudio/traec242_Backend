@@ -17,7 +17,6 @@ test('user can login with valid credentials', function (): void {
     User::factory()->create([
         'email' => 'user@example.com',
         'password' => 'secret123',
-        'is_verified' => true,
     ]);
 
     $response = $this->postJson('/api/login', [
@@ -37,7 +36,6 @@ test('login fails with invalid credentials', function (): void {
     User::factory()->create([
         'email' => 'user@example.com',
         'password' => 'secret123',
-        'is_verified' => true,
     ]);
 
     $response = $this->postJson('/api/login', [
@@ -50,10 +48,9 @@ test('login fails with invalid credentials', function (): void {
 });
 
 test('unverified user cannot login', function (): void {
-    User::factory()->create([
+    User::factory()->unverified()->create([
         'email' => 'unverified@example.com',
         'password' => 'secret123',
-        'is_verified' => false,
     ]);
 
     $response = $this->postJson('/api/login', [
@@ -69,7 +66,6 @@ test('unverified user cannot login', function (): void {
 test('authenticated user can fetch own profile via me endpoint', function (): void {
     $user = User::factory()->create([
         'email' => 'profile@example.com',
-        'is_verified' => true,
     ]);
 
     $response = $this->actingAs($user, 'api')->getJson('/api/me');
@@ -82,7 +78,6 @@ test('authenticated user can fetch own profile via me endpoint', function (): vo
 test('authenticated user can change password', function (): void {
     $user = User::factory()->create([
         'password' => 'oldpassword123',
-        'is_verified' => true,
     ]);
 
     $response = $this->actingAs($user, 'api')->postJson('/api/profile/passwordchange', [
@@ -101,7 +96,6 @@ test('authenticated user can change password', function (): void {
 test('user cannot change password with incorrect current password', function (): void {
     $user = User::factory()->create([
         'password' => 'oldpassword123',
-        'is_verified' => true,
     ]);
 
     $response = $this->actingAs($user, 'api')->postJson('/api/profile/passwordchange', [
@@ -176,7 +170,7 @@ test('user can reset password using valid otp', function (): void {
 });
 
 test('authenticated user can logout', function (): void {
-    $user = User::factory()->create(['jwt_token' => 'dummy-token']);
+    $user = User::factory()->create();
 
     $response = $this->actingAs($user, 'api')->postJson('/api/admin/logout');
 

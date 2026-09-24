@@ -61,8 +61,7 @@ function createServiceForShow(): array
         'updated_at' => now(),
     ]);
 
-    $owner = User::factory()->create([
-        'type' => 2,
+    $owner = createProviderUser([
         'category_id' => $categoryId,
     ]);
 

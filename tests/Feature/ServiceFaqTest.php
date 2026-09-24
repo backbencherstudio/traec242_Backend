@@ -132,8 +132,7 @@ function createFaqProvider(): array
         'updated_at' => now(),
     ]);
 
-    $provider = User::factory()->create([
-        'type' => 2,
+    $provider = createProviderUser([
         'category_id' => $categoryId,
     ]);
 

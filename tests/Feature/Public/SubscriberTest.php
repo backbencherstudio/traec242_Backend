@@ -2,7 +2,6 @@
 
 use App\Mail\SubscriberMail;
 use App\Models\Subscriber;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 
@@ -46,7 +45,7 @@ test('subscription requires a valid and unique email', function (): void {
 });
 
 test('admin can list all subscribers', function (): void {
-    $admin = User::factory()->create(['type' => 1]);
+    $admin = createAdminUser();
     Subscriber::create(['email' => 'sub1@example.com']);
     Subscriber::create(['email' => 'sub2@example.com']);
 

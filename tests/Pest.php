@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Models\User;
+use Database\Seeders\RoleSeeder;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 /*
@@ -15,7 +18,12 @@ use Tests\TestCase;
 |
 */
 
-pest()->extend(TestCase::class)->in('Feature');
+pest()->extend(TestCase::class)->beforeEach(function (): void {
+    /** @var TestCase $this */
+    if (Schema::hasTable('roles')) {
+        $this->seed(RoleSeeder::class);
+    }
+})->in('Feature');
 
 /*
 |--------------------------------------------------------------------------
@@ -27,8 +35,6 @@ pest()->extend(TestCase::class)->in('Feature');
 | to assert different things. Of course, you may extend the Expectation API at any time.
 |
 */
-
-use App\Models\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,15 +49,15 @@ use App\Models\User;
 
 function createAdminUser(array $attributes = []): User
 {
-    return User::factory()->create(array_merge(['type' => 1], $attributes));
+    return User::factory()->admin()->create($attributes);
 }
 
 function createClientUser(array $attributes = []): User
 {
-    return User::factory()->create(array_merge(['type' => 0], $attributes));
+    return User::factory()->create($attributes);
 }
 
 function createProviderUser(array $attributes = []): User
 {
-    return User::factory()->create(array_merge(['type' => 2], $attributes));
+    return User::factory()->provider()->create($attributes);
 }
