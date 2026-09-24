@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
-use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthService
 {
@@ -37,7 +36,7 @@ class AuthService
         /** @var User $user */
         $user = Auth::guard('api')->user();
 
-        if (! $user->is_verified) {
+        if (! $user->email_verified_at) {
             Auth::guard('api')->logout();
 
             $secondsUntilNextAttempt = $this->otpService->getSecondsUntilNextAttempt($user->email);
@@ -47,16 +46,6 @@ class AuthService
 
             throw new \DomainException('Please verify your email before logging in.');
         }
-
-        if ($user->jwt_token) {
-            try {
-                JWTAuth::setToken($user->jwt_token)->invalidate(true);
-            } catch (\Throwable) {
-                // Ignore invalidation failures for expired tokens
-            }
-        }
-
-        $user->update(['jwt_token' => $token]);
 
         return [
             'user' => $user,
@@ -71,17 +60,22 @@ class AuthService
      */
     public function register(array $data): array
     {
+        $firstName = $data['first_name'] ?? $data['name'] ?? null;
         $user = User::create([
-            'name' => $data['name'],
+            'first_name' => $firstName,
             'last_name' => $data['last_name'] ?? null,
             'email' => $data['email'],
-            'type' => 0,
             'password' => $data['password'],
-            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
 
+        $role = Role::firstOrCreate([
+            'name' => 'user',
+            'guard_name' => 'api',
+        ]);
+        $user->assignRole($role->name);
+
         $token = Auth::guard('api')->login($user);
-        $user->update(['jwt_token' => $token]);
 
         return [
             'user' => $user,
@@ -97,7 +91,7 @@ class AuthService
     public function adminRegister(array $data, ?UploadedFile $image = null): array
     {
         $role = Role::firstOrCreate([
-            'name' => 'Admin',
+            'name' => 'admin',
             'guard_name' => 'api',
         ]);
 
@@ -106,22 +100,21 @@ class AuthService
             $imagePath = $this->fileUploadService->upload($image, 'user');
         }
 
+        $firstName = $data['first_name'] ?? $data['name'] ?? null;
         $user = User::create([
-            'name' => $data['name'],
+            'first_name' => $firstName,
+            'last_name' => $data['last_name'] ?? null,
             'email' => $data['email'],
             'phone' => $data['phone'] ?? null,
-            'type' => 1,
             'status' => 1,
-            'role' => $data['role'] ?? null,
             'image' => $imagePath,
             'password' => $data['password'],
-            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
 
         $user->assignRole($role->name);
 
         $token = Auth::guard('api')->login($user);
-        $user->update(['jwt_token' => $token]);
 
         return [
             'user' => $user,
@@ -141,6 +134,11 @@ class AuthService
 
         if (empty($data['password'])) {
             unset($data['password']);
+        }
+
+        if (isset($data['name']) && ! isset($data['first_name'])) {
+            $data['first_name'] = $data['name'];
+            unset($data['name']);
         }
 
         $user->update($data);

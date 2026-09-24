@@ -12,6 +12,7 @@ use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Laravel\Cashier\Exceptions\IncompletePayment;
+use Spatie\Permission\Models\Role;
 use Stripe\Exception\ApiErrorException;
 
 class ProviderRegisterController extends Controller
@@ -60,8 +61,10 @@ class ProviderRegisterController extends Controller
         try {
             DB::beginTransaction();
 
+            $firstName = $validated['first_name'] ?? $validated['name'] ?? null;
+
             $user = User::create([
-                'name' => $validated['name'],
+                'first_name' => $firstName,
                 'last_name' => $validated['last_name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'],
@@ -72,11 +75,15 @@ class ProviderRegisterController extends Controller
                 'password' => $validated['password'],
                 'category_id' => $validated['category_id'],
                 'plan_id' => $plan->id,
-                'type' => 2,
                 'status' => 1,
-                'provider_status' => false,
-                'is_verified' => true,
+                'email_verified_at' => now(),
             ]);
+
+            $role = Role::firstOrCreate([
+                'name' => 'provider',
+                'guard_name' => 'api',
+            ]);
+            $user->assignRole($role->name);
 
             $user->newSubscription('provider', $plan->stripe_price_id)
                 ->withMetadata([
@@ -136,7 +143,6 @@ class ProviderRegisterController extends Controller
         }
 
         $token = auth('api')->login($user);
-        $user->update(['jwt_token' => $token]);
 
         return $this->sendResponse(array_filter([
             'user' => UserResource::make($user->fresh(['plan', 'subscriptions'])),

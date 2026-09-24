@@ -21,7 +21,7 @@ class VerifyRegistrationOtpController extends Controller
         $validated = $request->validated();
         $user = User::where('email', $validated['email'])->first();
 
-        if ($user?->is_verified) {
+        if ($user?->email_verified_at) {
             return $this->sendError('Email already verified', [], 400);
         }
 
@@ -29,10 +29,9 @@ class VerifyRegistrationOtpController extends Controller
             return $this->sendError('Invalid or expired OTP', [], 400);
         }
 
-        $user->update(['is_verified' => true]);
+        $user->update(['email_verified_at' => now()]);
 
         $token = auth('api')->login($user);
-        $user->update(['jwt_token' => $token]);
 
         return $this->sendResponse([
             'user' => UserResource::make($user->loadMissing(['plan', 'subscriptions'])),
@@ -45,7 +44,7 @@ class VerifyRegistrationOtpController extends Controller
         $validated = $request->validated();
         $user = User::where('email', $validated['email'])->first();
 
-        if ($user?->is_verified) {
+        if ($user?->email_verified_at) {
             return $this->sendError('Email already verified', [], 400);
         }
 

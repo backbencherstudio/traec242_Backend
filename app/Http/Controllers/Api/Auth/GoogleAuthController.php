@@ -28,9 +28,16 @@ class GoogleAuthController extends Controller
                 $user = User::where('email', $googleUser->getEmail())->first();
 
                 if (! $user) {
+                    $fullName = (string) $googleUser->getName();
+                    $parts = explode(' ', $fullName, 2);
+                    $firstName = $parts[0] ?: $fullName;
+                    $lastName = $parts[1] ?? null;
+
                     $user = User::create([
-                        'name' => $googleUser->getName(),
+                        'first_name' => $firstName,
+                        'last_name' => $lastName,
                         'email' => $googleUser->getEmail(),
+                        'email_verified_at' => now(),
                         'google_id' => $googleUser->getId(),
                         'password' => bcrypt(Str::random(16)),
                     ]);
@@ -42,9 +49,6 @@ class GoogleAuthController extends Controller
             }
 
             $jwtToken = auth('api')->login($user);
-            $user->update([
-                'jwt_token' => $jwtToken,
-            ]);
 
             return response()->json([
                 'token' => $jwtToken,

@@ -18,6 +18,7 @@ class UpdateProfileRequest extends FormRequest
         $user = $this->user();
 
         $rules = [
+            'first_name' => ['sometimes', 'string', 'max:255'],
             'name' => ['sometimes', 'string', 'max:255'],
             'last_name' => ['sometimes', 'string', 'max:255'],
             'phone' => ['sometimes', 'string', 'max:20'],
@@ -31,7 +32,7 @@ class UpdateProfileRequest extends FormRequest
             'languages.*' => ['string'],
         ];
 
-        if ($user && (int) $user->type === 2) {
+        if ($user && $user->isProvider()) {
             $rules['category_id'] = ['sometimes', 'array'];
             $rules['category_id.*'] = ['integer', 'exists:categories,id'];
         }

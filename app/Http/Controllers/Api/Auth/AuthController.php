@@ -17,7 +17,6 @@ use App\Services\AuthService;
 use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
@@ -31,7 +30,7 @@ class AuthController extends Controller
      */
     public function index(): JsonResponse
     {
-        $admins = User::where('type', 1)->get();
+        $admins = User::role('admin')->get();
 
         return response()->json([
             'status' => 'success',
@@ -133,7 +132,7 @@ class AuthController extends Controller
      */
     public function edit($id): JsonResponse
     {
-        $user = User::where('id', $id)->where('type', 1)->first();
+        $user = User::role('admin')->find($id);
         if (! $user) {
             return response()->json([
                 'status' => 'error',
@@ -152,7 +151,7 @@ class AuthController extends Controller
      */
     public function adminUpdate(AdminUpdateRequest $request, $id): JsonResponse
     {
-        $user = User::where('id', $id)->where('type', 1)->first();
+        $user = User::role('admin')->find($id);
         if (! $user) {
             return $this->sendError('Admin not found', [], 404);
         }
@@ -167,7 +166,7 @@ class AuthController extends Controller
      */
     public function delete($id): JsonResponse
     {
-        $user = User::where('id', $id)->where('type', 1)->first();
+        $user = User::role('admin')->find($id);
         if (! $user) {
             return $this->sendError('Admin not found', [], 404);
         }
@@ -197,15 +196,9 @@ class AuthController extends Controller
      */
     public function logout(): JsonResponse
     {
-        /** @var User|null $user */
-        $user = Auth::guard('api')->user();
-
-        if ($user && $user->jwt_token) {
-            try {
-                JWTAuth::setToken($user->jwt_token)->invalidate();
-            } catch (\Throwable) {
-            }
-            $user->update(['jwt_token' => null]);
+        try {
+            Auth::guard('api')->logout();
+        } catch (\Throwable) {
         }
 
         return response()->json(['message' => 'Logged out successfully']);
@@ -216,7 +209,7 @@ class AuthController extends Controller
      */
     public function password($id): JsonResponse
     {
-        $admin = User::where('type', 1)->find($id);
+        $admin = User::role('admin')->find($id);
         if (! $admin) {
             return $this->sendError('Admin not found', [], 404);
         }

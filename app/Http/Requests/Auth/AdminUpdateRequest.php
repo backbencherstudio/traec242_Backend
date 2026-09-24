@@ -18,7 +18,9 @@ class AdminUpdateRequest extends FormRequest
         $id = $this->route('id');
 
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required_without:name', 'nullable', 'string', 'max:255'],
+            'name' => ['required_without:first_name', 'nullable', 'string', 'max:255'],
+            'last_name' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email,'.$id],
             'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone,'.$id],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
