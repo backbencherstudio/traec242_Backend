@@ -32,10 +32,6 @@ use App\Http\Controllers\Api\User\UserDashboardController;
 use App\Http\Controllers\Api\User\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
-// Admin Public Routes
-// Route::post('/admin/login', [AdminController::class, 'login'])->name('admin.login');
-// Route::get('index', [CategoryController::class, 'index'])->name('admin.category.index');
-// user login
 Route::post('/user-register', [AuthController::class, 'register']);
 Route::post('/verify-email-otp', [VerifyRegistrationOtpController::class, 'verify']);
 Route::post('/resend-email-otp', [VerifyRegistrationOtpController::class, 'resend']);
@@ -45,19 +41,13 @@ Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('/reset-password', [AuthController::class, 'resetPasswordWithOtp']);
 
 Route::post('/subscriber', [SubscriberController::class, 'store'])->name('subscriber.store');
-// Route::middleware('auth:api')->post('/user/logout', [UserController::class, 'logout']);
 
-// Public provider listing and details
 Route::get('/providers', [ProviderDirectoryController::class, 'index']);
 Route::get('/providers/{id}', [ProviderDirectoryController::class, 'show']);
 
-// Route::post('/admin/register', [AuthController::class, 'adminregister']);
-
-// google login api
 Route::get('/auth/google', [GoogleAuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
 
-// Authenticated user routes
 Route::middleware(['auth:api'])->group(function () {
     Route::get('/me', [AuthController::class, 'me'])->name('me');
     Route::prefix('profile')->group(function () {
@@ -66,24 +56,22 @@ Route::middleware(['auth:api'])->group(function () {
     });
 });
 
-// Admin Protected Routes
 Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/index', [AuthController::class, 'index'])->name('index');
-    Route::post('/register', [AuthController::class, 'adminregister'])->name('registerr');
+    Route::post('/register', [AuthController::class, 'adminregister'])->name('register');
     Route::get('/edit/{id}', [AuthController::class, 'edit'])->name('edit');
     Route::post('/update/{id}', [AuthController::class, 'adminUpdate'])->name('update');
     Route::delete('/delete/{id}', [AuthController::class, 'delete'])->name('delete');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/password/{id}', [AuthController::class, 'password'])->name('password');
 
-    // Role
     Route::prefix('role')->group(function () {
         Route::get('index', [RoleController::class, 'index'])->name('role.index');
         Route::post('store', [RoleController::class, 'store'])->name('role.store');
         Route::get('edit/{id}', [RoleController::class, 'edit'])->name('role.edit');
         Route::post('update/{id}', [RoleController::class, 'update'])->name('role.update');
     });
-    // permission
+
     Route::prefix('permission')->group(function () {
         Route::get('index', [PermissionController::class, 'index'])->name('permission.index');
         Route::post('store', [PermissionController::class, 'store'])->name('permission.store');
@@ -91,7 +79,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::post('update/{id}', [PermissionController::class, 'update'])->name('permission.update');
         Route::delete('delete/{id}', [PermissionController::class, 'destroy'])->name('permission.destroy');
     });
-    // category
+
     Route::prefix('category')->group(function () {
         Route::get('index', [CategoryController::class, 'index'])->name('category.index');
         Route::post('store', [CategoryController::class, 'store'])->name('category.store');
@@ -100,7 +88,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::delete('/delete/{id}', [CategoryController::class, 'destroy'])->name('category.destroy');
     });
 
-    // Plan
     Route::prefix('plan')->group(function () {
         Route::get('index', [PlanController::class, 'index'])->name('plan.index');
         Route::post('store', [PlanController::class, 'store'])->name('plan.store');
@@ -108,19 +95,16 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::delete('delete/{id}', [PlanController::class, 'destroy'])->name('plan.destroy');
     });
 
-    // Admin Stripe
     Route::prefix('stripe')->group(function () {
         Route::post('upsert', [StripeController::class, 'upsert'])->name('stripe.upsert');
         Route::get('show', [StripeController::class, 'show'])->name('stripe.show');
     });
 
-    // Provider Stripe
     Route::prefix('p-stripe')->group(function () {
         Route::post('upsert', [ProviderStripeController::class, 'upsert'])->name('p-stripe.upsert');
         Route::get('show', [ProviderStripeController::class, 'show'])->name('p-stripe.show');
     });
 
-    // subcategory
     Route::prefix('subcategory')->group(function () {
         Route::get('index', [SubcategoryController::class, 'index'])->name('subcategory.index');
         Route::post('store', [SubcategoryController::class, 'store'])->name('subcategory.store');
@@ -129,7 +113,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::delete('/delete/{id}', [SubcategoryController::class, 'destroy'])->name('subcategory.destroy');
     });
 
-    // Brand
     Route::prefix('brand')->group(function () {
         Route::get('index', [BrandController::class, 'index'])->name('brand.index');
         Route::post('store', [BrandController::class, 'store'])->name('brand.store');
@@ -138,7 +121,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::delete('/delete/{id}', [BrandController::class, 'destroy'])->name('brand.destroy');
     });
 
-    // Slider
     Route::prefix('slider')->group(function () {
         Route::get('index', [SliderController::class, 'index'])->name('slider.index');
         Route::post('store', [SliderController::class, 'store'])->name('slider.store');
@@ -147,7 +129,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::delete('delete/{id}', [SliderController::class, 'destroy'])->name('slider.destroy');
     });
 
-    // faq-category
     Route::prefix('faq-categories')->group(function () {
         Route::get('index', [FaqCategoryController::class, 'index'])->name('faq-categories.index');
         Route::post('store', [FaqCategoryController::class, 'store'])->name('faq-categories.store');
@@ -155,7 +136,7 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::post('update/{id}', [FaqCategoryController::class, 'update'])->name('faq-categories.update');
         Route::delete('delete/{id}', [FaqCategoryController::class, 'destroy'])->name('faq-categories.destroy');
     });
-    // promition0
+
     Route::prefix('promotions')->group(function () {
         Route::get('index', [PromotionController::class, 'index'])->name('promotions.index');
         Route::post('store', [PromotionController::class, 'store'])->name('promotions.store');
@@ -164,7 +145,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::delete('delete/{id}', [PromotionController::class, 'destroy'])->name('promotions.destroy');
     });
 
-    // faq
     Route::prefix('faq')->group(function () {
         Route::get('index', [FaqController::class, 'index'])->name('faq.index');
         Route::post('store', [FaqController::class, 'store'])->name('faq.store');
@@ -173,24 +153,21 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::delete('delete/{id}', [FaqController::class, 'destroy'])->name('faq.destroy');
     });
 
-    // setting
     Route::prefix('setting')->group(function () {
         Route::get('index', [SettingController::class, 'index'])->name('setting.index');
         Route::post('update', [SettingController::class, 'update'])->name('setting.update');
     });
-    // notification
+
     Route::prefix('notification')->group(function () {
         Route::get('/unread-count', [NotificationController::class, 'getTotalUnreadCount']);
         Route::get('/chat-unread-count', [NotificationController::class, 'getChatListWithUnreadCount']);
         Route::post('/read', [NotificationController::class, 'markChatAsRead']);
     });
 
-    // mail
     Route::prefix('mail')->group(function () {
         Route::post('/send-email', [EmailController::class, 'sendEmail']);
     });
 
-    // Subscriber
     Route::prefix('subscriber')->group(function () {
         Route::get('index', [SubscriberController::class, 'index']);
     });
@@ -201,7 +178,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::post('send', [MessageController::class, 'sendMessage']);
     });
 
-    // Order.....
     Route::prefix('order')->group(function () {
         Route::post('/create-order', [OrderController::class, 'store']);
         Route::get('index', [OrderController::class, 'index'])->name('order.index');
@@ -209,13 +185,11 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::patch('update-status/{id}', [OrderController::class, 'updateStatus'])->name('order.updateStatus');
     });
 
-    // Profile
     Route::prefix('profile')->group(function () {
         Route::get('provider-profile', [ProviderProfileController::class, 'providerProfile']);
         Route::put('update-provider-profile', [ProviderProfileController::class, 'updateProviderProfile']);
     });
 
-    // Subscription Management
     Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
         Route::get('providers', [SubscriptionManagementController::class, 'index'])->name('providers');
         Route::get('providers/{providerId}', [SubscriptionManagementController::class, 'show'])->name('show');
@@ -226,7 +200,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::post('providers/{providerId}/resume', [SubscriptionManagementController::class, 'resume'])->name('resume');
     });
 
-    // Admin Dashboard
     Route::prefix('client')->group(function () {
         Route::get('index', [UserManagementController::class, 'clients']);
         Route::get('show-details/{id}', [UserManagementController::class, 'showDetails']);
@@ -239,13 +212,11 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('index', [AdminDashboardController::class, 'index']);
     });
 
-    // Order Management
     Route::prefix('admin-order')->group(function () {
         Route::get('index', [OrderManagementController::class, 'index']);
         Route::get('show-details/{id}', [OrderManagementController::class, 'showOrderDetails']);
     });
 
-    // user-dashboard
     Route::prefix('user-dashboard')->group(function () {
         Route::get('summary', [UserDashboardController::class, 'summary']);
         Route::get('recent-orders', [UserDashboardController::class, 'recentOrders']);
@@ -254,7 +225,6 @@ Route::middleware(['auth:api'])->prefix('admin')->name('admin.')->group(function
         Route::get('chat-list', [UserDashboardController::class, 'chat']);
     });
 
-    // Review
     Route::prefix('review')->group(function () {
         Route::get('index', [ReviewController::class, 'index']);
         Route::get('received', [ReviewController::class, 'providerReviews']);
@@ -268,7 +238,6 @@ Route::get('/order/success/{orderId}', [OrderController::class, 'success'])->nam
 Route::get('/order/cancel/{orderId}', [OrderController::class, 'cancel'])->name('order.cancel');
 Route::get('/order/invoice/{orderId}', [OrderController::class, 'generateInvoice'])->name('order.invoice');
 
-// Stripe Public_key
 Route::get('stripe/p-k/{service}', [ProviderStripeController::class, 'getPublicKey'])->name('p-stripe.getPublicKey');
 
 require __DIR__.'/mahmudul.php';
