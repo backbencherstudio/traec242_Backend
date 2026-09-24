@@ -11,20 +11,23 @@ class ServiceSeeder extends Seeder
 {
     public function run(): void
     {
-        User::updateOrCreate(
+        $user = User::updateOrCreate(
             ['email' => 'customer@example.com'],
             [
-                'name' => 'Customer',
+                'first_name' => 'Customer',
+                'last_name' => 'Provider',
                 'password' => bcrypt('12345678'),
-                'type' => 2,
                 'status' => 1,
+                'email_verified_at' => now(),
             ],
         );
+
+        $user->assignRole(RoleSeeder::ROLE_PROVIDER);
 
         $service = Service::updateOrCreate(
             ['title' => 'Event Photography'],
             [
-                'user_id' => 1,
+                'user_id' => $user->id,
                 'category_id' => 1,
                 'location' => 'Dhaka',
                 'description' => 'Professional event photography services.',

@@ -12,37 +12,33 @@ class AdminSeeder extends Seeder
     public function run(): void
     {
 
-        $superAdminRole = Role::updateOrCreate(
-            ['name' => 'Super Admin', 'guard_name' => 'api']
-        );
-
-        $adminRole = Role::updateOrCreate(
-            ['name' => 'Admin', 'guard_name' => 'api']
+        $adminRole = Role::firstOrCreate(
+            ['name' => 'admin', 'guard_name' => 'api']
         );
 
         $superAdmin = User::updateOrCreate(
             ['email' => 'super@gmail.com'],
             [
-                'name' => 'Super Admin',
+                'first_name' => 'Super',
+                'last_name' => 'Admin',
                 'password' => Hash::make('12345678'),
-                'type' => 1,
                 'status' => 1,
                 'image' => null,
-                'jwt_token' => null,
+                'email_verified_at' => now(),
             ]
         );
 
-        $superAdmin->syncRoles([$superAdminRole]);
+        $superAdmin->syncRoles([$adminRole]);
 
         $admin = User::updateOrCreate(
             ['email' => 'admin@gmail.com'],
             [
-                'name' => 'Admin',
+                'first_name' => 'Admin',
+                'last_name' => null,
                 'password' => Hash::make('12345678'),
-                'type' => 1,
                 'status' => 1,
                 'image' => null,
-                'jwt_token' => null,
+                'email_verified_at' => now(),
             ]
         );
 
