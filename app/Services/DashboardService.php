@@ -9,6 +9,7 @@ use App\Models\Review;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class DashboardService
 {
@@ -87,6 +88,66 @@ class DashboardService
         }
 
         return $activities;
+    }
+
+    /**
+     * Get recent messages for user dashboard.
+     */
+    public function getUserRecentMessages(int $userId, int $limit = 4): Collection
+    {
+        return Message::where(function ($query) use ($userId): void {
+            $query->where('sender_id', $userId)
+                ->orWhere('receiver_id', $userId);
+        })
+            ->with(['sender', 'receiver'])
+            ->latest()
+            ->get()
+            ->unique('conversation_id')
+            ->take($limit)
+            ->values();
+    }
+
+    /**
+     * Get conversation summaries for user chat list.
+     */
+    public function getUserConversations(int $userId, ?string $search = null): Collection
+    {
+        $latestMessages = Message::select('conversation_id', DB::raw('MAX(id) as last_id'))
+            ->where(function ($q) use ($userId): void {
+                $q->where('sender_id', $userId)
+                    ->orWhere('receiver_id', $userId);
+            })
+            ->groupBy('conversation_id');
+
+        $messages = Message::with(['sender', 'receiver'])
+            ->whereIn('id', $latestMessages->pluck('last_id'))
+            ->when($search, function ($query) use ($search): void {
+                $query->where(function ($q) use ($search): void {
+                    $q->where('message', 'like', "%{$search}%")
+                        ->orWhereHas('sender', function ($q2) use ($search): void {
+                            $q2->where('name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('receiver', function ($q3) use ($search): void {
+                            $q3->where('name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->latest()
+            ->get();
+
+        $unreadCounts = Message::where('receiver_id', $userId)
+            ->whereNull('read_at')
+            ->select('conversation_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('conversation_id')
+            ->pluck('total', 'conversation_id');
+
+        foreach ($messages as $message) {
+            $message->unread_count = $unreadCounts[$message->conversation_id] ?? 0;
+        }
+
+        return $messages->values();
     }
 
     /**
