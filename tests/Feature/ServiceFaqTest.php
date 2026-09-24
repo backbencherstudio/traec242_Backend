@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\Mail;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     config(['jwt.secret' => 'testing-jwt-secret']);
     Mail::fake();
 });
 
-test('provider can create service with multiple faqs', function () {
+test('provider can create service with multiple faqs', function (): void {
     [$provider, $categoryId] = createFaqProvider();
 
     $response = $this->actingAs($provider, 'api')->postJson(
@@ -38,7 +38,7 @@ test('provider can create service with multiple faqs', function () {
     ]);
 });
 
-test('provider can create service without faqs', function () {
+test('provider can create service without faqs', function (): void {
     [$provider, $categoryId] = createFaqProvider();
 
     $response = $this->actingAs($provider, 'api')->postJson(
@@ -52,7 +52,7 @@ test('provider can create service without faqs', function () {
     $this->assertDatabaseCount('service_faqs', 0);
 });
 
-test('faq question and answer are required', function () {
+test('faq question and answer are required', function (): void {
     [$provider, $categoryId] = createFaqProvider();
 
     $response = $this->actingAs($provider, 'api')->postJson(
@@ -66,7 +66,7 @@ test('faq question and answer are required', function () {
         ->assertJsonValidationErrors(['faqs.0.answer']);
 });
 
-test('public show returns service with faqs', function () {
+test('public show returns service with faqs', function (): void {
     [$provider, $categoryId] = createFaqProvider();
 
     $serviceId = $this->actingAs($provider, 'api')->postJson(
@@ -85,7 +85,7 @@ test('public show returns service with faqs', function () {
         ->assertJsonPath('data.faqs.0.question', 'Do you travel?');
 });
 
-test('provider show returns own service with faqs', function () {
+test('provider show returns own service with faqs', function (): void {
     [$provider, $categoryId] = createFaqProvider();
 
     $serviceId = $this->actingAs($provider, 'api')->postJson(
@@ -102,7 +102,7 @@ test('provider show returns own service with faqs', function () {
         ->assertJsonPath('data.faqs.0.answer', 'A 20% deposit is required.');
 });
 
-test('provider cannot show another providers service', function () {
+test('provider cannot show another providers service', function (): void {
     [$owner, $categoryId] = createFaqProvider();
     [$otherProvider] = createFaqProvider();
 

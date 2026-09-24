@@ -16,7 +16,7 @@ uses(RefreshDatabase::class);
 // Tests
 // -------------------------------------------------------------------------
 
-test('provider registration sends otp first and only creates the account after otp confirmation', function () {
+test('provider registration sends otp first and only creates the account after otp confirmation', function (): void {
     fakeStripeClient(app());
 
     $categoryId = DB::table('categories')->insertGetId([
@@ -114,7 +114,7 @@ test('provider registration sends otp first and only creates the account after o
     ]);
 });
 
-test('provider registration requires a valid otp', function () {
+test('provider registration requires a valid otp', function (): void {
     fakeStripeClient(app());
 
     $categoryId = DB::table('categories')->insertGetId([
@@ -174,7 +174,7 @@ test('provider registration requires a valid otp', function () {
     ]);
 });
 
-test('provider registration requires a monthly billable plan', function () {
+test('provider registration requires a monthly billable plan', function (): void {
     $categoryId = DB::table('categories')->insertGetId([
         'name' => 'Photography',
         'status' => 1,

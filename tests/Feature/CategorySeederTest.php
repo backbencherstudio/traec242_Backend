@@ -6,7 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('category seeder creates expected categories without duplicates', function () {
+test('category seeder creates expected categories without duplicates', function (): void {
     $this->seed(CategorySeeder::class);
     $this->seed(CategorySeeder::class);
 

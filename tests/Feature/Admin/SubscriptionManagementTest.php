@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->admin = User::factory()->create(['type' => 1]);
 });
 
@@ -39,7 +39,7 @@ function createSubscriptionRecord(User $provider, array $overrides = []): int
 // GET /api/admin/subscriptions/providers
 // -------------------------------------------------------------------------
 
-test('index returns all providers with subscription info', function () {
+test('index returns all providers with subscription info', function (): void {
     $provider = createSubscriptionProvider();
     createSubscriptionRecord($provider);
 
@@ -59,7 +59,7 @@ test('index returns all providers with subscription info', function () {
         ]);
 });
 
-test('index filters providers by name search', function () {
+test('index filters providers by name search', function (): void {
     createSubscriptionProvider(['name' => 'Alice', 'email' => 'alice@example.com']);
     createSubscriptionProvider(['name' => 'Bob', 'email' => 'bob@example.com']);
 
@@ -73,7 +73,7 @@ test('index filters providers by name search', function () {
         ->and($data[0]['name'])->toContain('Alice');
 });
 
-test('index filters providers by subscription status', function () {
+test('index filters providers by subscription status', function (): void {
     $active = createSubscriptionProvider();
     createSubscriptionRecord($active, ['stripe_status' => 'active']);
 
@@ -93,7 +93,7 @@ test('index filters providers by subscription status', function () {
     expect($statuses)->toBe(['active']);
 });
 
-test('index does not return non provider users', function () {
+test('index does not return non provider users', function (): void {
     User::factory()->create(['type' => 0]);
     User::factory()->create(['type' => 1]);
     $provider = createSubscriptionProvider();
@@ -110,7 +110,7 @@ test('index does not return non provider users', function () {
 // GET /api/admin/subscriptions/providers/{id}
 // -------------------------------------------------------------------------
 
-test('show returns detailed subscription info', function () {
+test('show returns detailed subscription info', function (): void {
     $provider = createSubscriptionProvider();
     createSubscriptionRecord($provider);
 
@@ -127,14 +127,14 @@ test('show returns detailed subscription info', function () {
         ]);
 });
 
-test('show returns 404 for non existent provider', function () {
+test('show returns 404 for non existent provider', function (): void {
     $this->actingAs($this->admin, 'api')
         ->getJson('/api/admin/subscriptions/providers/9999')
         ->assertNotFound()
         ->assertJsonPath('success', false);
 });
 
-test('show returns 404 for non provider user', function () {
+test('show returns 404 for non provider user', function (): void {
     $client = User::factory()->create(['type' => 0]);
 
     $this->actingAs($this->admin, 'api')
@@ -146,7 +146,7 @@ test('show returns 404 for non provider user', function () {
 // GET /api/admin/subscriptions/all
 // -------------------------------------------------------------------------
 
-test('all subscriptions returns subscriptions for providers only', function () {
+test('all subscriptions returns subscriptions for providers only', function (): void {
     $provider = createSubscriptionProvider();
     createSubscriptionRecord($provider);
 
@@ -173,7 +173,7 @@ test('all subscriptions returns subscriptions for providers only', function () {
         ->and($data[0]['provider_id'])->toBe($provider->id);
 });
 
-test('all subscriptions can filter by stripe status', function () {
+test('all subscriptions can filter by stripe status', function (): void {
     $p1 = createSubscriptionProvider();
     createSubscriptionRecord($p1, ['stripe_status' => 'active']);
 
@@ -193,7 +193,7 @@ test('all subscriptions can filter by stripe status', function () {
 // POST /api/admin/subscriptions/providers/{id}/cancel
 // -------------------------------------------------------------------------
 
-test('cancel returns 422 when provider has no subscription', function () {
+test('cancel returns 422 when provider has no subscription', function (): void {
     $provider = createSubscriptionProvider();
 
     $this->actingAs($this->admin, 'api')
@@ -202,7 +202,7 @@ test('cancel returns 422 when provider has no subscription', function () {
         ->assertJsonPath('success', false);
 });
 
-test('cancel returns 422 when subscription already canceled', function () {
+test('cancel returns 422 when subscription already canceled', function (): void {
     $provider = createSubscriptionProvider();
     createSubscriptionRecord($provider, [
         'stripe_status' => 'canceled',
@@ -215,7 +215,7 @@ test('cancel returns 422 when subscription already canceled', function () {
         ->assertJsonPath('success', false);
 });
 
-test('cancel returns 404 for unknown provider', function () {
+test('cancel returns 404 for unknown provider', function (): void {
     $this->actingAs($this->admin, 'api')
         ->postJson('/api/admin/subscriptions/providers/9999/cancel')
         ->assertNotFound();
@@ -225,7 +225,7 @@ test('cancel returns 404 for unknown provider', function () {
 // POST /api/admin/subscriptions/providers/{id}/pause
 // -------------------------------------------------------------------------
 
-test('pause returns 422 when provider has no active subscription', function () {
+test('pause returns 422 when provider has no active subscription', function (): void {
     $provider = createSubscriptionProvider();
 
     $this->actingAs($this->admin, 'api')
@@ -234,7 +234,7 @@ test('pause returns 422 when provider has no active subscription', function () {
         ->assertJsonPath('success', false);
 });
 
-test('pause returns 422 when subscription is already paused', function () {
+test('pause returns 422 when subscription is already paused', function (): void {
     $provider = createSubscriptionProvider();
     createSubscriptionRecord($provider, ['stripe_status' => 'paused']);
 
@@ -248,7 +248,7 @@ test('pause returns 422 when subscription is already paused', function () {
 // POST /api/admin/subscriptions/providers/{id}/resume
 // -------------------------------------------------------------------------
 
-test('resume returns 422 when no subscription exists', function () {
+test('resume returns 422 when no subscription exists', function (): void {
     $provider = createSubscriptionProvider();
 
     $this->actingAs($this->admin, 'api')
@@ -257,7 +257,7 @@ test('resume returns 422 when no subscription exists', function () {
         ->assertJsonPath('success', false);
 });
 
-test('resume returns 422 when subscription is active and not on grace period', function () {
+test('resume returns 422 when subscription is active and not on grace period', function (): void {
     $provider = createSubscriptionProvider();
     createSubscriptionRecord($provider, ['stripe_status' => 'active']);
 
@@ -271,7 +271,7 @@ test('resume returns 422 when subscription is active and not on grace period', f
 // POST /api/admin/subscriptions/providers/{id}/cancel-now
 // -------------------------------------------------------------------------
 
-test('cancel now returns 422 when no subscription exists', function () {
+test('cancel now returns 422 when no subscription exists', function (): void {
     $provider = createSubscriptionProvider();
 
     $this->actingAs($this->admin, 'api')
@@ -280,7 +280,7 @@ test('cancel now returns 422 when no subscription exists', function () {
         ->assertJsonPath('success', false);
 });
 
-test('cancel now returns 404 for unknown provider', function () {
+test('cancel now returns 404 for unknown provider', function (): void {
     $this->actingAs($this->admin, 'api')
         ->postJson('/api/admin/subscriptions/providers/9999/cancel-now')
         ->assertNotFound();

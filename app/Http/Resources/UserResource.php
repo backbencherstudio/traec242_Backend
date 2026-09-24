@@ -38,7 +38,7 @@ class UserResource extends JsonResource
                 ? Category::whereIn('id', $this->category_id ?? [])->get(['id', 'name', 'image'])
                 : null,
             'plan_id' => $this->plan_id,
-            'plan' => $this->whenLoaded('plan', fn () => [
+            'plan' => $this->whenLoaded('plan', fn (): array => [
                 'id' => $this->plan?->id,
                 'name' => $this->plan?->name,
                 'title' => $this->plan?->title,

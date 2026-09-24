@@ -6,7 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('plan seeder creates expected plans without duplicates', function () {
+test('plan seeder creates expected plans without duplicates', function (): void {
     $this->seed(PlanSeeder::class);
     $this->seed(PlanSeeder::class);
 

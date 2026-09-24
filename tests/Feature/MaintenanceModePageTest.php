@@ -1,6 +1,6 @@
 <?php
 
-test('the custom maintenance page is displayed', function () {
+test('the custom maintenance page is displayed', function (): void {
     $this->artisan('down', ['--render' => 'errors::503'])->assertExitCode(0);
 
     try {

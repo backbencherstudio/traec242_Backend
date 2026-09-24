@@ -29,7 +29,7 @@ class ServiceResource extends JsonResource
                     return null;
                 }
 
-                return $this->reviews->map(fn ($review) => [
+                return $this->reviews->map(fn ($review): array => [
                     'id' => $review->id,
                     'reviewer_name' => trim(($review->user->name ?? '').' '.($review->user->last_name ?? '')),
                     'rating' => $review->rating,

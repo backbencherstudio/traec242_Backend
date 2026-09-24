@@ -33,7 +33,7 @@ class UserDashboardController extends Controller
         $userId = (int) $request->user()->id;
         $orders = $this->dashboardService->getUserRecentOrders($userId);
 
-        $recentOrders = $orders->map(fn ($order) => [
+        $recentOrders = $orders->map(fn ($order): array => [
             'event_name' => $order->event_name,
             'order_by' => trim(
                 ($order->service?->user?->name ?? '').' '.

@@ -8,11 +8,11 @@ use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     config(['jwt.secret' => 'testing-jwt-secret']);
 });
 
-test('create order requires a payment method id', function () {
+test('create order requires a payment method id', function (): void {
     [$customer, $service, $pricing] = createOrderScenario();
 
     $response = $this->actingAs($customer, 'api')->postJson(
@@ -24,7 +24,7 @@ test('create order requires a payment method id', function () {
         ->assertJsonValidationErrors(['payment_method_id']);
 });
 
-test('create order fails when provider has no stripe keys', function () {
+test('create order fails when provider has no stripe keys', function (): void {
     [$customer, $service, $pricing] = createOrderScenario();
 
     $response = $this->actingAs($customer, 'api')->postJson(

@@ -27,7 +27,7 @@ class UserManagementController extends Controller
             (int) ($request->per_page ?? 10)
         );
 
-        $data = $users->getCollection()->map(fn ($user) => [
+        $data = $users->getCollection()->map(fn ($user): array => [
             'id' => $user->id,
             'image_url' => $user->image ? asset($user->image) : null,
             'name' => trim(($user->name ?? '').' '.($user->last_name ?? '')),
@@ -108,7 +108,7 @@ class UserManagementController extends Controller
             (int) ($request->per_page ?? 10)
         );
 
-        $data = $users->getCollection()->map(fn ($user) => [
+        $data = $users->getCollection()->map(fn ($user): array => [
             'id' => $user->id,
             'image_url' => $user->image ? asset($user->image) : null,
             'name' => trim(($user->name ?? '').' '.($user->last_name ?? '')),

@@ -24,7 +24,7 @@ class MessageResource extends JsonResource
             'message' => $this->message,
             'type' => $this->type,
             'read_at' => $this->read_at,
-            'attachments' => $this->attachments ? $this->attachments->map(fn ($file) => [
+            'attachments' => $this->attachments ? $this->attachments->map(fn ($file): array => [
                 'id' => $file->id,
                 'file_name' => $file->file_name,
                 'file_type' => $file->file_type,

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Hash;
 
 uses(RefreshDatabase::class);
 
-test('user register sends otp without saving the user when otp is missing', function () {
+test('user register sends otp without saving the user when otp is missing', function (): void {
     $response = $this->postJson('/api/user-register', [
         'name' => 'Test User',
         'email' => 'test@example.com',
@@ -29,7 +29,7 @@ test('user register sends otp without saving the user when otp is missing', func
     ]);
 });
 
-test('user registration succeeds when valid otp is submitted', function () {
+test('user registration succeeds when valid otp is submitted', function (): void {
     DB::table('registration_otps')->insert([
         'email' => 'test@example.com',
         'user_id' => null,
@@ -64,7 +64,7 @@ test('user registration succeeds when valid otp is submitted', function () {
     ]);
 });
 
-test('existing unverified user can still verify via verify endpoint', function () {
+test('existing unverified user can still verify via verify endpoint', function (): void {
     $user = User::factory()->create([
         'email' => 'test@example.com',
         'is_verified' => false,
@@ -94,7 +94,7 @@ test('existing unverified user can still verify via verify endpoint', function (
     ]);
 });
 
-test('invalid otp prevents user registration', function () {
+test('invalid otp prevents user registration', function (): void {
     DB::table('registration_otps')->insert([
         'email' => 'test@example.com',
         'user_id' => null,
@@ -121,7 +121,7 @@ test('invalid otp prevents user registration', function () {
     ]);
 });
 
-test('resend otp succeeds for unregistered email', function () {
+test('resend otp succeeds for unregistered email', function (): void {
     $response = $this->postJson('/api/resend-email-otp', [
         'email' => 'test@example.com',
     ]);
@@ -134,7 +134,7 @@ test('resend otp succeeds for unregistered email', function () {
     ]);
 });
 
-test('resend otp fails for verified email', function () {
+test('resend otp fails for verified email', function (): void {
     User::factory()->create([
         'email' => 'test@example.com',
         'is_verified' => true,

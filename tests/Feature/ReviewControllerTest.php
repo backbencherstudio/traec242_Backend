@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Mail;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     config(['jwt.secret' => 'testing-jwt-secret']);
     Mail::fake();
 });
@@ -19,7 +19,7 @@ beforeEach(function () {
 // Store
 // -------------------------------------------------------------------------
 
-test('customer can store a review for a completed order', function () {
+test('customer can store a review for a completed order', function (): void {
     [$service] = createReviewService();
     $customer = User::factory()->create();
     $order = createCompletedOrderForReview($customer, $service);
@@ -44,7 +44,7 @@ test('customer can store a review for a completed order', function () {
     ]);
 });
 
-test('customer cannot review another users order', function () {
+test('customer cannot review another users order', function (): void {
     [$service] = createReviewService();
     $customer = User::factory()->create();
     $stranger = User::factory()->create();
@@ -58,7 +58,7 @@ test('customer cannot review another users order', function () {
     $this->assertDatabaseCount('reviews', 0);
 });
 
-test('customer cannot review an order that is not completed', function () {
+test('customer cannot review an order that is not completed', function (): void {
     [$service] = createReviewService();
     $customer = User::factory()->create();
     $order = createCompletedOrderForReview($customer, $service, 'pending');
@@ -71,7 +71,7 @@ test('customer cannot review an order that is not completed', function () {
     $this->assertDatabaseCount('reviews', 0);
 });
 
-test('customer cannot review the same order twice', function () {
+test('customer cannot review the same order twice', function (): void {
     [$service] = createReviewService();
     $customer = User::factory()->create();
     $order = createCompletedOrderForReview($customer, $service);
@@ -91,7 +91,7 @@ test('customer cannot review the same order twice', function () {
     $this->assertDatabaseCount('reviews', 1);
 });
 
-test('store requires an order id and valid rating', function () {
+test('store requires an order id and valid rating', function (): void {
     $customer = User::factory()->create();
 
     $this->actingAs($customer, 'api')->postJson('/api/admin/review/store', [
@@ -104,7 +104,7 @@ test('store requires an order id and valid rating', function () {
 // Reply
 // -------------------------------------------------------------------------
 
-test('service owner can reply to a review and it persists', function () {
+test('service owner can reply to a review and it persists', function (): void {
     [$service, $owner] = createReviewService();
     $customer = User::factory()->create();
 
@@ -128,7 +128,7 @@ test('service owner can reply to a review and it persists', function () {
     ]);
 });
 
-test('non owner cannot reply to a review', function () {
+test('non owner cannot reply to a review', function (): void {
     [$service] = createReviewService();
     $customer = User::factory()->create();
     $stranger = User::factory()->create();
@@ -153,7 +153,7 @@ test('non owner cannot reply to a review', function () {
 // Received
 // -------------------------------------------------------------------------
 
-test('provider sees only reviews on their own services with reply status', function () {
+test('provider sees only reviews on their own services with reply status', function (): void {
     [$service, $owner] = createReviewService();
     [$otherService] = createReviewService();
     $customer = User::factory()->create();
@@ -178,7 +178,7 @@ test('provider sees only reviews on their own services with reply status', funct
         ->assertJsonPath('data.0.has_replied', false);
 });
 
-test('provider received review shows replied after responding', function () {
+test('provider received review shows replied after responding', function (): void {
     [$service, $owner] = createReviewService();
     $customer = User::factory()->create();
 
@@ -202,7 +202,7 @@ test('provider received review shows replied after responding', function () {
 // Show
 // -------------------------------------------------------------------------
 
-test('review author can show their own review', function () {
+test('review author can show their own review', function (): void {
     [$service] = createReviewService();
     $customer = User::factory()->create();
 
@@ -219,7 +219,7 @@ test('review author can show their own review', function () {
         ->assertJsonPath('data.rating', 5);
 });
 
-test('service owner can show a review on their service', function () {
+test('service owner can show a review on their service', function (): void {
     [$service, $owner] = createReviewService();
     $customer = User::factory()->create();
 
@@ -235,7 +235,7 @@ test('service owner can show a review on their service', function () {
         ->assertJsonPath('data.id', $review->id);
 });
 
-test('stranger cannot show a review they do not own', function () {
+test('stranger cannot show a review they do not own', function (): void {
     [$service] = createReviewService();
     $customer = User::factory()->create();
     $stranger = User::factory()->create();
@@ -255,7 +255,7 @@ test('stranger cannot show a review they do not own', function () {
 // Order integration
 // -------------------------------------------------------------------------
 
-test('order index marks completed unreviewed order as reviewable', function () {
+test('order index marks completed unreviewed order as reviewable', function (): void {
     [$service] = createReviewService();
     $customer = User::factory()->create(['type' => 0]);
     createCompletedOrderForReview($customer, $service);
@@ -266,7 +266,7 @@ test('order index marks completed unreviewed order as reviewable', function () {
         ->assertJsonPath('data.0.review_id', null);
 });
 
-test('order show includes review eligibility', function () {
+test('order show includes review eligibility', function (): void {
     [$service] = createReviewService();
     $customer = User::factory()->create(['type' => 0]);
     $order = createCompletedOrderForReview($customer, $service);
@@ -277,7 +277,7 @@ test('order show includes review eligibility', function () {
         ->assertJsonPath('data.order_details.review_id', null);
 });
 
-test('order index returns null review when not yet reviewed', function () {
+test('order index returns null review when not yet reviewed', function (): void {
     [$service] = createReviewService();
     $customer = User::factory()->create(['type' => 0]);
     createCompletedOrderForReview($customer, $service);
@@ -287,7 +287,7 @@ test('order index returns null review when not yet reviewed', function () {
         ->assertJsonPath('data.0.review', null);
 });
 
-test('order index includes review object with provider reply', function () {
+test('order index includes review object with provider reply', function (): void {
     [$service, $owner] = createReviewService();
     $customer = User::factory()->create(['type' => 0]);
     $order = createCompletedOrderForReview($customer, $service);
@@ -310,7 +310,7 @@ test('order index includes review object with provider reply', function () {
         ->assertJsonPath('data.0.review.has_replied', true);
 });
 
-test('order show includes review object when reviewed', function () {
+test('order show includes review object when reviewed', function (): void {
     [$service] = createReviewService();
     $customer = User::factory()->create(['type' => 0]);
     $order = createCompletedOrderForReview($customer, $service);
@@ -331,7 +331,7 @@ test('order show includes review object when reviewed', function () {
         ->assertJsonPath('data.order_details.review.reply', null);
 });
 
-test('order index marks reviewed order as not reviewable', function () {
+test('order index marks reviewed order as not reviewable', function (): void {
     [$service] = createReviewService();
     $customer = User::factory()->create(['type' => 0]);
     $order = createCompletedOrderForReview($customer, $service);
