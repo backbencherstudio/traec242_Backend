@@ -7,9 +7,11 @@ use App\Http\Resources\ChatConversationResource;
 use App\Http\Resources\DashboardRecentMessageResource;
 use App\Http\Resources\UserDashboardRecentOrderResource;
 use App\Services\DashboardService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+#[Group('user-dashboard', weight: 2)]
 class UserDashboardController extends Controller
 {
     public function __construct(

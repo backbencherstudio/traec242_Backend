@@ -8,14 +8,17 @@ use App\Http\Requests\Admin\UpdateCategoryRequest;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
 use App\Services\FileUploadService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 
+#[Group('admin-category', weight: 4)]
 class CategoryController extends Controller
 {
     public function __construct(
         protected FileUploadService $fileUploadService
     ) {}
 
+    #[Group('public-category', weight: 1)]
     public function index(): JsonResponse
     {
         $categories = Category::with('subcategories')->latest()->get();

@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
+#[Group('public-google-auth', weight: 1)]
 class GoogleAuthController extends Controller
 {
     public function redirectToGoogle()

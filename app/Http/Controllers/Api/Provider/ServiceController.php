@@ -10,10 +10,12 @@ use App\Mail\NewServiceMail;
 use App\Models\Service;
 use App\Models\Subscriber;
 use App\Services\FileUploadService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
+#[Group('provider-service', weight: 3)]
 class ServiceController extends Controller
 {
     public function __construct(

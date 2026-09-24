@@ -8,10 +8,12 @@ use App\Http\Resources\OrderManagementCustomerResource;
 use App\Models\Order;
 use App\Models\ProviderPayment;
 use App\Models\User;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+#[Group('admin-order-management', weight: 4)]
 class OrderManagementController extends Controller
 {
     public function index(Request $request): JsonResponse

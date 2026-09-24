@@ -7,8 +7,10 @@ use App\Http\Requests\Admin\StorePromotionRequest;
 use App\Http\Requests\Admin\UpdatePromotionRequest;
 use App\Http\Resources\PromotionResource;
 use App\Models\Promotion;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 
+#[Group('admin-promotion', weight: 4)]
 class PromotionController extends Controller
 {
     public function index(): JsonResponse

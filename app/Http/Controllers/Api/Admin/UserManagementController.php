@@ -8,9 +8,11 @@ use App\Http\Resources\UserManagementClientResource;
 use App\Http\Resources\UserManagementSellerResource;
 use App\Models\User;
 use App\Services\UserManagementService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+#[Group('admin-user-management', weight: 4)]
 class UserManagementController extends Controller
 {
     public function __construct(

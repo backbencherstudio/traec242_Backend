@@ -7,8 +7,10 @@ use App\Http\Requests\Admin\StoreFaqRequest;
 use App\Http\Requests\Admin\UpdateFaqRequest;
 use App\Http\Resources\FaqResource;
 use App\Models\Faq;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 
+#[Group('admin-faq', weight: 4)]
 class FaqController extends Controller
 {
     public function index(): JsonResponse

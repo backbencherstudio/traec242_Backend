@@ -7,8 +7,10 @@ use App\Http\Requests\Admin\UpdateSettingRequest;
 use App\Http\Resources\SettingResource;
 use App\Models\Setting;
 use App\Services\FileUploadService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 
+#[Group('admin-setting', weight: 4)]
 class SettingController extends Controller
 {
     public function __construct(

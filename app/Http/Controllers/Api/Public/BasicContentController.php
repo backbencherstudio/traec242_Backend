@@ -8,8 +8,10 @@ use App\Models\Faq;
 use App\Models\PrivacyPolicy;
 use App\Models\Review;
 use App\Models\User;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 
+#[Group('public-basic-content', weight: 1)]
 class BasicContentController extends Controller
 {
     public function home_response(): JsonResponse

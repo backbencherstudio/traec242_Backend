@@ -13,6 +13,7 @@ use App\Models\ProviderStripe;
 use App\Models\Service;
 use App\Services\OrderService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -22,6 +23,7 @@ use Stripe\Exception\CardException;
 use Stripe\PaymentIntent;
 use Stripe\Stripe;
 
+#[Group('user-order', weight: 2)]
 class OrderController extends Controller
 {
     public function __construct(
@@ -139,6 +141,7 @@ class OrderController extends Controller
     /**
      * Handle Stripe payment success callback.
      */
+    #[Group('public-order', weight: 1)]
     public function success(Request $request, $orderId): JsonResponse
     {
         $order = Order::findOrFail($orderId);
@@ -243,6 +246,7 @@ class OrderController extends Controller
     /**
      * Handle Stripe cancel callback.
      */
+    #[Group('public-order', weight: 1)]
     public function cancel(Request $request, $orderId): JsonResponse
     {
         $order = Order::findOrFail($orderId);
@@ -263,6 +267,7 @@ class OrderController extends Controller
     /**
      * Download order invoice PDF.
      */
+    #[Group('public-order', weight: 1)]
     public function generateInvoice($orderId): Response
     {
         $order = Order::with(['service', 'pricing', 'user'])->findOrFail($orderId);

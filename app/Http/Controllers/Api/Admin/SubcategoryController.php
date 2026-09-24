@@ -8,9 +8,11 @@ use App\Http\Requests\Admin\UpdateSubcategoryRequest;
 use App\Http\Resources\SubcategoryResource;
 use App\Models\Subcategory;
 use App\Services\FileUploadService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 
+#[Group('admin-subcategory', weight: 4)]
 class SubcategoryController extends Controller
 {
     public function __construct(

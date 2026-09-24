@@ -9,8 +9,10 @@ use App\Http\Resources\ReviewResource;
 use App\Models\Order;
 use App\Models\Review;
 use App\Models\Service;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 
+#[Group('user-review', weight: 2)]
 class ReviewController extends Controller
 {
     public function index(): JsonResponse
@@ -25,6 +27,7 @@ class ReviewController extends Controller
         return $this->sendResponse(ReviewResource::collection($reviews));
     }
 
+    #[Group('provider-review', weight: 3)]
     public function providerReviews(): JsonResponse
     {
         $providerId = auth()->id();
@@ -99,6 +102,7 @@ class ReviewController extends Controller
         return $this->sendResponse(new ReviewResource($review), 'Review submitted successfully.', 201);
     }
 
+    #[Group('provider-review', weight: 3)]
     public function reply(ReplyReviewRequest $request, $id): JsonResponse
     {
         $review = Review::with('service')->findOrFail($id);

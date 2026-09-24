@@ -10,9 +10,11 @@ use App\Models\PrivacyPolicy;
 use App\Models\Review;
 use App\Models\User;
 use App\Services\FileUploadService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+#[Group('admin-content', weight: 4)]
 class ContentController extends Controller
 {
     public function __construct(

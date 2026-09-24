@@ -9,12 +9,14 @@ use App\Http\Resources\UserResource;
 use App\Models\Plan;
 use App\Models\User;
 use App\Services\OtpService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Laravel\Cashier\Exceptions\IncompletePayment;
 use Spatie\Permission\Models\Role;
 use Stripe\Exception\ApiErrorException;
 
+#[Group('public-provider-register', weight: 1)]
 class ProviderRegisterController extends Controller
 {
     public function __construct(

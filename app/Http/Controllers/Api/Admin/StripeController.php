@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpsertStripeRequest;
 use App\Http\Resources\StripeSettingResource;
 use App\Models\Stripe;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 
+#[Group('admin-stripe', weight: 4)]
 class StripeController extends Controller
 {
     public function upsert(UpsertStripeRequest $request): JsonResponse

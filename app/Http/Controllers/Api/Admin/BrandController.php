@@ -8,9 +8,11 @@ use App\Http\Requests\Admin\UpdateBrandRequest;
 use App\Http\Resources\BrandResource;
 use App\Models\Brand;
 use App\Services\FileUploadService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 
+#[Group('admin-brand', weight: 4)]
 class BrandController extends Controller
 {
     public function __construct(

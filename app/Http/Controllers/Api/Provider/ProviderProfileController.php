@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Profile\UpdateProviderProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Order;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
+#[Group('provider-profile', weight: 3)]
 class ProviderProfileController extends Controller
 {
     public function providerProfile(): JsonResponse

@@ -7,9 +7,11 @@ use App\Http\Resources\AdminSubscriptionResource;
 use App\Http\Resources\ProviderSubscriptionResource;
 use App\Models\User;
 use App\Services\SubscriptionManagementService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+#[Group('admin-subscription-management', weight: 4)]
 class SubscriptionManagementController extends Controller
 {
     public function __construct(

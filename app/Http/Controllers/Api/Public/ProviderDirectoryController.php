@@ -9,11 +9,13 @@ use App\Http\Resources\UserResource;
 use App\Models\Category;
 use App\Models\Service;
 use App\Models\User;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+#[Group('public-provider-directory', weight: 1)]
 class ProviderDirectoryController extends Controller
 {
     public function index(Request $request): JsonResponse

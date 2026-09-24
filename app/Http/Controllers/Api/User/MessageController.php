@@ -8,9 +8,11 @@ use App\Http\Resources\MessageResource;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Services\ChatService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+#[Group('user-message', weight: 2)]
 class MessageController extends Controller
 {
     public function __construct(

@@ -8,8 +8,10 @@ use App\Http\Requests\Admin\UpdateSliderRequest;
 use App\Http\Resources\SliderResource;
 use App\Models\Slider;
 use App\Services\FileUploadService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 
+#[Group('admin-slider', weight: 4)]
 class SliderController extends Controller
 {
     public function __construct(

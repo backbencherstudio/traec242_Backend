@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\StripeSettingResource;
 use App\Models\ProviderStripe;
 use App\Models\Service;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+#[Group('provider-stripe', weight: 3)]
 class ProviderStripeController extends Controller
 {
     public function upsert(Request $request): JsonResponse
@@ -65,6 +67,7 @@ class ProviderStripeController extends Controller
         ]);
     }
 
+    #[Group('public-provider-stripe', weight: 1)]
     public function getPublicKey($serviceId): JsonResponse
     {
         $service = Service::find($serviceId);

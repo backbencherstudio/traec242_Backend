@@ -7,8 +7,10 @@ use App\Http\Requests\Admin\StorePlanRequest;
 use App\Http\Requests\Admin\UpdatePlanRequest;
 use App\Http\Resources\PlanResource;
 use App\Models\Plan;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 
+#[Group('admin-plan', weight: 4)]
 class PlanController extends Controller
 {
     protected array $daysMap = [
@@ -17,6 +19,7 @@ class PlanController extends Controller
         'yearly' => 365,
     ];
 
+    #[Group('public-plan', weight: 1)]
     public function index(): JsonResponse
     {
         $plans = Plan::all();

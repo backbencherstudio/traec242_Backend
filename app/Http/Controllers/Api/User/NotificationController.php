@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Chat\MarkChatAsReadRequest;
 use App\Models\Message;
 use App\Services\ChatService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
+#[Group('user-notification', weight: 2)]
 class NotificationController extends Controller
 {
     public function __construct(

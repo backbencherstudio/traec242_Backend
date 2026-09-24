@@ -15,9 +15,11 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\AuthService;
 use App\Services\OtpService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
+#[Group('public-auth', weight: 1)]
 class AuthController extends Controller
 {
     public function __construct(
@@ -28,6 +30,7 @@ class AuthController extends Controller
     /**
      * List all administrator users.
      */
+    #[Group('admin-auth', weight: 4)]
     public function index(): JsonResponse
     {
         $admins = User::role('admin')->get();
@@ -115,6 +118,7 @@ class AuthController extends Controller
     /**
      * Register a new admin user.
      */
+    #[Group('admin-auth', weight: 4)]
     public function adminregister(AdminRegisterRequest $request): JsonResponse
     {
         $result = $this->authService->adminRegister($request->validated(), $request->file('image'));
@@ -130,6 +134,7 @@ class AuthController extends Controller
     /**
      * Retrieve admin details for editing.
      */
+    #[Group('admin-auth', weight: 4)]
     public function edit($id): JsonResponse
     {
         $user = User::role('admin')->find($id);
@@ -149,6 +154,7 @@ class AuthController extends Controller
     /**
      * Update an admin user.
      */
+    #[Group('admin-auth', weight: 4)]
     public function adminUpdate(AdminUpdateRequest $request, $id): JsonResponse
     {
         $user = User::role('admin')->find($id);
@@ -164,6 +170,7 @@ class AuthController extends Controller
     /**
      * Delete an admin user.
      */
+    #[Group('admin-auth', weight: 4)]
     public function delete($id): JsonResponse
     {
         $user = User::role('admin')->find($id);
@@ -180,6 +187,7 @@ class AuthController extends Controller
     /**
      * Get authenticated user profile.
      */
+    #[Group('user-auth', weight: 2)]
     public function me(): JsonResponse
     {
         /** @var User $user */
@@ -194,6 +202,7 @@ class AuthController extends Controller
     /**
      * Log out current user and invalidate JWT token.
      */
+    #[Group('user-auth', weight: 2)]
     public function logout(): JsonResponse
     {
         try {
@@ -207,6 +216,7 @@ class AuthController extends Controller
     /**
      * Get admin password view or details.
      */
+    #[Group('admin-auth', weight: 4)]
     public function password($id): JsonResponse
     {
         $admin = User::role('admin')->find($id);
@@ -220,6 +230,7 @@ class AuthController extends Controller
     /**
      * Change authenticated user's password.
      */
+    #[Group('user-auth', weight: 2)]
     public function passwordchange(PasswordChangeRequest $request): JsonResponse
     {
         /** @var User $user */
